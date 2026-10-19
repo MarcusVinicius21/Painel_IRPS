@@ -89,6 +89,8 @@ class Criterion(Strict):
 
 class ViabilityReview(Strict):
     revision: int = Field(default=0,ge=0)
+    filters: OpportunityFilter
+    expected_context_fingerprint: str = Field(pattern=r'^[0-9a-f]{64}$')
     criteria: dict[str,Criterion]
     legal: Literal['pending','viable','not_viable']
     operational: Literal['pending','viable','not_viable']

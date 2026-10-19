@@ -10,7 +10,7 @@ Esta entrega amplia o Projeto Mestre por código executável. Os documentos orig
 |---|---|---|
 | Aplicação HTTP | `backend/app/main.py` | Operações autenticadas, erros redigidos e contratos, incluindo histórico e oportunidades |
 | Sessão e acesso | `security.py` | Verificação RS256/JWK; vínculo ativo no banco; classe/permissão; CSRF e revogação |
-| Banco | `db.py`, cinco migrações | Transação por organização com `set_config(..., true)`, SQL parametrizado, RLS e evidências |
+| Banco | `db.py`, sete migrações | Transação por organização com `set_config(..., true)`, SQL parametrizado, RLS e evidências |
 | Planejamento | `scenarios.py` | Versões, concorrência, adapters V4 e persistência das linhas |
 | Comercial privado | `scenarios.quote` | `calculate_quote`, revisões e acesso exclusivo da empresa |
 | Fontes e oportunidades | `sources.py`, `history.py`, `opportunities.py` | URLs PNCP fixas, GET limitado, timeout, cache curto, pausa Retry-After, coleta paginada, filtros, cobertura e prioridade condicionada |

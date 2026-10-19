@@ -66,23 +66,55 @@ def coverage(ctx,f,cities):
     while current<=f.end:
         if (not f.months or current.month in f.months) and (not f.years or current.year in f.years):days.append(current)
         current+=timedelta(days=1)
-    collections=ctx.db.all("SELECT id,scope,pages,updated_at FROM history_collection WHERE org_id=:o AND dataset=:d AND state='completed'",{'o':ctx.org_id,'d':f.dataset})
+    denominator=len(days)*len(cities)
+    if f.dataset=='official' and f.phase!='publicado_estimado':
+        # Result endpoints enumerate known items reached through publication searches.
+        # Their consultation time is evidence of that item query, never a complete
+        # date window for all homologations in the municipality.
+        provider='PNCP_RESULTADOS' if f.phase=='homologado' else None
+        observations=ctx.db.all("""SELECT c.id AS collection_id,t.id AS task_id,p.record_count,p.created_at,
+            s.url,s.sha256,s.consulted_at,i.municipality_ibge
+            FROM history_page p JOIN history_task t ON t.org_id=p.org_id AND t.id=p.task_id
+            JOIN history_collection c ON c.org_id=p.org_id AND c.id=p.collection_id
+            JOIN source_observation s ON s.id=p.source_id
+            JOIN procurement_fact i ON i.id=(t.arguments->>'procurement_id')::uuid
+            WHERE p.org_id=:o AND c.dataset='official' AND t.provider=:provider
+              AND i.municipality_ibge=ANY(:cities)
+              AND EXISTS (SELECT 1 FROM procurement_fact result_fact
+                WHERE result_fact.source_id=p.source_id AND result_fact.provider='PNCP_RESULTADOS'
+                  AND result_fact.event_date BETWEEN :start AND :end
+                  AND result_fact.municipality_ibge=ANY(:cities))
+            ORDER BY p.created_at DESC,p.task_id LIMIT 501""",{'o':ctx.org_id,'provider':provider,'cities':cities,
+                'start':f.start,'end':f.end}) if provider and cities else []
+        proof=[{'phase':f.phase,'collection_id':str(p['collection_id']),'task_id':str(p['task_id']),
+            'municipality_ibge':p['municipality_ibge'],'record_count':p['record_count'],
+            'url':p['url'],'sha256':p['sha256'],'consulted_at':p['consulted_at']}
+            for p in observations[:30]]
+        observed=bool(observations)
+        message=('Resultados foram consultados para itens conhecidos. Isso não comprova todos os resultados homologados no período.'
+            if provider and observed else 'Ainda não há prova de cobertura desta situação no período. Registros isolados não tornam o histórico completo.')
+        return {'phase':f.phase,'verified_days':None,'requested_city_days':denominator,
+            'verified_ratio':None,'complete_months':[],'proof':proof,'proof_truncated':len(observations)>30,
+            'observed_result_pages':len(observations) if provider else 0,
+            'status':'observed_items_only' if observed else 'not_established','dataset':f.dataset,
+            'message':message},set()
+    collections=ctx.db.all("SELECT id,scope,pages,updated_at FROM history_collection WHERE org_id=:o AND dataset=:d AND state='completed' ORDER BY id",{'o':ctx.org_id,'d':f.dataset})
     windows=defaultdict(list);proof=[]
     for c in collections:
         s=c['scope']
         # Official collection indexes publication dates, not dates of homologation/payment.
-        compatible=(f.phase=='publicado_estimado' and s.get('publications') and s.get('items')) or (f.dataset=='synthetic' and s.get('event_dates_complete') is True)
+        compatible=(f.dataset=='official' and f.phase=='publicado_estimado' and s.get('publications') and s.get('items')) or (f.dataset=='synthetic' and s.get('event_dates_complete') is True)
         if not compatible or (f.dataset=='official' and (not f.modalities or not set(f.modalities)<=set(s.get('modalities',[])))):continue
         start=date.fromisoformat(s['start']);end=date.fromisoformat(s['end'])
         for city in set(cities)&set(s.get('municipalities',[])):windows[city].append((start,end))
         proof.append({'collection_id':str(c['id']),'start':s['start'],'end':s['end'],'pages':c['pages'],'dataset':f.dataset})
     covered={city:{d for d in days if any(a<=d<=b for a,b in windows[city])} for city in cities}
-    denominator=len(days)*len(cities);count=sum(len(x) for x in covered.values())
+    count=sum(len(x) for x in covered.values())
     ratio=Decimal(count)/denominator if denominator else Decimal(0)
     months={d.strftime('%Y-%m') for d in days}
     complete_months={month for month in months if cities and all(all(d in covered[c] for d in days if d.strftime('%Y-%m')==month) for c in cities)
         and f.start<=date.fromisoformat(month+'-01') and f.end>=date(int(month[:4]),int(month[5:]),calendar.monthrange(int(month[:4]),int(month[5:]))[1])}
-    return {'verified_days':count,'requested_city_days':denominator,'verified_ratio':ratio,'complete_months':sorted(complete_months),'proof':proof[:30],
+    return {'phase':f.phase,'verified_days':count,'requested_city_days':denominator,'verified_ratio':ratio,'complete_months':sorted(complete_months),'proof':proof[:30],
         'status':'complete_scope' if ratio==1 else 'partial_or_unverified','dataset':f.dataset,
         'message':'Cobertura restrita ao recorte e às modalidades coletadas. Não comprova todo o histórico municipal.'},complete_months
 
@@ -137,7 +169,8 @@ def score(metrics,review,cov,weights,scope_count):
     missing=[]
     if metrics['purchases']<3 or metrics['active_months']<3:missing.append('Faltam compras em pelo menos três meses diferentes.')
     if metrics['municipalities']<2:missing.append('Faltam dois municípios compradores no recorte.')
-    if cov['verified_ratio']<Decimal('.8') or len(cov['complete_months'])<12:missing.append('Faltam 12 meses com cobertura verificável de ao menos 80% do recorte.')
+    if cov['verified_ratio'] is None:missing.append('A cobertura desta situação ainda não foi comprovada por período e município.')
+    elif cov['verified_ratio']<Decimal('.8') or len(cov['complete_months'])<12:missing.append('Faltam 12 meses com cobertura verificável de ao menos 80% do recorte.')
     if metrics['price']['count']<3:missing.append('Faltam três preços da mesma unidade no intervalo comparável.')
     if not review:missing.append('Confira os seis critérios de fornecimento e a viabilidade jurídica e operacional.')
     elif review['data']['legal']!='viable' or review['data']['operational']!='viable':missing.append('A revisão jurídica e operacional ainda não indica viabilidade.')
@@ -150,14 +183,26 @@ def score(metrics,review,cov,weights,scope_count):
     return {'value':value,'state':'reviewed_analysis_priority','components':components,'weights':weights,'missing':[],
         'formula_version':VERSION,'notice':'Prioridade de análise no recorte. Não garante compra, lucro ou autorização administrativa.'}
 
-def build(ctx,f):
-    rows,cities=facts(ctx,f);cov,complete=coverage(ctx,f,cities)
-    equivalences=ctx.db.all('SELECT * FROM opportunity_equivalence WHERE org_id=:o ORDER BY created_at DESC,id',{'o':ctx.org_id})
+def equivalence_index(equivalences):
     assigned={};definitions={}
     for e in equivalences:
         key='g-'+str(e['id']);definitions[key]={'key':key,'name':e['name'],'category':e['category'],'unit':e['unit'],'members':e['members'],
             'equivalence':{'reviewed':True,'justification':e['justification'],'evidence':e['evidence'],'reviewed_at':e['created_at']}}
-        for m in e['members']:assigned.setdefault((m['id'],m['version']),key)
+        for m in e['members']:
+            member=(m['id'],m['version'])
+            if member in assigned:fail(409,'Um item aparece em dois grupos equivalentes. Revise os grupos antes da análise.','EQUIVALENCE_OVERLAP')
+            assigned[member]=key
+    return assigned,definitions
+
+def review_context_fingerprint(rows,definition,filters,cities,cov):
+    return hashlib.sha256(encoded({'version':VERSION,'rows':[(str(r['id']),r['revision_hash']) for r in rows],
+        'definition':definition,'filters':filters.model_dump(exclude={'offset','limit','order','weights'}),
+        'municipalities':cities,'coverage':cov}).encode()).hexdigest()
+
+def build(ctx,f):
+    rows,cities=facts(ctx,f);cov,complete=coverage(ctx,f,cities)
+    equivalences=ctx.db.all('SELECT * FROM opportunity_equivalence WHERE org_id=:o ORDER BY created_at DESC,id',{'o':ctx.org_id})
+    assigned,definitions=equivalence_index(equivalences)
     grouped=defaultdict(list)
     for row in rows:
         key=assigned.get((row['item_id'],row['item_version'])) or item_key(row['item_id'],row['item_version'],row['unit'])
@@ -165,13 +210,17 @@ def build(ctx,f):
             'members':[{'id':row['item_id'],'version':row['item_version']}],'equivalence':{'reviewed':False,'same_item_version_only':True}}
         grouped[key].append(row)
     if len(grouped)>1000:fail(422,'Selecione uma categoria ou reduza o período para comparar até mil grupos por vez.')
-    reviews={r['opportunity_key']:r for r in ctx.db.all('SELECT DISTINCT ON (opportunity_key) opportunity_key,revision,data,created_at,actor_id FROM opportunity_review WHERE org_id=:o ORDER BY opportunity_key,revision DESC',{'o':ctx.org_id})}
+    reviews={r['opportunity_key']:r for r in ctx.db.all('SELECT DISTINCT ON (opportunity_key) opportunity_key,revision,data,context_fingerprint,created_at,actor_id FROM opportunity_review WHERE org_id=:o ORDER BY opportunity_key,revision DESC',{'o':ctx.org_id})}
     result=[]
     for key,records in grouped.items():
         d=definitions[key];metrics=indicators(records,f,complete)
-        review=reviews.get(key)
+        latest=reviews.get(key)
+        context_fingerprint=review_context_fingerprint(records,d,f,cities,cov)
+        review=latest if latest and latest['context_fingerprint']==context_fingerprint else None
         fingerprint=hashlib.sha256(encoded({'version':VERSION,'rows':[(str(r['id']),r['revision_hash']) for r in records],'definition':d,'filters':f.model_dump(exclude={'offset','limit','order'})}).encode()).hexdigest()
-        result.append({**d,'metrics':metrics,'review':review,'priority':score(metrics,review,cov,f.weights,len(cities)),
+        result.append({**d,'metrics':metrics,'review':review,'review_revision':latest['revision'] if latest else 0,
+            'review_status':'current' if review else 'context_changed' if latest else 'not_reviewed',
+            'review_context_fingerprint':context_fingerprint,'priority':score(metrics,review,cov,f.weights,len(cities)),
             'classification':f.dataset,'phase':f.phase,'fingerprint':fingerprint,'_rows':records})
     return result,cov,cities
 
@@ -216,22 +265,27 @@ def equivalence_create(ctx,body):
         if not item or item['unit']!=body.unit:fail(422,'Os itens precisam ter a mesma unidade documentada. Conversão exige outro método revisado.')
         classes.add(item['classification'])
     if len(classes)!=1:fail(422,'Não misture itens oficiais e fictícios na equivalência.')
+    ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':ctx.org_id+':equivalence-members'})
+    requested={(m['id'],m['version']) for m in members}
+    for existing in ctx.db.all('SELECT members FROM opportunity_equivalence WHERE org_id=:o',{'o':ctx.org_id}):
+        if requested & {(m['id'],m['version']) for m in existing['members']}:
+            fail(409,'Um item já pertence a outro grupo equivalente. Revise o grupo existente.','EQUIVALENCE_OVERLAP')
     gid=identifier();ctx.db.execute('INSERT INTO opportunity_equivalence(org_id,id,name,category,unit,members,justification,evidence,reviewed_by) VALUES (:o,:i,:n,:c,:u,CAST(:m AS jsonb),:j,:e,:a)',{'o':ctx.org_id,'i':gid,'n':body.name,'c':body.category,'u':body.unit,'m':encoded(members),'j':body.justification,'e':body.evidence,'a':ctx.actor_id})
     ctx.audit('opportunity.equivalence_reviewed',gid,{'members':len(members)});return {'id':gid,'key':'g-'+gid}
 
 def review_save(ctx,key,body):
     ctx.require('opportunity.manage')
     if not re.fullmatch(r'(i-[0-9a-f]{24}|g-[0-9a-f-]{36})',key):fail(422,'Confira a oportunidade escolhida.')
-    if key.startswith('g-'):
-        if not ctx.db.one('SELECT id FROM opportunity_equivalence WHERE org_id=:o AND id=:i',{'o':ctx.org_id,'i':key[2:]}):fail(404,'Esta equivalência não está disponível.')
-    else:
-        exists=any(item_key(r['item_id'],r['item_version'],r['unit'])==key for r in ctx.db.all('SELECT DISTINCT item_id,item_version,unit FROM procurement_fact WHERE item_id IS NOT NULL AND unit IS NOT NULL'))
-        if not exists:fail(404,'Este item não está disponível.')
     ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':ctx.org_id+':review:'+key})
+    candidates,_,_=build(ctx,body.filters)
+    current=next((candidate for candidate in candidates if candidate['key']==key),None)
+    if not current:fail(404,'Esta oportunidade não apareceu no recorte. Confira os filtros.')
+    if current['review_context_fingerprint']!=body.expected_context_fingerprint:
+        fail(409,'O recorte mudou. Abra a análise atual antes de salvar a revisão.','REVIEW_CONTEXT_CHANGED')
     old=ctx.db.one('SELECT max(revision) AS revision FROM opportunity_review WHERE org_id=:o AND opportunity_key=:k',{'o':ctx.org_id,'k':key})['revision'] or 0
     if old!=body.revision:fail(409,'A revisão mudou. Atualize antes de salvar.')
-    data=body.model_dump(exclude={'revision'});rev=old+1
-    ctx.db.execute('INSERT INTO opportunity_review(org_id,opportunity_key,revision,data,actor_id) VALUES (:o,:k,:v,CAST(:d AS jsonb),:a)',{'o':ctx.org_id,'k':key,'v':rev,'d':encoded(data),'a':ctx.actor_id})
+    data=body.model_dump(exclude={'revision','filters','expected_context_fingerprint'});rev=old+1
+    ctx.db.execute('INSERT INTO opportunity_review(org_id,opportunity_key,revision,data,context_fingerprint,actor_id) VALUES (:o,:k,:v,CAST(:d AS jsonb),:f,:a)',{'o':ctx.org_id,'k':key,'v':rev,'d':encoded(data),'f':current['review_context_fingerprint'],'a':ctx.actor_id})
     ctx.audit('opportunity.viability_reviewed',key,{'revision':rev,'legal':body.legal,'operational':body.operational});return {'revision':rev}
 
 def to_scenario(ctx,key,body,idempotency_key):

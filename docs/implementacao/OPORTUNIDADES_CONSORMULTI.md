@@ -19,9 +19,9 @@ nunca soma essas fases como compras independentes.
 | Coleta histórica PNCP | `history.py` agenda publicações por janelas de sete dias, itens, resultados e contratos; `history_collection`/`history_task` guardam retomada, pausa, limite e tentativas | Cada página tem URL, data, SHA-256 e estado. O limite encerra como `limited`, não como cobertura completa. |
 | Histórico e filtros combinados | `POST /api/v1/opportunities/query` recebe município, grupo, órgão, categoria, item, período, mês, ano, modalidade, fornecedor, quantidade, valor e preço | Filtros ausentes não viram valor inventado; datas futuras são recusadas. |
 | Indicadores | O serviço calcula registros, municípios, meses ativos, recorrência, valores conhecidos, concentração e preços comparáveis | Um preço só é comparável com mesma unidade e item/ equivalência revisada. |
-| Equivalência técnica | `opportunity_equivalence` exige membro, unidade, justificativa, evidência e revisor | Sem revisão, só a mesma versão de item e unidade é agrupada. |
+| Equivalência técnica | `opportunity_equivalence` exige membro, unidade, justificativa, evidência e revisor | Cada versão de item pertence a no máximo um grupo por organização; conflito legado bloqueia a análise. |
 | Prioridade | Gera 0–100 somente após portas mínimas e revisão humana | Sem dados suficientes, a tela mostra o que falta em vez de pontuar. |
-| Viabilidade | Seis critérios (logística, padronização, fornecedores, exigências, prazo e disponibilidade), mais análise jurídica e operacional | Cada avaliação exige evidência; revisão não aprova fornecimento. |
+| Viabilidade | Seis critérios (logística, padronização, fornecedores, exigências, prazo e disponibilidade), mais análise jurídica e operacional | Cada avaliação exige evidência e fica presa ao recorte e aos fatos avaliados. |
 | Detalhe e cenário | Detalhe mostra mensalidade, cobertura, preços, municípios, fornecedores e documentos. O cenário usa participantes e item observados | O rascunho não recebe necessidade, estoque, preço, anuência ou aprovação inferidos. A chave de idempotência evita duplicação. |
 | Acompanhamentos | Relaciona o conjunto exato de versões já visto e registra nova publicação ou mudança comprovada | Não consulta nem envia aviso externo automaticamente. |
 
@@ -39,6 +39,31 @@ fornecimento. A pessoa responsável escolhe pesos que somam 100; o valor é
 seis avaliações de 1–5, convertida para 0–100. A fórmula, entradas, revisão e
 fonte permanecem na resposta da API; ela ordena investigação, não garante
 compra, margem ou contratação.
+
+## Correções verificadas na revisão do PR #1
+
+Uma revisão humana salva agora recebe e grava um SHA-256 do contexto avaliado:
+municípios efetivos, filtros de compra, período, fase, versão dos fatos,
+definição da equivalência e cobertura demonstrada. A API rejeita um envio
+feito com impressão antiga (409). Uma revisão anterior continua no histórico,
+mas aparece como `context_changed` e **não** alimenta a prioridade quando o
+contexto muda. Os pesos de ordenação são excluídos dessa impressão: trocar
+somente o peso recalcula a mesma avaliação, sem pedir nova decisão humana.
+Revisões anteriores à migração `0007`, sem impressão do contexto, ficam
+inativas até nova avaliação.
+
+A cobertura é específica da situação selecionada. Para publicações, somente
+janelas e páginas concluídas entram na prova de datas. Para homologação, as
+consultas PNCP de resultado por item têm URL, SHA-256, horário e registro da
+página; elas provam apenas que **aquele item conhecido foi consultado**. A
+resposta devolve `verified_ratio=null`, `complete_months=[]` e recorrência
+indeterminada, mesmo quando um resultado foi encontrado. A data de publicação
+não vira prova de todos os resultados homologados no período. Outras fases
+também permanecem sem completude declarada até possuir consulta específica.
+
+A criação de grupo equivalente usa bloqueio transacional por organização e
+recusa um item/versão já presente em outro grupo (409). A leitura também
+bloqueia grupos legados conflitantes, sem escolher um deles pela ordenação.
 
 ## Evidência de fonte pública executada em 19/10/2026
 

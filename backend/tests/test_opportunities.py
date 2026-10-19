@@ -14,8 +14,9 @@ F={'dataset':'synthetic','phase':'homologado','start':'2024-01-01','end':'2025-1
 def prepared(settings):
     opportunity_demo.seed_demo(settings)
 
-def body_review(revision=0):
-    return {'revision':revision,'criteria':{k:{'rating':4,'evidence':'Evidência fictícia para testar a revisão humana.'} for k in ('logistics','standardization','suppliers','requirements','deadline','availability')},
+def body_review(detail,filters=F):
+    return {'revision':detail['review_revision'],'filters':filters,'expected_context_fingerprint':detail['review_context_fingerprint'],
+        'criteria':{k:{'rating':4,'evidence':'Evidência fictícia para testar a revisão humana.'} for k in ('logistics','standardization','suppliers','requirements','deadline','availability')},
         'legal':'viable','operational':'viable','legal_evidence':'Análise fictícia, sem ato administrativo real.','operational_evidence':'Condição fictícia confirmada somente para teste.'}
 
 def first(c):
@@ -35,13 +36,39 @@ def test_history_metrics_and_missing_score(prepared,login):
 
 def test_review_weighted_score_and_optimistic_conflict(prepared,login):
     c=login();r=first(c);url='/api/v1/opportunities/'+r['key']+'/review'
-    current=c.post('/api/v1/opportunities/'+r['key']+'/detail',json=F).json().get('review')
-    rev=current['revision'] if current else 0
-    assert c.post(url,json=body_review(rev)).status_code==201
-    assert c.post(url,json=body_review(rev)).status_code==409
+    current=c.post('/api/v1/opportunities/'+r['key']+'/detail',json=F).json()
+    assert c.post(url,json=body_review(current)).status_code==201
+    assert c.post(url,json=body_review(current)).status_code==409
     scored=first(c);assert scored['priority']['value'] is not None
     weighted={**F,'weights':{'recurrence':100,'spread':0,'price':0,'ease':0},'order':'priority'}
     assert Decimal(c.post('/api/v1/opportunities/query',json=weighted).json()['records'][0]['priority']['value'])==100
+
+def test_review_context_changes_invalidate_priority_and_stale_submission(prepared,login):
+    c=login();r=first(c);url='/api/v1/opportunities/'+r['key']
+    detail=c.post(url+'/detail',json=F).json()
+    assert c.post(url+'/review',json=body_review(detail)).status_code==201
+    current=c.post(url+'/detail',json=F).json()
+    assert current['review_status']=='current' and current['priority']['value'] is not None
+    changed=[{**F,'municipalities':['3131307']},{**F,'start':'2025-01-01'},
+        {**F,'months':[1,2]},{**F,'suppliers':['00000000000001']}]
+    for filters in changed:
+        changed_detail=c.post(url+'/detail',json=filters).json()
+        assert changed_detail['review_status']=='context_changed'
+        assert changed_detail['review'] is None and changed_detail['priority']['value'] is None
+        stale={**body_review(detail),'filters':filters}
+        assert c.post(url+'/review',json=stale).status_code==409
+    # Ranking preferences are not physical/legal conditions and must not erase review.
+    weights={**F,'weights':{'recurrence':100,'spread':0,'price':0,'ease':0}}
+    assert c.post(url+'/detail',json=weights).json()['review_status']=='current'
+
+def test_review_context_binds_equivalence_and_source_revision():
+    f=OpportunityFilter(**F);rows=[{'id':'fact-1','revision_hash':'rev-1'}]
+    definition={'key':'g-example','members':[{'id':'papel','version':1}],'unit':'caixa de 10 resmas'}
+    cov={'phase':'homologado','status':'not_established','proof':[]}
+    before=opportunities.review_context_fingerprint(rows,definition,f,['3131307'],cov)
+    assert before!=opportunities.review_context_fingerprint(rows,{**definition,'members':[{'id':'papel','version':2}]},f,['3131307'],cov)
+    assert before!=opportunities.review_context_fingerprint([{'id':'fact-1','revision_hash':'rev-2'}],definition,f,['3131307'],cov)
+    assert before!=opportunities.review_context_fingerprint(rows,definition,f,['3131307'],{**cov,'status':'observed_items_only'})
 
 @pytest.mark.parametrize('extra',[{'weights':{'recurrence':100}}, {'months':[13]}, {'min_amount':'10','max_amount':'1'}, {'phase':'all'}, {'end':'2999-01-01'}, {'sql':'DROP TABLE scenario'}])
 def test_filters_fail_closed(login,extra):
@@ -69,11 +96,11 @@ def test_scenario_carries_selection_without_need_and_is_idempotent(prepared,logi
 
 def test_private_review_does_not_cross_org(prepared,login):
     a=login('empresa-a');b=login('empresa-b');r=first(a)
-    old=a.post('/api/v1/opportunities/'+r['key']+'/detail',json=F).json()['review']
-    assert a.post('/api/v1/opportunities/'+r['key']+'/review',json=body_review(old['revision'] if old else 0)).status_code==201
+    old=a.post('/api/v1/opportunities/'+r['key']+'/detail',json=F).json()
+    assert a.post('/api/v1/opportunities/'+r['key']+'/review',json=body_review(old)).status_code==201
     other=b.post('/api/v1/opportunities/'+r['key']+'/detail',json=F).json()
     assert not other['review'] and other['priority']['value'] is None
-    assert login('consulta-a').post('/api/v1/opportunities/'+r['key']+'/review',json=body_review()).status_code==403
+    assert login('consulta-a').post('/api/v1/opportunities/'+r['key']+'/review',json=body_review(old)).status_code==403
 
 def test_missing_month_and_price_do_not_become_zero():
     f=OpportunityFilter(start='2024-01-01',end='2024-03-31')
@@ -84,7 +111,7 @@ def test_missing_month_and_price_do_not_become_zero():
     assert opportunities.pct_change(Decimal(0),Decimal(1)) is None
 
 def test_human_not_viable_disables_score(prepared,login):
-    c=login();r=first(c);d=c.post('/api/v1/opportunities/'+r['key']+'/detail',json=F).json();review=body_review(d['review']['revision'] if d['review'] else 0)
+    c=login();r=first(c);d=c.post('/api/v1/opportunities/'+r['key']+'/detail',json=F).json();review=body_review(d)
     review['legal']='not_viable';assert c.post('/api/v1/opportunities/'+r['key']+'/review',json=review).status_code==201
     assert first(c)['priority']['value'] is None
 
@@ -114,6 +141,13 @@ def test_pagination_children_checkpoint_and_restart(app,login):
     r=c.get('/api/v1/history-collections/'+cid).json();assert r['state']=='completed' and r['pages']==4 and len(calls)==4
     history.advance(app.state.database,org['org_id'],org['actor_id'],cid,3,transport);assert len(calls)==4
     assert c.post('/api/v1/opportunities/query',json={'start':'2025-01-01','end':'2025-01-31','phase':'homologado'}).json()['total']>=1
+    result_coverage=c.post('/api/v1/opportunities/query',json={'start':'2025-01-01','end':'2025-01-31','phase':'homologado','municipalities':['3131307']}).json()
+    proof=result_coverage['coverage'];assert proof['phase']=='homologado' and proof['status']=='observed_items_only'
+    assert proof['verified_ratio'] is None and proof['verified_days'] is None and proof['complete_months']==[]
+    assert proof['observed_result_pages']>=1 and proof['proof'][0]['url'].endswith('/resultados')
+    assert proof['proof'][0]['sha256'] and proof['proof'][0]['consulted_at']
+    assert result_coverage['records'][0]['metrics']['recurrence_pct'] is None
+    assert result_coverage['records'][0]['priority']['value'] is None
     assert login('compras-b').get('/api/v1/history-collections/'+cid).status_code==404
 
 def test_page_limit_stays_partial_and_can_extend(app,login):
@@ -135,7 +169,30 @@ def test_contracts_stay_separate_from_item_quantity_and_price(app,login):
 def test_reviewed_equivalence_requires_same_documented_unit(prepared,login):
     body={'name':'Veículos equivalentes para análise','category':'Mobilidade','unit':'veículo','members':[{'id':'cat-13','version':1},{'id':'cat-18','version':1}],
         'justification':'Os dois registros foram avaliados na mesma unidade documental.','evidence':'Referências internas de teste, sem dado oficial.','confirmed':True}
-    assert login().post('/api/v1/opportunity-equivalences',json=body).status_code==201
+    assert login().post('/api/v1/opportunity-equivalences',json=body).status_code in (201,409)
+
+def test_equivalence_overlap_rejected(prepared,login):
+    c=login();primary={'name':'Primeiro grupo de veículos para teste','category':'Mobilidade','unit':'veículo',
+        'members':[{'id':'cat-13','version':1},{'id':'cat-18','version':1}],
+        'justification':'Os itens têm unidade documental igual neste teste.',
+        'evidence':'Referências internas fictícias para testar a revisão.','confirmed':True}
+    first_group=c.post('/api/v1/opportunity-equivalences',json=primary)
+    assert first_group.status_code in (201,409)
+    if first_group.status_code==409:assert first_group.json()['detail']['code']=='EQUIVALENCE_OVERLAP'
+    body={'name':'Segundo grupo conflitante de veículos','category':'Mobilidade','unit':'veículo',
+        'members':[{'id':'cat-13','version':1},{'id':'veiculo','version':1}],
+        'justification':'Este grupo usa um item que já pertence ao outro grupo revisado.',
+        'evidence':'Referências internas fictícias para testar rejeição.','confirmed':True}
+    response=c.post('/api/v1/opportunity-equivalences',json=body)
+    assert response.status_code==409 and response.json()['detail']['code']=='EQUIVALENCE_OVERLAP'
+
+def test_legacy_equivalence_overlap_fails_closed():
+    base={'name':'Grupo revisado','category':'Mobilidade','unit':'veículo',
+        'justification':'Justificativa fictícia','evidence':'Evidência fictícia','created_at':'2025-01-01'}
+    groups=[{**base,'id':'1','members':[{'id':'cat-13','version':1},{'id':'cat-18','version':1}]},
+        {**base,'id':'2','members':[{'id':'cat-13','version':1},{'id':'veiculo','version':1}]}]
+    with pytest.raises(Exception) as error:opportunities.equivalence_index(groups)
+    assert error.value.status_code==409
 
 def test_watch_registers_new_record_without_future_promise(prepared,settings,login):
     c=login();candidate=first(c);watch=c.post('/api/v1/opportunity-watches',json={'name':'Acompanhamento de teste '+uuid4().hex,'filters':F,'opportunity_key':candidate['key']});assert watch.status_code==201,watch.text

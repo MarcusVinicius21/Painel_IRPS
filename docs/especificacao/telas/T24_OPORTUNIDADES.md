@@ -26,6 +26,13 @@ comparável e prioridade ou a primeira pendência relevante. Cobertura parcial
 usa o aviso: “Há registros no recorte, mas a cobertura ainda não está
 comprovada.” Um resultado vazio diz que não comprova ausência de compra.
 
+Em resultados homologados, a cobertura aparece como “Não comprovada”. A
+consulta individual de resultado pode ser aberta com origem e data, mas não
+cria meses completos. Se municípios, período, equivalência ou evidências
+mudarem, a revisão aparece desatualizada e a prioridade fica suspensa até uma
+nova avaliação. Grupos equivalentes conflitantes mostram erro com instrução
+para revisão.
+
 No desktop a tabela prioriza comparação e abre a decisão em uma coluna clara.
 No mobile filtros avançados continuam recolhidos, cartões/tabela preservam
 unidade e origem e não há rolagem horizontal. Foco, labels, teclado e anúncio

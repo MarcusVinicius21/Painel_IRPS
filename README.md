@@ -86,7 +86,7 @@ Resultados brutos, downloads dos testes e capturas ficam em `.runtime/evidencias
 ```text
 backend/app/          API, permissões, cenários, documentos, fontes e assistente
 backend/irps_core/    Oito módulos originais V4, sem alteração de fórmulas
-backend/migrations/  Schema PostgreSQL e seis revisões Alembic
+backend/migrations/  Schema PostgreSQL e sete revisões Alembic
 backend/tests/       Regressões V4 e testes de integração/segurança
 backend/seed_data/   Cadastro municipal conciliado e catálogo fictício
 frontend/src/        Observatório conectado ao backend
