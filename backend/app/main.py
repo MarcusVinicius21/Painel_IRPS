@@ -14,6 +14,7 @@ from .db import Database,encoded,identifier,normalize
 from .security import authenticate,Verifier,TEST_USERS,stable_id,establish_session,fail,PERMISSIONS
 from .schemas import Login,ScenarioCreate,Snapshot,SyntheticCreate,QuoteBody,DocumentReview,AssistantBody,ToolCall,SourceSync,WatchBody
 from . import scenarios,documents,exports,assistant,sources
+from .opportunity_routes import router as opportunity_router
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 
@@ -233,6 +234,7 @@ def create_app(settings=None):
   return {'removed':True}
  @app.get('/api/v1/audit')
  def audit(ctx:Auth):return {'records':ctx.db.all('SELECT action,resource_id,metadata,created_at FROM audit_event WHERE org_id=:o AND actor_id=:a ORDER BY created_at DESC LIMIT 100',{'o':ctx.org_id,'a':ctx.actor_id})}
+ app.include_router(opportunity_router)
  return app
 
 app=create_app()

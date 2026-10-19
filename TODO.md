@@ -2,6 +2,16 @@
 
 # Critérios verificáveis
 
+## Oportunidades — incremento atual
+
+- [ ] Migração reversível, coleta histórica paginada e checkpoints persistentes.
+- [ ] Contratos/resultados separados de publicações e preços documentados.
+- [ ] Filtros combinados, equivalência explícita e indicadores rastreáveis.
+- [ ] Viabilidade humana, ranking configurável e bloqueio por dados insuficientes.
+- [ ] Observatório: oportunidades, detalhe, evidências, comparação e cenário sem parâmetros presumidos.
+- [ ] Alertas locais com origem e histórico, sem previsão de compra garantida.
+- [ ] Testes, capturas, fontes reais limitadas, segurança e PR da branch própria.
+
 - [x] P0 API e configuração tipada executáveis.
 - [x] PostgreSQL local, migrações up/down e RLS com papel restrito.
 - [x] JWT/JWKS, expiração/revogação, organização e permissões no servidor.

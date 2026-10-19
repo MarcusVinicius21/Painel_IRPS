@@ -16,6 +16,8 @@ PERMISSIONS={
  'business_owner':{'read','scenario.write','scenario.calculate','document.read','document.write','document.review','export','sources.sync','quote.read','quote.write','watch'},
  'technical_admin':{'read','sources.sync'},
 }
+for _role in ('planner','reviewer','business_owner'):
+ PERMISSIONS[_role].add('opportunity.manage')
 TEST_USERS=[
  {'key':'compras-a','name':'Equipe de compras A','org':'CONSORMULTI · organização A','role':'planner','kind':'consortium'},
  {'key':'compras-b','name':'Equipe de compras B','org':'Organização pública B','role':'planner','kind':'government'},

@@ -1,0 +1,29 @@
+{
+  "dataset": "synthetic",
+  "clicks": 7,
+  "fields": [
+    "#/oportunidades:Dados:0",
+    "#/oportunidade:Evidência da avaliação:1",
+    "#/oportunidade:Evidência da avaliação:3",
+    "#/oportunidade:Evidência da avaliação:5",
+    "#/oportunidade:Evidência da avaliação:7",
+    "#/oportunidade:Evidência da avaliação:9",
+    "#/oportunidade:Evidência da avaliação:11",
+    "#/oportunidade:Evidência jurídica:14",
+    "#/oportunidade:Evidência operacional:15",
+    "#/oportunidade:Viabilidade jurídica:12",
+    "#/oportunidade:Viabilidade operacional:13"
+  ],
+  "screens": [
+    "#/inicio",
+    "#/oportunidades",
+    "#/oportunidade",
+    "#/licitacao"
+  ],
+  "startedAt": 26.299999982118607,
+  "seconds": 7.64,
+  "fields_changed": 11,
+  "review_is_human_required": true,
+  "scenario_has_inferred_need": false,
+  "axe_violations": 0
+}

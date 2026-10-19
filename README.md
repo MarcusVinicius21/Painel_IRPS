@@ -16,6 +16,7 @@ O frontend Observatório usa React e TypeScript. O backend FastAPI grava no Post
 - Consultas públicas delimitadas de PNCP e IBGE; catálogo CATMAT/CATSER separado das compras.
 - Assistente offline com ferramentas validadas. Chamadas pagas a IA permanecem desativadas.
 - Observatório responsivo conectado às APIs, incluindo estados de erro e informações ausentes.
+- Área **Oportunidades**: coleta PNCP paginada e retomável, filtros históricos, cobertura explícita, equivalências revisadas, prioridade condicionada a dados e revisão humana, rascunho de licitação e acompanhamentos locais.
 
 Os conectores não representam cobertura histórica completa. Quantidade contratada não comprova consumo; valor contratado não significa valor pago. A instalação limpa inclui dados sintéticos, não uma cópia do banco utilizado anteriormente.
 
@@ -85,7 +86,7 @@ Resultados brutos, downloads dos testes e capturas ficam em `.runtime/evidencias
 ```text
 backend/app/          API, permissões, cenários, documentos, fontes e assistente
 backend/irps_core/    Oito módulos originais V4, sem alteração de fórmulas
-backend/migrations/  Schema PostgreSQL e cinco revisões Alembic
+backend/migrations/  Schema PostgreSQL e sete revisões Alembic
 backend/tests/       Regressões V4 e testes de integração/segurança
 backend/seed_data/   Cadastro municipal conciliado e catálogo fictício
 frontend/src/        Observatório conectado ao backend
@@ -97,7 +98,7 @@ docs/implementacao/  Documentação do recorte efetivamente implementado
 docs/validacao/      Resultados revisados, integridade V4 e capturas selecionadas
 ```
 
-Comece pelo [índice técnico](docs/INDEX.md), [arquitetura executável](docs/implementacao/ARQUITETURA_IMPLEMENTADA.md), [modelo de dados](docs/implementacao/BANCO_IMPLEMENTADO.mmd) e [OpenAPI](docs/implementacao/OPENAPI_IMPLEMENTADO.json). As especificações descrevem também funcionalidades futuras; o estado implementado prevalece em `docs/implementacao/`.
+Comece pelo [índice técnico](docs/INDEX.md), [arquitetura executável](docs/implementacao/ARQUITETURA_IMPLEMENTADA.md), [Oportunidades CONSORMULTI](docs/implementacao/OPORTUNIDADES_CONSORMULTI.md), [modelo de dados](docs/implementacao/BANCO_IMPLEMENTADO.mmd) e [OpenAPI](docs/implementacao/OPENAPI_IMPLEMENTADO.json). As especificações descrevem também funcionalidades futuras; o estado implementado prevalece em `docs/implementacao/`.
 
 ## Segurança e limites
 

@@ -1,0 +1,22 @@
+flowchart TD
+    A[Definir fonte, fase e período] --> B{Coleta PNCP necessária?}
+    B -- Sim --> C[Agendar janelas e tarefas limitadas]
+    C --> D[Consultar uma página]
+    D --> E[Salvar URL, digest, data e ponto de retomada]
+    E --> F{Há limite, pausa ou erro?}
+    F -- Limite/pausa --> G[Mostrar cobertura parcial e retomar sob comando]
+    F -- Não --> H[Separar publicação, resultado e contrato]
+    B -- Não --> H
+    H --> I[Filtrar somente a situação selecionada]
+    I --> J[Comparar mesma unidade e versão ou equivalência revisada]
+    J --> K[Calcular histórico, cobertura e preços documentados]
+    K --> L{Portas de prioridade atendidas?}
+    L -- Não --> M[Explicar dados ou revisão que faltam]
+    L -- Sim --> N[Aplicar pesos configurados]
+    N --> O[Pessoa revisa viabilidade e evidências]
+    O --> P{Revisão viável?}
+    P -- Não/pendente --> M
+    P -- Sim --> Q[Criar rascunho com item e participantes]
+    Q --> R[Montar Licitação V4 calcula quantidades auditáveis]
+    K --> S[Acompanhar versões já coletadas]
+    S --> T[Registrar nova publicação ou mudança comprovada]
