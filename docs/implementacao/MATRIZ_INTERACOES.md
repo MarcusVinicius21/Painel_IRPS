@@ -10,6 +10,7 @@ Medição Playwright local. C = eventos de clique DOM; F = controles alterados; 
 | Comparar o recorte de três cidades | 1 | 1 | 0 | 0.160 | 3.01 |
 | Criar e calcular 118 × 100 fictício | 3 | 3 | 0 | 8.310 | 9.28 |
 | Calcular lucro da hipótese privada | 1 | 0 | 0 | 0.192 | 1.01 |
+| Abrir oportunidade sintética, revisar e criar rascunho | 7 | 11 | 3 | 10.1 | 38.34 |
 
 **Definição interna:** IF = C + 2F + 3N + min(t/30, 5). Menor é melhor apenas sob a mesma tarefa, ponto de partida, dados e ambiente. É uma proposta operacional, sem validação estatística.
 
@@ -18,6 +19,8 @@ Os eventos de `selectOption` alteram controles sem simular cada clique físico d
 A busca inclui seleção de dados fictícios; a comparação parte de três cidades previamente indicadas e preserva resultados vazios. O cenário grande usa preenchimento artificial explícito. Isso não prova que informações reais de 11.800 linhas foram encontradas automaticamente.
 
 O fluxo regular de calcular um cenário já preenchido ou uma simulação comercial usa uma ação principal. Criar o exemplo e calcular exige três botões e três controles alterados. Não declaramos atingida a meta de 1–2 cliques para todas as operações.
+
+Na jornada de oportunidade, um controle alterado escolhe dados sintéticos; dez controles são revisão humana: seis evidências dos critérios, duas evidências e duas decisões jurídica/operacional. O indicador usa três mudanças de rota após a entrada e 10,1 segundos, logo `7 + 2×11 + 3×3 + 10,1/30 = 38,34`. Essa medição Playwright não equivale ao tempo humano. A seleção de fonte e abertura da análise continuam em poucos passos no exemplo já disponível.
 
 A tabela de resultados usa páginas do servidor de 20 registros, sem outra paginação intermediária nessa página. Seleção de municípios e itens permanece separada do filtro visível.
 

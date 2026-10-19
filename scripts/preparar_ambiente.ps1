@@ -15,6 +15,6 @@ if (-not (Test-Path -LiteralPath (Join-Path $taskRoot '_tools/postgresql/bin/pos
 if ($LASTEXITCODE) { throw 'Falha no PostgreSQL local.' }
 $env:IRPS_LOCAL_CONFIG = Join-Path $taskRoot '.runtime/config-local.json'
 Push-Location (Join-Path $taskRoot 'backend')
-try { & $taskPython -m alembic upgrade head; if ($LASTEXITCODE) { throw 'Falha nas migrações.' }; & $taskPython -m app.seed; if ($LASTEXITCODE) { throw 'Falha na carga de testes.' } }
+try { & $taskPython -m alembic upgrade head; if ($LASTEXITCODE) { throw 'Falha nas migrações.' }; & $taskPython -m app.seed; if ($LASTEXITCODE) { throw 'Falha na carga de testes.' }; & $taskPython -m app.opportunity_demo; if ($LASTEXITCODE) { throw 'Falha na carga do exemplo controlado de oportunidades.' } }
 finally { Pop-Location }
 Write-Output 'Ambiente local preparado. Inicie a API e o frontend em terminais separados.'

@@ -42,3 +42,7 @@ Chrome e serviços reais locais, sobre dados sintéticos identificados. Contas d
 
 ![390-recuperacao-documentos.png](telas/390-recuperacao-documentos.png)
 
+## Oportunidades
+
+As capturas e a jornada verificável da nova área estão em [Resultados de Oportunidades](OPORTUNIDADES_RESULTADOS.md).
+

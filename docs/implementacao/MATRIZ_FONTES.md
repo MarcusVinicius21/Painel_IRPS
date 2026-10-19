@@ -10,6 +10,7 @@ As consultas abaixo foram GETs públicos, sem autenticação externa, em 19/10/2
 | PNCP Consulta | [OpenAPI](https://pncp.gov.br/api/consulta/v3/api-docs) | Publicações de 18–19/10/2026, modalidade 6, página 1, tamanho 10, recorte geral | 10 publicações | Contrato, entrega, consumo ou pagamento |
 | PNCP Consulta | Mesmo contrato | Publicações de 13–19/10/2026, modalidade 6, página 1, tamanho 10, IBGE 3131307 | 2 publicações | Histórico integral de Ipatinga ou de outros participantes |
 | PNCP itens | [OpenAPI da API PNCP](https://pncp.gov.br/api/pncp/v3/api-docs) | Duas publicações já preservadas; página 1, tamanho 10 por publicação | 20 itens | Quantidade contratada, efetivamente entregue ou consumida |
+| PNCP contratos | [API de Consulta](https://pncp.gov.br/api/consulta/v3/api-docs) | Coleta limitada de 13–19/10/2026, com CNPJ obtido da resposta de item, uma página | 1 contrato | Itens, quantidade, preço unitário, entrega, pagamento ou consumo |
 | Compras.gov.br CATMAT | [OpenAPI](https://dadosabertos.compras.gov.br/v3/api-docs) | [10 descrições de materiais](https://dadosabertos.compras.gov.br/modulo-material/4_consultarItemMaterial?pagina=1&tamanhoPagina=10) | 10 descrições | Quantidade adquirida, preço pago, unidade de fornecimento pronta para cálculo |
 | Compras.gov.br CATSER | Mesmo contrato | [10 descrições de serviços](https://dadosabertos.compras.gov.br/modulo-servico/6_consultarItemServico?pagina=1&tamanhoPagina=10) | 10 descrições | Contratação, medição do serviço, quantidade ou pagamento |
 
@@ -34,9 +35,11 @@ Comprador é órgão/CNPJ/unidade. Município é território. Quando um código 
 - Falha não apaga histórico; cobertura indisponível não significa “não comprou”.
 - Alteração de identidade IBGE não corrige silenciosamente o cadastro. O resultado informa conflito para revisão.
 
-## Ainda não operacionais nesta rodada
+## Limites e fontes ainda não operacionais
 
-Contratos/resultados e execução financeira PNCP; histórico de preços/contratos Compras.gov.br; INEP; SICONFI; TCE-MG/RJ; portais municipais; Transferegov; diários; BPS/CMED; SINAPI/SICRO; SIOPS/SIOPE. Os estudos anteriores continuam válidos como referências de implementação, sem serem anunciados como coletores ativos.
+Resultados PNCP são consultados somente quando a resposta de item informa disponibilidade; a rota foi validada por teste controlado e não foi acionada na pequena coleta real porque o limite de páginas foi atingido. A coleta de contratos está ativa, mas não converte contrato sem item documentado em quantidade ou preço.
+
+Execução financeira PNCP; histórico de preços/contratos Compras.gov.br; INEP; SICONFI; TCE-MG/RJ; portais municipais; Transferegov; diários; BPS/CMED; SINAPI/SICRO; SIOPS/SIOPE continuam sem coletor ativo. Os estudos anteriores continuam válidos como referências de implementação, sem serem anunciados como integrações concluídas.
 
 Fonte para necessidade física depende do item: população isolada não calcula medicamentos, veículos, serviços ou obras. A entrada atual aceita base/taxa/fontes revisáveis e usa o V4. Não há previsão municipal validada com o histórico oficial desta pequena amostra.
 

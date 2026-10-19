@@ -7,6 +7,7 @@
 - [Auditoria do envio ao GitHub](validacao/SEGURANCA_PUBLICACAO.md).
 - [Integridade dos oito módulos V4](validacao/integridade-v4.json).
 - [Galeria revisada](validacao/GALERIA.md).
+- [Resultados de Oportunidades](validacao/OPORTUNIDADES_RESULTADOS.md).
 
 ## Implementação local entregue
 
@@ -21,6 +22,8 @@
 - [GATE EXECUCAO](implementacao/GATE_EXECUCAO.md).
 - [LOG TESTES](implementacao/LOG_TESTES.md).
 - [MATRIZ FONTES](implementacao/MATRIZ_FONTES.md).
+- [OPORTUNIDADES CONSORMULTI](implementacao/OPORTUNIDADES_CONSORMULTI.md).
+- [FLUXO DE OPORTUNIDADES](implementacao/FLUXO_OPORTUNIDADES.mmd).
 - [MATRIZ INTERACOES](implementacao/MATRIZ_INTERACOES.md).
 - [MATRIZ SEGURANCA](implementacao/MATRIZ_SEGURANCA.md).
 - [OPENAPI IMPLEMENTADO](implementacao/OPENAPI_IMPLEMENTADO.json).
@@ -41,4 +44,5 @@ As referências visuais são próprias do IRPS; PDFs e ativos privados do EVA n�
 - [06 DESIGN SYSTEM OBSERVATORIO](especificacao/06_DESIGN_SYSTEM_OBSERVATORIO.md).
 - [07 ESTADOS ACESSIBILIDADE E AUTOMACAO](especificacao/07_ESTADOS_ACESSIBILIDADE_E_AUTOMACAO.md).
 - [08 PLANO IMPLEMENTACAO E DEPENDENCIAS](especificacao/08_PLANO_IMPLEMENTACAO_E_DEPENDENCIAS.md).
+- [T24 OPORTUNIDADES](especificacao/telas/T24_OPORTUNIDADES.md).
 - [FLUXOGRAMAS](especificacao/FLUXOGRAMAS.md).

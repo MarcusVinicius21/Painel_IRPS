@@ -53,3 +53,20 @@ Gerado do FastAPI em execução. Login de teste é restrito ao ambiente local.
 | POST | `/api/v1/watches` | Watch Create |
 | DELETE | `/api/v1/watches/{wid}` | Watch Delete |
 | GET | `/api/v1/audit` | Audit |
+| GET | `/api/v1/opportunity-options` | Dados para filtros de oportunidades |
+| POST | `/api/v1/municipality-groups` | Salva um grupo de municípios da organização |
+| POST | `/api/v1/opportunity-equivalences` | Registra equivalência técnica revisada |
+| POST | `/api/v1/opportunities/query` | Lista oportunidades com cobertura e indicadores |
+| POST | `/api/v1/opportunities/{key}/detail` | Abre histórico, fontes e preços do recorte |
+| POST | `/api/v1/opportunities/{key}/review` | Salva revisão humana de viabilidade |
+| POST | `/api/v1/opportunities/{key}/scenario` | Cria rascunho de cenário com idempotência |
+| GET/POST | `/api/v1/history-collections` | Lista ou prepara coleta PNCP limitada |
+| GET | `/api/v1/history-collections/{cid}` | Consulta cobertura e ponto de retomada |
+| POST | `/api/v1/history-collections/{cid}/advance` | Solicita uma quantidade limitada de páginas |
+| POST | `/api/v1/history-collections/{cid}/pause` | Pausa a coleta |
+| POST | `/api/v1/history-collections/{cid}/resume` | Retoma a coleta autorizada |
+| POST | `/api/v1/history-collections/{cid}/extend` | Aumenta o limite de páginas até 2000 |
+| GET | `/api/v1/opportunity-alerts` | Lista acompanhamentos e diferenças comprovadas |
+| POST | `/api/v1/opportunity-watches` | Cria acompanhamento local do conjunto de versões |
+| POST | `/api/v1/opportunity-alerts/refresh` | Compara somente dados já coletados |
+| DELETE | `/api/v1/opportunity-watches/{wid}` | Desativa acompanhamento e preserva histórico |

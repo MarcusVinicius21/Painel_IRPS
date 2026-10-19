@@ -8,12 +8,12 @@ Esta entrega amplia o Projeto Mestre por código executável. Os documentos orig
 
 | Componente | Código | Responsabilidade real |
 |---|---|---|
-| Aplicação HTTP | `backend/app/main.py` | 47 operações, autenticação, erros redigidos e contratos |
+| Aplicação HTTP | `backend/app/main.py` | Operações autenticadas, erros redigidos e contratos, incluindo histórico e oportunidades |
 | Sessão e acesso | `security.py` | Verificação RS256/JWK; vínculo ativo no banco; classe/permissão; CSRF e revogação |
 | Banco | `db.py`, cinco migrações | Transação por organização com `set_config(..., true)`, SQL parametrizado, RLS e evidências |
 | Planejamento | `scenarios.py` | Versões, concorrência, adapters V4 e persistência das linhas |
 | Comercial privado | `scenarios.quote` | `calculate_quote`, revisões e acesso exclusivo da empresa |
-| Fontes | `sources.py` | URLs fixas, GET limitado, timeout, cache curto, pausa Retry-After, jobs e gravação |
+| Fontes e oportunidades | `sources.py`, `history.py`, `opportunities.py` | URLs PNCP fixas, GET limitado, timeout, cache curto, pausa Retry-After, coleta paginada, filtros, cobertura e prioridade condicionada |
 | Documentos | `documents.py` | Propostas com localização e revisão, sem execução de instruções |
 | Assistente | `assistant.py`, `schemas.ToolCall` | Intenção por regras, argumentos fechados, autorização e fatos do banco |
 | Exportações | `exports.py` | CSV/XLSX/PDF de cálculo/versão, arquivo e autorização |
@@ -21,7 +21,7 @@ Esta entrega amplia o Projeto Mestre por código executável. Os documentos orig
 
 ## Modelo de dados real
 
-30 tabelas, 55 chaves estrangeiras e 26 tabelas com RLS habilitada e forçada. O usuário da API é `irps_app`, sem superusuário e sem bypass de RLS. O proprietário só aplica migrações e prepara dados de teste.
+38 tabelas, chaves estrangeiras e RLS habilitada e forçada também nas tabelas de oportunidades. O usuário da API é `irps_app`, sem superusuário e sem bypass de RLS. O proprietário só aplica migrações e prepara dados de teste.
 
 - Identidade: `organization`, `actor`, `membership`, `auth_session`.
 - Cadastro: `municipality`, `item_version`, `official_catalogue_entry`.
@@ -31,6 +31,7 @@ Esta entrega amplia o Projeto Mestre por código executável. Os documentos orig
 - Documentos: `document`, `extracted_document`, `artifact`.
 - Trabalho e IA: `job`, `ai_session`, `ai_turn`, `ai_cache`, `ai_reservation`.
 - Atividades: `audit_event`, `watch`.
+- Oportunidades: `municipality_group`, `history_collection`, `history_task`, `history_page`, `opportunity_equivalence`, `opportunity_review`, `opportunity_watch`, `opportunity_alert`.
 
 `BANCO_IMPLEMENTADO.mmd` deriva do PostgreSQL executado. Os tipos e constraints completos estão em `001_schema.sql` e nas revisões `0002`–`0005`; não são apenas uma proposta de modelo.
 

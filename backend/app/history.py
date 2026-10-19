@@ -1,0 +1,124 @@
+"""Durable, bounded PNCP pagination. Each successful page commits with its checkpoint."""
+from datetime import date,datetime,timedelta,timezone
+import hashlib,json,time
+from .db import identifier,encoded
+from .security import fail
+from . import sources,history_sources
+
+def queue(ctx,cid,provider,args):
+    key=provider+':'+hashlib.sha256(encoded(args).encode()).hexdigest()
+    ctx.db.execute("INSERT INTO history_task(org_id,collection_id,id,task_key,provider,arguments) VALUES (:o,:c,:i,:k,:p,CAST(:a AS jsonb)) ON CONFLICT(org_id,collection_id,task_key) DO NOTHING",
+        {'o':ctx.org_id,'c':cid,'i':identifier(),'k':key,'p':provider,'a':encoded(args)})
+
+def get(ctx,cid):
+    ctx.require('sources.sync')
+    row=ctx.db.one('SELECT * FROM history_collection WHERE org_id=:o AND id=:i',{'o':ctx.org_id,'i':cid})
+    if not row:fail(404,'Esta coleta não está disponível neste espaço.')
+    row['tasks']=ctx.db.all('SELECT state,count(*) AS count FROM history_task WHERE org_id=:o AND collection_id=:c GROUP BY state',{'o':ctx.org_id,'c':cid})
+    row['recent_pages']=ctx.db.all('SELECT p.task_id,p.source_id,p.record_count,p.created_at,s.url,s.sha256 FROM history_page p JOIN source_observation s ON s.id=p.source_id WHERE p.org_id=:o AND p.collection_id=:c ORDER BY p.created_at DESC LIMIT 12',{'o':ctx.org_id,'c':cid})
+    row['coverage_message']='Conclusão significa somente o recorte e as rotas escolhidas, nunca todo o histórico municipal.'
+    return row
+
+def create(ctx,body):
+    ctx.require('sources.sync')
+    known={r['ibge'] for r in ctx.db.all('SELECT ibge FROM municipality')}
+    if set(body.municipalities)-known:fail(422,'Confira os municípios antes de iniciar a coleta.')
+    cid=identifier();scope=json.loads(body.model_dump_json())
+    ctx.db.execute('INSERT INTO history_collection(org_id,id,actor_id,scope) VALUES (:o,:i,:a,CAST(:s AS jsonb))',{'o':ctx.org_id,'i':cid,'a':ctx.actor_id,'s':encoded(scope)})
+    start=body.start
+    while start<=body.end:
+        end=min(start+timedelta(days=6),body.end)
+        dates={'start_date':start.isoformat(),'end_date':end.isoformat(),'page':1,'size':body.size}
+        if body.publications:
+            for city in body.municipalities:
+                for modality in body.modalities:queue(ctx,cid,'PNCP',{**dates,'municipality_ibge':city,'modality':modality,'provider':'PNCP'})
+        if body.contracts:
+            for cnpj in body.organization_cnpjs:queue(ctx,cid,'PNCP_CONTRATOS',{**dates,'cnpj':cnpj})
+        start=end+timedelta(days=1)
+    ctx.audit('history.created',cid,{'municipalities':len(body.municipalities),'network_requests':0})
+    return get(ctx,cid)
+
+def action(ctx,cid,action,max_pages=None):
+    get(ctx,cid)
+    if action=='pause':
+        ctx.db.execute("UPDATE history_collection SET state='paused',error_code='USER_PAUSED',updated_at=now() WHERE org_id=:o AND id=:i",{'o':ctx.org_id,'i':cid})
+    elif action=='extend':
+        row=ctx.db.one('SELECT pages,scope FROM history_collection WHERE org_id=:o AND id=:i FOR UPDATE',{'o':ctx.org_id,'i':cid})
+        if not max_pages or not row['pages']<max_pages<=2000:fail(422,'Defina um limite maior que as páginas já coletadas, até 2.000.')
+        scope={**row['scope'],'max_pages':max_pages}
+        ctx.db.execute("UPDATE history_collection SET scope=CAST(:s AS jsonb),state='ready',error_code=NULL WHERE org_id=:o AND id=:i",{'o':ctx.org_id,'i':cid,'s':encoded(scope)})
+    else:
+        row=ctx.db.one('SELECT resume_after FROM history_collection WHERE org_id=:o AND id=:i',{'o':ctx.org_id,'i':cid})
+        if row['resume_after'] and row['resume_after']>datetime.now(timezone.utc):fail(429,'A fonte pediu uma pausa. Aguarde o horário informado.')
+        ctx.db.execute("UPDATE history_collection SET state='ready',error_code=NULL WHERE org_id=:o AND id=:i",{'o':ctx.org_id,'i':cid})
+    ctx.audit('history.'+action,cid)
+    return get(ctx,cid)
+
+def children(ctx,cid,scope,provider,args,result):
+    observation=ctx.db.one('SELECT body FROM source_observation WHERE id=:s',{'s':result['source_id']})
+    data=json.loads(observation['body']) if observation else None
+    if provider in ('PNCP','PNCP_CONTRATOS'):
+        total=result.get('expected_pages')
+        if not isinstance(total,int) or total<0:raise sources.SourceFault('PAGINATION_UNVERIFIED')
+        if total>10000:raise sources.SourceFault('SOURCE_PAGE_RANGE')
+        if args['page']<total:queue(ctx,cid,provider,{**args,'page':args['page']+1})
+        if provider=='PNCP' and scope['items']:
+            for record in (data or {}).get('data',[]):
+                parent=ctx.db.one("SELECT id FROM procurement_fact WHERE provider='PNCP' AND obligation_id=:i AND is_current AND classification='official'",{'i':record.get('numeroControlePNCP')})
+                if parent:queue(ctx,cid,'PNCP_ITENS',{'provider':'PNCP_ITENS','procurement_id':str(parent['id']),'page':1,'size':scope['size']})
+    elif provider=='PNCP_ITENS':
+        if not isinstance(data,list):raise sources.SourceFault('INVALID_ITEM_FORMAT')
+        # An exact full page schedules one more request; no count is inferred from a full page.
+        if len(data)==args['size']:queue(ctx,cid,provider,{**args,'page':args['page']+1})
+        if scope['results']:
+            parent=ctx.db.one('SELECT obligation_id FROM procurement_fact WHERE id=:i',{'i':args['procurement_id']})
+            for record in data:
+                if record.get('temResultado') is not True:continue
+                item=ctx.db.one("SELECT id FROM procurement_fact WHERE provider='PNCP_ITENS' AND event_identity=:e AND is_current",{'e':parent['obligation_id']+':item:'+str(record.get('numeroItem'))})
+                if item:queue(ctx,cid,'PNCP_RESULTADOS',{'procurement_id':str(item['id'])})
+
+def advance(database,org,actor,cid,budget=1,transport=None):
+    """No autonomous infinite loop. Scheduler/CLI explicitly requests at most three pages."""
+    done=0
+    for _ in range(min(budget,3)):
+        with database.transaction(org,actor) as db:
+            ctx=sources.job_context(db,org,actor);ctx.require('sources.sync')
+            collection=db.one('SELECT * FROM history_collection WHERE org_id=:o AND id=:i FOR UPDATE',{'o':org,'i':cid})
+            if not collection or collection['dataset']!='official':return {'pages':done}
+            if collection['state'] in ('completed','limited') or (collection['state']=='paused' and (collection['error_code']=='USER_PAUSED' or collection['resume_after'] and collection['resume_after']>datetime.now(timezone.utc))):return {'pages':done}
+            if collection['pages']>=collection['scope']['max_pages']:
+                db.execute("UPDATE history_collection SET state='limited',updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid});return {'pages':done}
+            if db.one("SELECT id FROM history_task WHERE org_id=:o AND collection_id=:c AND state='running' AND lease_until>now()",{'o':org,'c':cid}):return {'pages':done}
+            task=db.one("SELECT * FROM history_task WHERE org_id=:o AND collection_id=:c AND (state IN ('ready','failed') OR (state='running' AND lease_until<now())) ORDER BY attempts,task_key LIMIT 1 FOR UPDATE SKIP LOCKED",{'o':org,'c':cid})
+            if not task:
+                db.execute("UPDATE history_collection SET state='completed',updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid});return {'pages':done}
+            pause=db.one('SELECT resume_after FROM source_backoff WHERE org_id=:o AND provider=:p AND resume_after>now()',{'o':org,'p':task['provider']})
+            if pause:
+                db.execute("UPDATE history_collection SET state='paused',error_code='SOURCE_BACKOFF',resume_after=:r WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'r':pause['resume_after']});return {'pages':done}
+            db.execute("UPDATE history_task SET state='running',lease_until=now()+interval '3 minutes',attempts=attempts+1 WHERE org_id=:o AND id=:i",{'o':org,'i':task['id']})
+            db.execute("UPDATE history_collection SET state='running',source_requests=source_requests+1,updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid})
+        try:
+            with database.transaction(org,actor) as db:
+                ctx=sources.job_context(db,org,actor);ctx.require('sources.sync')
+                args=task['arguments'];provider=task['provider']
+                if provider=='PNCP_CONTRATOS':result=history_sources.contracts(ctx,args,transport)
+                elif provider=='PNCP_RESULTADOS':result=history_sources.results(ctx,args,transport)
+                else:result=sources.sync(ctx,args,transport)
+                children(ctx,cid,collection['scope'],provider,args,result)
+                db.execute('INSERT INTO history_page(org_id,collection_id,task_id,source_id,record_count,result) VALUES (:o,:c,:t,:s,:n,CAST(:r AS jsonb))',{'o':org,'c':cid,'t':task['id'],'s':result['source_id'],'n':result['records'],'r':encoded(result)})
+                db.execute("UPDATE history_task SET state='done',lease_until=NULL,error_code=NULL WHERE org_id=:o AND id=:i",{'o':org,'i':task['id']})
+                pending=db.one("SELECT count(*) AS n FROM history_task WHERE org_id=:o AND collection_id=:c AND state<>'done'",{'o':org,'c':cid})['n']
+                next_state='completed' if not pending else 'limited' if collection['pages']+1>=collection['scope']['max_pages'] else 'ready'
+                db.execute("UPDATE history_collection SET pages=pages+1,records=records+:n,state=CASE WHEN error_code='USER_PAUSED' THEN 'paused' ELSE :state END,error_code=CASE WHEN error_code='USER_PAUSED' THEN error_code ELSE NULL END,resume_after=NULL,updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'n':result['records'],'state':next_state})
+                ctx.audit('history.page',cid,{'provider':provider,'records':result['records'],'source_id':result['source_id']})
+            done+=1
+            if transport is None and budget>1:time.sleep(1)
+        except Exception as exc:
+            code=exc.code if isinstance(exc,sources.SourceFault) else 'HISTORY_PAGE_FAILED'
+            wait=exc.retry_after if isinstance(exc,sources.SourceFault) else 60
+            with database.transaction(org,actor) as db:
+                db.execute("UPDATE history_task SET state='failed',lease_until=NULL,error_code=:e WHERE org_id=:o AND id=:i",{'o':org,'i':task['id'],'e':code})
+                db.execute("UPDATE history_collection SET state='paused',error_code=:e,resume_after=now()+make_interval(secs=>:w),updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'e':code,'w':wait})
+                db.execute("INSERT INTO source_backoff(org_id,provider,resume_after) VALUES (:o,:p,now()+make_interval(secs=>:w)) ON CONFLICT(org_id,provider) DO UPDATE SET resume_after=EXCLUDED.resume_after",{'o':org,'p':task['provider'],'w':wait})
+            return {'pages':done,'paused':True,'error_code':code}
+    return {'pages':done}
