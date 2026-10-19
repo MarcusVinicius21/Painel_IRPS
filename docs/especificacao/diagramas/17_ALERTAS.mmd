@@ -1,0 +1,14 @@
+flowchart TD
+A[Salvar recorte e preferência] --> B[Observar somente fontes autorizadas]
+B --> C{Há nova observação comprovada?}
+C -->|Não| D[Não inventar alerta ou compra futura]
+C -->|Sim| E[Comparar versões, fase, prazo e impacto]
+E --> F{Sujeito pode ver o evento?}
+F -->|Não| G[Não revelar conteúdo ou existência restrita]
+F -->|Sim| H[Alerta com origem e próximo passo]
+H --> I{Deseja acompanhar?}
+I -->|Não| J[Desativar preferência sem apagar evidência]
+I -->|Sim| K[Guardar acompanhamento e canal autorizado]
+K --> L[Abrir detalhe mantendo recorte]
+J --> L
+D --> B

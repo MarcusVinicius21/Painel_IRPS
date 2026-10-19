@@ -1,0 +1,15 @@
+flowchart TD
+A[Identificar processo e obrigação] --> B[Vincular contrato, aditivos e eventos financeiros]
+B --> C{Chaves e documentos conciliáveis?}
+C -->|Não| D[Pagamento não comprovado no recorte]
+D --> E[Manter contrato separado; pedir vínculo]
+E --> B
+C -->|Sim| F[Identificar parcelas, duplicatas e estornos]
+F --> G{Evento retificado ou revertido?}
+G -->|Sim| H[Substituir ou reverter sem dupla contagem]
+G -->|Não| I[Conservar evento válido]
+H --> J[Somar pagamentos e deduzir estornos]
+I --> J
+J --> K[Mostrar pago líquido, datas e documentos]
+K --> L[Não inferir quantidade entregue ou consumida]
+L --> M[Voltar à obrigação ou comparar mesma fase]

@@ -1,0 +1,15 @@
+flowchart TD
+A[Digitar termo, código, CNPJ ou IBGE] --> B{Tipo de entidade identificado?}
+B -->|Ambíguo| C[Exibir item, órgão e cidade com UF e atributos]
+C --> A
+B -->|Sim| D[Aplicar fase, período, órgão e município]
+D --> E{Cobertura suficiente no recorte?}
+E -->|Não consultado| F[Informar limite; não declarar ausência de compras]
+E -->|Falha| G[Preservar consulta e último sucesso; tentar novamente]
+G --> D
+E -->|Sim| H{Há resultados?}
+H -->|Não| I[Vazio apenas neste recorte; ajustar filtro]
+I --> D
+H -->|Sim| J[Resultados por item e comprador com origem]
+J --> K[Detalhe mantém termo, filtro e posição de retorno]
+K --> D

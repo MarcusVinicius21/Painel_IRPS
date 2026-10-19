@@ -1,0 +1,52 @@
+flowchart TD
+  A[Escolher conta fictícia] --> B[Verificar sessão assinada]
+  B --> C{Vínculo e permissão ativos?}
+  C -->|Não| D[Recusar e solicitar nova entrada]
+  C -->|Sim| E[Transação com organização e RLS]
+  E --> F{Tarefa}
+  F --> G[Pesquisar registros por fase, item e município]
+  G --> H[Mostrar fonte, data, unidade e cobertura]
+  F --> I[Montar licitação]
+  I --> J[Selecionar municípios e versões de itens]
+  J --> K{Método}
+  K -->|Individual| L[Conferir base, taxa, estoque e recebimentos]
+  K -->|Quantidade global| M[Meta, justificativa, pesos, pisos e tetos]
+  M --> N{Critérios confirmados para esta seleção?}
+  N -->|Não| O[Solicitar revisão dos critérios]
+  N -->|Sim| P[Chamar allocate_total V4]
+  L --> Q{Insumos conhecidos?}
+  Q -->|Não| R[Manter pendência, sem converter em zero]
+  Q -->|Sim| S[Chamar calculate_need e allocate_independent V4]
+  P --> T[Preço da mesma unidade e versão]
+  S --> T
+  T --> U{Referência suficiente para calcular?}
+  U -->|Não| R
+  U -->|Sim| V[Chamar calculate_tender_value V4]
+  V --> W[Persistir linhas e memória da versão]
+  W --> X[Revisão interna sem autorizar despesa]
+  X --> Y[Gerar PDF, CSV ou XLSX autorizado]
+  W --> Z[Alterar cenário com If-Match]
+  Z --> AA{Versão atual?}
+  AA -->|Não| AB[409: abrir versão atual]
+  AA -->|Sim| AC[Novo rascunho imutável]
+  AC --> J
+  F --> AD[Simulação comercial privada]
+  AD --> AE{Empresa e permissão?}
+  AE -->|Não| D
+  AE -->|Sim| AF[calculate_quote V4 e versão privada]
+  F --> AG[Importar documento local]
+  AG --> AH{Formato e limites seguros?}
+  AH -->|Não| AI[Recusar, sem executar conteúdo]
+  AH -->|Sim| AJ[Preservar original e propor campos com localização]
+  AJ --> AK[Revisão explícita sem aplicação automática]
+  F --> AL[Consultar fonte pública fixa]
+  AL --> AM[Job idempotente e permissão revalidada]
+  AM --> AN{Fonte disponível?}
+  AN -->|429 ou 503| AO[Pausa solicitada e histórico preservado]
+  AN -->|Sim| AP[Observação imutável e cobertura delimitada]
+  AP --> H
+  F --> AQ[Perguntar ao assistente local]
+  AQ --> AR{Entidade e argumentos claros?}
+  AR -->|Não| AS[Pedir esclarecimento]
+  AR -->|Sim| AT[Ferramenta autorizada e V4 ou fatos do banco]
+  AT --> H

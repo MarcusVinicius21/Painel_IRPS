@@ -1,0 +1,18 @@
+flowchart LR
+ UI[React e TypeScript] --> AUTH[Identidade e autorização por organização]
+ AUTH --> API[Serviços de domínio e contratos]
+ API --> CORE[Núcleo Python V4 preservado]
+ API --> DB[(PostgreSQL: fatos, versões e escopo)]
+ API --> JOB[Filas com idempotência e retomada]
+ JOB --> ADAPT[Adaptadores por fonte e limites]
+ ADAPT --> GOV[Fontes governamentais permitidas]
+ ADAPT --> OBJ[(Originais imutáveis e evidências)]
+ JOB --> DOC[Extração e revisão documental]
+ DOC --> OBJ
+ DOC --> DB
+ JOB --> EXPORT[Relatório da versão autorizada]
+ EXPORT --> OBJ
+ API --> PRIV[Simulação privada na organização empresarial]
+ PRIV --> DB
+ DB --> AUD[Auditoria e observabilidade sem segredos]
+ AUTH --> DEN[Negar acesso sem revelar conteúdo]

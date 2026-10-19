@@ -1,0 +1,16 @@
+flowchart TD
+A[Escolher cenário e versão autorizados] --> B[Definir recorte completo ou item]
+B --> C[Carregar snapshot da mesma versão]
+C --> D{Valores e linhas reconciliados?}
+D -->|Não| E[Impedir arquivo inconsistente; recuperar versão]
+E --> C
+D -->|Sim| F{Há faltas?}
+F -->|Sim| G[Subtotal parcial e todas as linhas pendentes]
+F -->|Não| H[Total estimado; sem aprovação inferida]
+G --> I[Incluir unidade, fontes, período e classificação]
+H --> I
+I --> J[Gerar PDF e planilha do conjunto declarado]
+J --> K{Acesso ainda válido ao entregar?}
+K -->|Não em produção| L[Revogar/expirar sem expor arquivo]
+K -->|Sim ou demo rotulada| M[Conferir arquivo contra tela e seleção]
+M --> N[Baixar documento sem custos privados indevidos]

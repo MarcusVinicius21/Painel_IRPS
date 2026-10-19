@@ -1,0 +1,5807 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "IRPS - Contratos consolidados de implementação",
+    "version": "1.0.0-projeto",
+    "description": "Especificação futura. Não há servidor de produção nem integração ativa; validar DTOs por comando no incremento correspondente."
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Prefixo proposto, não implantado"
+    }
+  ],
+  "paths": {
+    "/municipalities": {
+      "get": {
+        "operationId": "get_municipalities",
+        "summary": "Identidades verificadas por nome, UF e IBGE",
+        "tags": [
+          "F08/F12"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Municipality"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/buyers": {
+      "get": {
+        "operationId": "get_buyers",
+        "summary": "Órgão, CNPJ/unidade e natureza institucional",
+        "tags": [
+          "F02/F08"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Buyer"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/items": {
+      "get": {
+        "operationId": "get_items",
+        "summary": "Busca, atributos, versão e unidade",
+        "tags": [
+          "F01/F09"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Item"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      },
+      "post": {
+        "operationId": "post_items",
+        "summary": "Cadastrar variante sem inferir método",
+        "tags": [
+          "F25"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Item"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/facts": {
+      "get": {
+        "operationId": "get_facts",
+        "summary": "Fatos por obrigação, fase e recorte",
+        "tags": [
+          "F03/F04"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ibge",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "buyer_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_version_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phase",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planejado",
+                "publicado_estimado",
+                "homologado",
+                "contratado",
+                "solicitado",
+                "entregue",
+                "consumido",
+                "empenhado",
+                "liquidado",
+                "pago"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Fact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/obligations/{id}/events": {
+      "get": {
+        "operationId": "get_obligations_id_events",
+        "summary": "Parcelas, versões e estornos conciliados",
+        "tags": [
+          "F05"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Fact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/coverage": {
+      "get": {
+        "operationId": "get_coverage",
+        "summary": "Recorte e cobertura de fontes",
+        "tags": [
+          "F21"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ibge",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "buyer_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_version_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phase",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planejado",
+                "publicado_estimado",
+                "homologado",
+                "contratado",
+                "solicitado",
+                "entregue",
+                "consumido",
+                "empenhado",
+                "liquidado",
+                "pago"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Coverage"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/opportunities": {
+      "get": {
+        "operationId": "get_opportunities",
+        "summary": "Mudanças comprovadas e autorizadas",
+        "tags": [
+          "F22"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ibge",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "buyer_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_version_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phase",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planejado",
+                "publicado_estimado",
+                "homologado",
+                "contratado",
+                "solicitado",
+                "entregue",
+                "consumido",
+                "empenhado",
+                "liquidado",
+                "pago"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Fact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/scenarios": {
+      "post": {
+        "operationId": "post_scenarios",
+        "summary": "Criar rascunho e seleção explícita",
+        "tags": [
+          "F11/F12"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Scenario"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioCreate"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/scenarios/{id}": {
+      "get": {
+        "operationId": "get_scenarios_id",
+        "summary": "Ler versão autorizada",
+        "tags": [
+          "F17"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Scenario"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/scenarios/{id}/draft": {
+      "put": {
+        "operationId": "put_scenarios_id_draft",
+        "summary": "Editar com versão esperada e idempotência",
+        "tags": [
+          "F17"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Scenario"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioEdit"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/scenarios/{id}/calculate": {
+      "post": {
+        "operationId": "post_scenarios_id_calculate",
+        "summary": "Calcular por método/inputs conhecidos",
+        "tags": [
+          "F13/F15"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Calculation"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Trabalho aceito; progresso em /jobs/{id}, com autorização revalidada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalculateCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/scenarios/{id}/allocations/validate": {
+      "post": {
+        "operationId": "post_scenarios_id_allocations_validate",
+        "summary": "Validar envelope da meta global",
+        "tags": [
+          "F14"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Calculation"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlobalEnvelope"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/scenarios/{id}/versions": {
+      "post": {
+        "operationId": "post_scenarios_id_versions",
+        "summary": "Congelar snapshot imutável",
+        "tags": [
+          "F17"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Scenario"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FreezeVersion"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/scenarios/{id}/reviews": {
+      "post": {
+        "operationId": "post_scenarios_id_reviews",
+        "summary": "Registrar revisão técnica competente",
+        "tags": [
+          "F17"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Decision"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/scenarios/{id}/approvals": {
+      "post": {
+        "operationId": "post_scenarios_id_approvals",
+        "summary": "Ato separado, com competência e versão",
+        "tags": [
+          "F17"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Decision"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/scenarios/{id}/exports": {
+      "post": {
+        "operationId": "post_scenarios_id_exports",
+        "summary": "Gerar arquivo da mesma versão autorizada",
+        "tags": [
+          "F20"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Job"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Trabalho aceito; progresso em /jobs/{id}, com autorização revalidada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/artifacts/{id}": {
+      "get": {
+        "operationId": "get_artifacts_id",
+        "summary": "Revalidar acesso, expiração e revogação",
+        "tags": [
+          "F20"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Artifact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/document-batches": {
+      "post": {
+        "operationId": "post_document_batches",
+        "summary": "Criar lote com chave idempotente",
+        "tags": [
+          "F19"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Job"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Trabalho aceito; progresso em /jobs/{id}, com autorização revalidada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentBatchCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/documents": {
+      "post": {
+        "operationId": "post_documents",
+        "summary": "Receber original autorizado sem execução de fórmulas",
+        "tags": [
+          "F19"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Document"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "batch_id",
+                  "classification"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "batch_id": {
+                    "type": "string"
+                  },
+                  "classification": {
+                    "enum": [
+                      "government_internal",
+                      "business_private"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/documents/{id}/fields": {
+      "get": {
+        "operationId": "get_documents_id_fields",
+        "summary": "Ler proposta por página/célula/confiança",
+        "tags": [
+          "F19"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Extraction"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/documents/{id}/reviews": {
+      "post": {
+        "operationId": "post_documents_id_reviews",
+        "summary": "Aceitar campos com origem e decisão",
+        "tags": [
+          "F19"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Decision"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldReviewCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/private/quotes": {
+      "post": {
+        "operationId": "post_private_quotes",
+        "summary": "Simular na organização empresarial",
+        "tags": [
+          "F18"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Quote"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/private/quotes/{id}/versions": {
+      "post": {
+        "operationId": "post_private_quotes_id_versions",
+        "summary": "Salvar hipótese privada versionada",
+        "tags": [
+          "F18"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Quote"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/watches": {
+      "post": {
+        "operationId": "post_watches",
+        "summary": "Preferência por recorte e canal permitido",
+        "tags": [
+          "F22"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Watch"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/methods": {
+      "post": {
+        "operationId": "post_methods",
+        "summary": "Criar versão revisável de método",
+        "tags": [
+          "F24"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Method"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/memberships": {
+      "post": {
+        "operationId": "post_memberships",
+        "summary": "Atribuir papel/escopo sem conceder competência implícita",
+        "tags": [
+          "F23"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Membership"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipCommand"
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. A chave idempotente é ligada à organização e ao comando. Sem competência/entradas, retornar erro ou resultado parcial; nunca ato automático."
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "operationId": "get_jobs_id",
+        "summary": "Progresso, falha parcial e retomada autorizada",
+        "tags": [
+          "F19/F20"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Job"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    },
+    "/audit": {
+      "get": {
+        "operationId": "get_audit",
+        "summary": "Trilha minimizada por papel de leitura",
+        "tags": [
+          "F23"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado autorizado; classe/recorte/versão preservados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Audit"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Versão imutável ou versão vigente esperada para edição",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Escopo negado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro de contrato sem revelar dado restrito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de versão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dado incompatível ou meta inviável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite da fonte/serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade recuperável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "description": "Organização e ator resolvidos da sessão no servidor. Dado ausente permanece null. Coleções usam cursor e recorte com cobertura."
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sessão validada pelo provedor; não confiar em flags do cliente"
+      }
+    },
+    "schemas": {
+      "Decimal": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "pattern": "^\\d+(\\.\\d+)?$",
+        "description": "Decimal textual; null ausente, não zero"
+      },
+      "Envelope": {
+        "type": "object",
+        "required": [
+          "data",
+          "coverage",
+          "as_of",
+          "source_snapshot",
+          "notices"
+        ],
+        "properties": {
+          "data": {},
+          "coverage": {
+            "type": "object"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_snapshot": {
+            "type": "string"
+          },
+          "notices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "next_action"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "next_action": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resource_version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "Municipality": {
+        "type": "object",
+        "properties": {
+          "ibge": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string"
+          },
+          "verified_at": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Buyer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cnpj": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "institution_kind": {
+            "type": "string"
+          },
+          "territory_ibge": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "family": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "step": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "attributes": {
+            "type": "object"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Fact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "obligation_id": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "source_line": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "unit_price": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "event_date": {
+            "type": "string"
+          },
+          "buyer_id": {
+            "type": "string"
+          },
+          "supersedes": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Coverage": {
+        "type": "object",
+        "properties": {
+          "municipality": {
+            "type": "string"
+          },
+          "buyer_scope": {
+            "type": "array",
+            "items": {}
+          },
+          "provider": {
+            "type": "string"
+          },
+          "window": {
+            "type": "object"
+          },
+          "object_filter": {
+            "type": "object"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "pagination": {
+            "type": "object"
+          },
+          "last_success": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Scenario": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "horizon": {
+            "type": "string"
+          },
+          "participant_ids": {
+            "type": "array",
+            "items": {}
+          },
+          "item_versions": {
+            "type": "array",
+            "items": {}
+          },
+          "inputs": {
+            "type": "object"
+          },
+          "global_envelopes": {
+            "type": "object"
+          },
+          "revision_state": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Calculation": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "lines": {
+            "type": "array",
+            "items": {}
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "pending_count": {
+            "type": "integer"
+          },
+          "method_snapshot": {
+            "type": "object"
+          },
+          "source_snapshot": {
+            "type": "object"
+          },
+          "input_hash": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Decision": {
+        "type": "object",
+        "properties": {
+          "scenario_version": {
+            "type": "integer"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "competence_source": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "acquisition": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "variable": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "sale": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "freight": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "fixed": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "tax_rate": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "result": {
+            "type": "object"
+          },
+          "access_class": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "classification": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": "integer"
+          },
+          "original_key": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Extraction": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {}
+          },
+          "page_cell": {
+            "type": "object"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "review_state": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "checkpoint": {
+            "type": "object"
+          },
+          "notices": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Artifact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "scenario_version": {
+            "type": "integer"
+          },
+          "classification": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "download_url": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Watch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "query_snapshot": {
+            "type": "object"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "channels": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Method": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "family": {
+            "type": "string"
+          },
+          "input_schema": {
+            "type": "object"
+          },
+          "formula_ref": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Membership": {
+        "type": "object",
+        "properties": {
+          "actor_id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "object"
+          },
+          "valid_until": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "Audit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "resource_version": {
+            "type": "object"
+          },
+          "redacted_details": {
+            "type": "object"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        },
+        "description": "Contrato de domínio; obrigatoriedade por comando e nulabilidade especificadas nas regras."
+      },
+      "ScenarioCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "horizon",
+          "participants",
+          "items",
+          "mode"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "horizon": {
+            "type": "string"
+          },
+          "participants": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9]{7}$"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "mode": {
+            "enum": [
+              "A",
+              "B"
+            ]
+          }
+        }
+      },
+      "ScenarioEdit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "base_version",
+          "title",
+          "horizon",
+          "participant_ids",
+          "item_versions",
+          "input_overrides",
+          "reference_price_versions",
+          "reason"
+        ],
+        "properties": {
+          "base_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string"
+          },
+          "horizon": {
+            "type": "string"
+          },
+          "participant_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "item_versions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "input_overrides": {
+            "type": "object"
+          },
+          "reference_price_versions": {
+            "type": "object"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "CalculateCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "method_versions",
+          "allow_partial"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "method_versions": {
+            "type": "object"
+          },
+          "allow_partial": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GlobalEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "item",
+          "target",
+          "unit",
+          "step",
+          "horizon",
+          "reason",
+          "source_document_id",
+          "weights_and_limits"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "item": {
+            "type": "object",
+            "required": [
+              "id",
+              "version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "target": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "step": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "horizon": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_document_id": {
+            "type": "string"
+          },
+          "weights_and_limits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "ibge",
+                "weight",
+                "floor",
+                "ceiling",
+                "source"
+              ],
+              "properties": {
+                "ibge": {
+                  "type": "string"
+                },
+                "weight": {
+                  "$ref": "#/components/schemas/Decimal"
+                },
+                "floor": {
+                  "$ref": "#/components/schemas/Decimal"
+                },
+                "ceiling": {
+                  "$ref": "#/components/schemas/Decimal"
+                },
+                "source": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FreezeVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "base_version",
+          "reason"
+        ],
+        "properties": {
+          "base_version": {
+            "type": "integer"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ReviewCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "decision",
+          "reason",
+          "evidence_ids"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "decision": {
+            "enum": [
+              "accepted_for_review",
+              "changes_requested"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApprovalCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "competence_source_id",
+          "participation_authorization_ids",
+          "decision_document_id",
+          "reason"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "competence_source_id": {
+            "type": "string"
+          },
+          "participation_authorization_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "decision_document_id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ExportCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "format",
+          "scope",
+          "item_versions",
+          "requested_classification",
+          "include_private_costs"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "format": {
+            "enum": [
+              "pdf",
+              "csv",
+              "xlsx"
+            ]
+          },
+          "scope": {
+            "enum": [
+              "complete_selection",
+              "selected_item_subset"
+            ]
+          },
+          "item_versions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "requested_classification": {
+            "enum": [
+              "public",
+              "government_internal",
+              "business_private"
+            ]
+          },
+          "include_private_costs": {
+            "const": false
+          }
+        }
+      },
+      "DocumentBatchCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "files",
+          "classification",
+          "purpose"
+        ],
+        "properties": {
+          "files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "mime",
+                "bytes",
+                "sha256"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "mime": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sha256": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "classification": {
+            "enum": [
+              "government_internal",
+              "business_private"
+            ]
+          },
+          "purpose": {
+            "type": "string"
+          }
+        }
+      },
+      "FieldReviewCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "document_version",
+          "decisions"
+        ],
+        "properties": {
+          "document_version": {
+            "type": "string"
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "field_id",
+                "decision",
+                "reason"
+              ],
+              "properties": {
+                "field_id": {
+                  "type": "string"
+                },
+                "decision": {
+                  "enum": [
+                    "accept",
+                    "correct",
+                    "reject"
+                  ]
+                },
+                "normalized_value": {},
+                "page_cell": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "QuoteCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "quantity",
+          "acquisition_cost_unit",
+          "intended_sale_price_unit",
+          "other_variable_cost_unit",
+          "fixed_freight",
+          "fixed_expenses",
+          "sales_tax_rate",
+          "item_version",
+          "reason"
+        ],
+        "properties": {
+          "quantity": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "acquisition_cost_unit": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "intended_sale_price_unit": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "other_variable_cost_unit": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "fixed_freight": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "fixed_expenses": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "sales_tax_rate": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "item_version": {
+            "type": "object",
+            "required": [
+              "id",
+              "version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "ItemCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "description",
+          "family_id",
+          "unit",
+          "quantity_step",
+          "attributes",
+          "packaging",
+          "source_ids"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "family_id": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "quantity_step": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "attributes": {
+            "type": "object"
+          },
+          "packaging": {
+            "type": "object"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "WatchCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "query_snapshot",
+          "enabled",
+          "channels"
+        ],
+        "properties": {
+          "query_snapshot": {
+            "type": "object"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "in_app",
+                "email_authorized"
+              ]
+            }
+          }
+        }
+      },
+      "MethodCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "family_id",
+          "name",
+          "inputs_schema",
+          "formula_ref",
+          "rounding",
+          "source_ids",
+          "test_refs"
+        ],
+        "properties": {
+          "family_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "inputs_schema": {
+            "type": "object"
+          },
+          "formula_ref": {
+            "type": "string",
+            "description": "Referência à estratégia permitida; nunca código executável enviado pelo documento"
+          },
+          "rounding": {
+            "type": "string"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "test_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "MembershipCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "actor_id",
+          "role",
+          "municipality_scope",
+          "resource_scope",
+          "valid_until",
+          "reason"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "municipality_scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource_scope": {
+            "type": "object"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

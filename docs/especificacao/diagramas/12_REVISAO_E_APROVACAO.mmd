@@ -1,0 +1,16 @@
+flowchart TD
+A[Versão e fontes congeladas] --> B[Agrupar pendências por impacto]
+B --> C{Dados, preços e recursos suficientes?}
+C -->|Não| D[Abrir linha e revisar apenas a falta]
+D --> E[Nova versão de cálculo, sem apagar anterior]
+E --> B
+C -->|Sim| F[Revisão técnica documentada]
+F --> G{Autoridade competente e participação vigentes?}
+G -->|Não| H[Manter proposta sem aprovação]
+G -->|Sim em produção| I[Ato de aprovação vinculado à versão]
+F -->|Demonstração| J[Registrar revisão de exemplo, sem efeito oficial]
+I --> K{Entrada relevante mudou?}
+K -->|Sim| E
+K -->|Não| L[Relatório autorizado e rastreável]
+J --> L
+H --> L

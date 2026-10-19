@@ -1,0 +1,592 @@
+[
+  {
+    "id": "3100500",
+    "name": "Açucena",
+    "uf": "MG"
+  },
+  {
+    "id": "3100609",
+    "name": "Água Boa",
+    "uf": "MG"
+  },
+  {
+    "id": "3101409",
+    "name": "Albertina",
+    "uf": "MG"
+  },
+  {
+    "id": "3101607",
+    "name": "Alfenas",
+    "uf": "MG"
+  },
+  {
+    "id": "3102852",
+    "name": "Angelândia",
+    "uf": "MG"
+  },
+  {
+    "id": "3103405",
+    "name": "Araçuaí",
+    "uf": "MG"
+  },
+  {
+    "id": "3104452",
+    "name": "Aricanduva",
+    "uf": "MG"
+  },
+  {
+    "id": "3104700",
+    "name": "Ataléia",
+    "uf": "MG"
+  },
+  {
+    "id": "3105202",
+    "name": "Bandeira",
+    "uf": "MG"
+  },
+  {
+    "id": "3105707",
+    "name": "Barra Longa",
+    "uf": "MG"
+  },
+  {
+    "id": "3106507",
+    "name": "Berilo",
+    "uf": "MG"
+  },
+  {
+    "id": "3108255",
+    "name": "Bonito de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3109253",
+    "name": "Bugre",
+    "uf": "MG"
+  },
+  {
+    "id": "3110608",
+    "name": "Cambuí",
+    "uf": "MG"
+  },
+  {
+    "id": "3110806",
+    "name": "Campanário",
+    "uf": "MG"
+  },
+  {
+    "id": "3112059",
+    "name": "Cantagalo",
+    "uf": "MG"
+  },
+  {
+    "id": "3112307",
+    "name": "Capelinha",
+    "uf": "MG"
+  },
+  {
+    "id": "3112406",
+    "name": "Capetinga",
+    "uf": "MG"
+  },
+  {
+    "id": "3112653",
+    "name": "Capitão Andrade",
+    "uf": "MG"
+  },
+  {
+    "id": "3113008",
+    "name": "Caraí",
+    "uf": "MG"
+  },
+  {
+    "id": "3113404",
+    "name": "Caratinga",
+    "uf": "MG"
+  },
+  {
+    "id": "3114402",
+    "name": "Carmo do Rio Claro",
+    "uf": "MG"
+  },
+  {
+    "id": "3114709",
+    "name": "Carvalhópolis",
+    "uf": "MG"
+  },
+  {
+    "id": "3115458",
+    "name": "Catuji",
+    "uf": "MG"
+  },
+  {
+    "id": "3116100",
+    "name": "Chapada do Norte",
+    "uf": "MG"
+  },
+  {
+    "id": "3117009",
+    "name": "Comercinho",
+    "uf": "MG"
+  },
+  {
+    "id": "3117702",
+    "name": "Conceição do Rio Verde",
+    "uf": "MG"
+  },
+  {
+    "id": "3118601",
+    "name": "Contagem",
+    "uf": "MG"
+  },
+  {
+    "id": "3119005",
+    "name": "Cordislândia",
+    "uf": "MG"
+  },
+  {
+    "id": "3119906",
+    "name": "Córrego do Bom Jesus",
+    "uf": "MG"
+  },
+  {
+    "id": "3120151",
+    "name": "Crisólita",
+    "uf": "MG"
+  },
+  {
+    "id": "3121803",
+    "name": "Dionísio",
+    "uf": "MG"
+  },
+  {
+    "id": "3122504",
+    "name": "Dom Cavati",
+    "uf": "MG"
+  },
+  {
+    "id": "3122603",
+    "name": "Dom Joaquim",
+    "uf": "MG"
+  },
+  {
+    "id": "3123858",
+    "name": "Entre Folhas",
+    "uf": "MG"
+  },
+  {
+    "id": "3125606",
+    "name": "Felisburgo",
+    "uf": "MG"
+  },
+  {
+    "id": "3126505",
+    "name": "Francisco Badaró",
+    "uf": "MG"
+  },
+  {
+    "id": "3126752",
+    "name": "Franciscópolis",
+    "uf": "MG"
+  },
+  {
+    "id": "3126802",
+    "name": "Frei Gaspar",
+    "uf": "MG"
+  },
+  {
+    "id": "3126901",
+    "name": "Frei Inocêncio",
+    "uf": "MG"
+  },
+  {
+    "id": "3127057",
+    "name": "Fronteira dos Vales",
+    "uf": "MG"
+  },
+  {
+    "id": "3127503",
+    "name": "Gonzaga",
+    "uf": "MG"
+  },
+  {
+    "id": "3129301",
+    "name": "Iapu",
+    "uf": "MG"
+  },
+  {
+    "id": "3130903",
+    "name": "Inhapim",
+    "uf": "MG"
+  },
+  {
+    "id": "3131158",
+    "name": "Ipaba",
+    "uf": "MG"
+  },
+  {
+    "id": "3131307",
+    "name": "Ipatinga",
+    "uf": "MG"
+  },
+  {
+    "id": "3132701",
+    "name": "Itambacuri",
+    "uf": "MG"
+  },
+  {
+    "id": "3132305",
+    "name": "Itaipé",
+    "uf": "MG"
+  },
+  {
+    "id": "3133303",
+    "name": "Itaobim",
+    "uf": "MG"
+  },
+  {
+    "id": "3134806",
+    "name": "Jacuí",
+    "uf": "MG"
+  },
+  {
+    "id": "3163508",
+    "name": "São José do Jacuri",
+    "uf": "MG"
+  },
+  {
+    "id": "3134905",
+    "name": "Jacutinga",
+    "uf": "MG"
+  },
+  {
+    "id": "3135001",
+    "name": "Jaguaraçu",
+    "uf": "MG"
+  },
+  {
+    "id": "3135456",
+    "name": "Jenipapo de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3135803",
+    "name": "Jequitinhonha",
+    "uf": "MG"
+  },
+  {
+    "id": "3136520",
+    "name": "José Gonçalves de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3136553",
+    "name": "José Raydan",
+    "uf": "MG"
+  },
+  {
+    "id": "3137007",
+    "name": "Ladainha",
+    "uf": "MG"
+  },
+  {
+    "id": "3138906",
+    "name": "Machacalis",
+    "uf": "MG"
+  },
+  {
+    "id": "3139003",
+    "name": "Machado",
+    "uf": "MG"
+  },
+  {
+    "id": "3139201",
+    "name": "Malacacheta",
+    "uf": "MG"
+  },
+  {
+    "id": "3140308",
+    "name": "Marliéria",
+    "uf": "MG"
+  },
+  {
+    "id": "3141108",
+    "name": "Matozinhos",
+    "uf": "MG"
+  },
+  {
+    "id": "3141405",
+    "name": "Medina",
+    "uf": "MG"
+  },
+  {
+    "id": "3141702",
+    "name": "Mesquita",
+    "uf": "MG"
+  },
+  {
+    "id": "3303005",
+    "name": "Miracema",
+    "uf": "RJ"
+  },
+  {
+    "id": "3143153",
+    "name": "Monte Formoso",
+    "uf": "MG"
+  },
+  {
+    "id": "3143708",
+    "name": "Morro do Pilar",
+    "uf": "MG"
+  },
+  {
+    "id": "3144201",
+    "name": "Nacip Raydan",
+    "uf": "MG"
+  },
+  {
+    "id": "3144300",
+    "name": "Nanuque",
+    "uf": "MG"
+  },
+  {
+    "id": "3144359",
+    "name": "Naque",
+    "uf": "MG"
+  },
+  {
+    "id": "3144672",
+    "name": "Nova Belém",
+    "uf": "MG"
+  },
+  {
+    "id": "3144904",
+    "name": "Nova Módica",
+    "uf": "MG"
+  },
+  {
+    "id": "3145109",
+    "name": "Nova Resende",
+    "uf": "MG"
+  },
+  {
+    "id": "3145307",
+    "name": "Novo Cruzeiro",
+    "uf": "MG"
+  },
+  {
+    "id": "3145356",
+    "name": "Novo Oriente de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3146008",
+    "name": "Ouro Fino",
+    "uf": "MG"
+  },
+  {
+    "id": "3146206",
+    "name": "Ouro Verde de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3146305",
+    "name": "Padre Paraíso",
+    "uf": "MG"
+  },
+  {
+    "id": "3146750",
+    "name": "Palmópolis",
+    "uf": "MG"
+  },
+  {
+    "id": "3148400",
+    "name": "Paulistas",
+    "uf": "MG"
+  },
+  {
+    "id": "3148608",
+    "name": "Peçanha",
+    "uf": "MG"
+  },
+  {
+    "id": "3150000",
+    "name": "Pescador",
+    "uf": "MG"
+  },
+  {
+    "id": "3152402",
+    "name": "Poté",
+    "uf": "MG"
+  },
+  {
+    "id": "3152501",
+    "name": "Pouso Alegre",
+    "uf": "MG"
+  },
+  {
+    "id": "3155108",
+    "name": "Rio do Prado",
+    "uf": "MG"
+  },
+  {
+    "id": "3156601",
+    "name": "Rubim",
+    "uf": "MG"
+  },
+  {
+    "id": "3157500",
+    "name": "Santa Efigênia de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3157658",
+    "name": "Santa Helena de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3157807",
+    "name": "Santa Luzia",
+    "uf": "MG"
+  },
+  {
+    "id": "3158201",
+    "name": "Santa Maria do Suaçuí",
+    "uf": "MG"
+  },
+  {
+    "id": "3159357",
+    "name": "Santa Rita de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3158300",
+    "name": "Santana da Vargem",
+    "uf": "MG"
+  },
+  {
+    "id": "3160959",
+    "name": "São Domingos das Dores",
+    "uf": "MG"
+  },
+  {
+    "id": "3161056",
+    "name": "São Félix de Minas",
+    "uf": "MG"
+  },
+  {
+    "id": "3304755",
+    "name": "São Francisco de Itabapoana",
+    "uf": "RJ"
+  },
+  {
+    "id": "3162609",
+    "name": "São João do Oriente",
+    "uf": "MG"
+  },
+  {
+    "id": "3162807",
+    "name": "São João Evangelista",
+    "uf": "MG"
+  },
+  {
+    "id": "3162948",
+    "name": "São José da Barra",
+    "uf": "MG"
+  },
+  {
+    "id": "3163201",
+    "name": "São José do Alegre",
+    "uf": "MG"
+  },
+  {
+    "id": "3163300",
+    "name": "São José do Divino",
+    "uf": "MG"
+  },
+  {
+    "id": "3163409",
+    "name": "São José do Goiabal",
+    "uf": "MG"
+  },
+  {
+    "id": "3163607",
+    "name": "São José do Mantimento",
+    "uf": "MG"
+  },
+  {
+    "id": "3163904",
+    "name": "São Pedro da União",
+    "uf": "MG"
+  },
+  {
+    "id": "3164100",
+    "name": "São Pedro do Suaçuí",
+    "uf": "MG"
+  },
+  {
+    "id": "3164472",
+    "name": "São Sebastião do Anta",
+    "uf": "MG"
+  },
+  {
+    "id": "3164506",
+    "name": "São Sebastião do Maranhão",
+    "uf": "MG"
+  },
+  {
+    "id": "3167103",
+    "name": "Serro",
+    "uf": "MG"
+  },
+  {
+    "id": "3167202",
+    "name": "Sete Lagoas",
+    "uf": "MG"
+  },
+  {
+    "id": "3165552",
+    "name": "Setubinha",
+    "uf": "MG"
+  },
+  {
+    "id": "3168705",
+    "name": "Timóteo",
+    "uf": "MG"
+  },
+  {
+    "id": "3169505",
+    "name": "Tumiritinga",
+    "uf": "MG"
+  },
+  {
+    "id": "3169604",
+    "name": "Tupaciguara",
+    "uf": "MG"
+  },
+  {
+    "id": "3169703",
+    "name": "Turmalina",
+    "uf": "MG"
+  },
+  {
+    "id": "3170305",
+    "name": "Umburatiba",
+    "uf": "MG"
+  },
+  {
+    "id": "3170578",
+    "name": "Vargem Alegre",
+    "uf": "MG"
+  },
+  {
+    "id": "3171808",
+    "name": "Virginópolis",
+    "uf": "MG"
+  },
+  {
+    "id": "3171907",
+    "name": "Virgolândia",
+    "uf": "MG"
+  }
+]

@@ -1,0 +1,17 @@
+flowchart TD
+A[Selecionar item e observações] --> B[Conferir versão, concentração, embalagem e unidade]
+B --> C{Equivalência comprovada?}
+C -->|Não| D[Separar variantes; pedir curadoria]
+D --> B
+C -->|Sim| E{Conversão necessária?}
+E -->|Sim| F{Fator, dimensão e fonte aprovados?}
+F -->|Não| D
+F -->|Sim| G[Normalizar preservando original e fator]
+E -->|Não| G
+G --> H[Filtrar mesma fase, período e condições]
+H --> I{Preço sigiloso ou ausente?}
+I -->|Sim| J[Sem valor; não preencher zero]
+I -->|Não| K[Calcular faixa e mediana; listar amostra e exclusões]
+K --> L[Revisão competente e validade da referência]
+J --> L
+L --> M[Usar na versão do cenário ou voltar ao recorte]

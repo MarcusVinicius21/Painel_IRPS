@@ -1,0 +1,17 @@
+flowchart TD
+A[Selecionar cidades e item, unidade e período] --> B[Obter D, taxa, reserva, estoque e recebimentos]
+B --> C{Entradas conhecidas e fontes válidas?}
+C -->|Não| D[Linha pendente; não usar defaults zero]
+C -->|Sim| E[Q igual teto da necessidade líquida no passo]
+E --> F{Q e limites consistentes?}
+F -->|Não| G[Exibir Q calculada; bloquear revisão sem truncar]
+F -->|Sim| H[Quantidade por cidade para revisão]
+D --> I[Subtotal parcial com faltas]
+G --> I
+H --> J[Preço compatível e soma de linhas]
+J --> K{Retirar participante?}
+K -->|Sim| L[Remover apenas sua parcela; preservar demais Q]
+L --> M[Salvar derivada e oferecer desfazer]
+M --> J
+K -->|Não| N[Revisão e relatório da versão]
+I --> N

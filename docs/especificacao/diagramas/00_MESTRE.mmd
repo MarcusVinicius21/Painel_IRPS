@@ -1,0 +1,47 @@
+flowchart TD
+ A[Entrar no Observatório] --> B{Identidade e escopo autorizados?}
+ B -->|Não| DEN[Negar acesso restrito sem retornar dados]
+ B -->|Consulta pública| C[Buscar produto, serviço, obra, órgão ou cidade]
+ B -->|Planejamento autorizado| S[Selecionar itens, versões e N cidades]
+ B -->|Empresa autorizada| COM[Simular custo, venda e resultado privado]
+ C --> D[Definir fase, órgão, período e cobertura]
+ D --> E{Fonte e recorte disponíveis?}
+ E -->|Não consultado ou falha| P[Exibir limite e último sucesso datado]
+ P --> D
+ E -->|Sim| F[Preservar original e reconciliar evento, item e unidade]
+ F --> G{Equivalência e obrigação consistentes?}
+ G -->|Não| H[Curadoria e revisão contextual]
+ H --> F
+ G -->|Sim| I[Comparar quantidade, preço, fase e frequência]
+ I --> J{Há pagamento conciliado?}
+ J -->|Sim| K[Parcelas menos estornos; não somar fases]
+ J -->|Não| L[Pagamento não comprovado]
+ K --> N[Analisar necessidade futura com método e limites]
+ L --> N
+ N --> S
+ S --> M{Método por item}
+ M -->|A| MA[Calcular cada necessidade com estoque e entradas conhecidos]
+ M -->|B| MB[Validar meta física, justificativa, pesos, pisos e tetos]
+ MA --> Q{Dados e limites consistentes?}
+ MB --> Q
+ Q -->|Não| PA[Manter linha pendente e subtotal parcial]
+ Q -->|Sim| V[Consolidar valores por item e município]
+ PA --> REV[Revisão técnica e conferência de recursos]
+ V --> REV
+ REV --> AP{Autoridade, dados e versão aptos?}
+ AP -->|Não| S
+ AP -->|Sim em produção| OF[Aprovação por ato competente; não automática]
+ REV --> DEM[Na demo: revisão identificada, sem efeito oficial]
+ OF --> REL[Relatório da versão e do conjunto autorizado]
+ DEM --> REL
+ REL --> ALT{Alterar cenário?}
+ ALT -->|Sim| VERS[Nova versão; invalidar revisão da derivada]
+ VERS --> S
+ ALT -->|Não| FIM[Entregar evidências e encerrar tarefa]
+ COM --> PRIV[Guardar apenas na organização da empresa]
+ PRIV --> CR{Campos válidos e tributos menores que 100%?}
+ CR -->|Não| COM
+ CR -->|Sim| RES[Receita, custo, lucro, margem e equilíbrio]
+ RES --> EX[Exportação privada separada do relatório público]
+ EX --> FIM
+

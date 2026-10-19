@@ -1,0 +1,17 @@
+flowchart TD
+A[Escolher item, cidade, fase e horizonte] --> B[Deduplicar e validar versões/unidades]
+B --> C{Anos e recortes completos?}
+C -->|Não| D[Histórico insuficiente; não preencher anos como zero]
+D --> E[Mostrar lacunas e método físico se houver]
+C -->|Sim| F[Agregar anos da mesma natureza]
+F --> G{Método temporal validado para a família?}
+G -->|Não| H[Mediana exploratória rotulada; sem precisão declarada]
+G -->|Sim| I[Previsão com backtest, erros, cobertura e data de corte]
+H --> J[Comparar com necessidade física]
+I --> J
+E --> J
+J --> K{Há estoque e direcionadores válidos?}
+K -->|Não| L[Manter necessidade oficial pendente]
+K -->|Sim| M[Calcular hipótese revisável por município]
+L --> N[Memória e revisão humana]
+M --> N

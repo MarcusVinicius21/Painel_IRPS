@@ -1,0 +1,21 @@
+flowchart TD
+A[Escolher cidades e item] --> B[Definir fase, período e unidade]
+B --> C{Objetos e condições equivalentes?}
+C -->|Não| D[Separar variantes; explicar incompatibilidade]
+D --> B
+C -->|Sim| E[Recuperar registros autorizados e cobertura]
+E --> F{Cobertura e dados suficientes?}
+F -->|Não| G[Mostrar parcialidade e ausências; não zero]
+F -->|Sim| H[Comparar quantidades e preços da mesma base]
+G --> H
+H --> I{Indicador por habitante pertinente e validado?}
+I -->|Não| J[Manter medidas diretas por item e unidade]
+I -->|Sim| K[Explicar denominador, ano e fonte do indicador]
+J --> L[Tabela mantém todo o conjunto; gráfico declara limite visual]
+K --> L
+L --> M{Filtrar ou paginar?}
+M -->|Sim| N[Alterar só visibilidade; preservar selecionados]
+N --> L
+M -->|Exportar| O[Declarar seleção e recorte do relatório]
+O --> P[Arquivo da mesma base, sem custos privados]
+M -->|Planejar| Q[Abrir cenário com identidades; necessidade própria]

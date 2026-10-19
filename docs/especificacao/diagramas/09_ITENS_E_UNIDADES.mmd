@@ -1,0 +1,15 @@
+flowchart TD
+A[Buscar ou cadastrar objeto] --> B[Descrição original, família, unidade, embalagem e passo]
+B --> C{Item ou variante já existe?}
+C -->|Sim| D[Comparar atributos; não fundir por nome]
+C -->|Não| E[Criar identidade e versão novas]
+D --> F{Equivalência validada?}
+F -->|Não| E
+F -->|Sim| G[Alias documentado à versão]
+E --> H{Método e referência disponíveis?}
+G --> H
+H -->|Não| I[Adicionar pendente, sem Q ou preço inventado]
+H -->|Sim| J[Incluir item na versão do cenário]
+I --> K[Seleção independente do filtro de catálogo]
+J --> K
+K --> L[Calcular por dimensão; consolidar só moeda comparável]

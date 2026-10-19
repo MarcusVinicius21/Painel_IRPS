@@ -1,0 +1,22 @@
+{
+  "database": "irps_migration_test",
+  "steps": [
+    {
+      "operation": "upgrade",
+      "tables": 30,
+      "rls_forced": 26
+    },
+    {
+      "operation": "downgrade",
+      "tables": 0,
+      "rls_forced": 0
+    },
+    {
+      "operation": "upgrade",
+      "tables": 30,
+      "rls_forced": 26
+    }
+  ],
+  "checked_at": "2026-10-19T17:38:05.581087+00:00",
+  "real_postgresql": true
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "id": "T00",
+    "path": "/#/entrada",
+    "title": "Entrada demonstrativa",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T01",
+    "path": "/#/inicio",
+    "title": "Início Observatório",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T02",
+    "path": "/#/pesquisa",
+    "title": "Busca global",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T03",
+    "path": "/#/resultados",
+    "title": "Resultados por comprador",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T04",
+    "path": "/#/produto",
+    "title": "Produto, serviço ou obra",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T05",
+    "path": "/#/municipio",
+    "title": "Município e órgão comprador",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T06",
+    "path": "/#/processo",
+    "title": "Processo, documentos e retificação",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T07",
+    "path": "/#/pagamentos",
+    "title": "Valores e pagamentos",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T08",
+    "path": "/#/comparar",
+    "title": "Comparar municípios",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T09",
+    "path": "/#/necessidades",
+    "title": "Possível necessidade futura",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T10",
+    "path": "/#/licitacao",
+    "title": "Montar Licitação",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T11",
+    "path": "/#/participantes",
+    "title": "Selecionar participantes",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T12",
+    "path": "/#/itens",
+    "title": "Itens e catálogo aberto",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T13",
+    "path": "/#/quantidades",
+    "title": "Quantitativos por município",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T14",
+    "path": "/#/distribuicao",
+    "title": "Meta global justificada",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T15",
+    "path": "/#/precos",
+    "title": "Preços e recursos",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T16",
+    "path": "/#/revisao",
+    "title": "Revisão e decisões",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T17",
+    "path": "/#/relatorios",
+    "title": "Relatórios e versões",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T18",
+    "path": "/#/negocio",
+    "title": "Simulação comercial privada",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T19",
+    "path": "/#/documentos",
+    "title": "Importar documentos",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T20",
+    "path": "/#/fontes",
+    "title": "Fontes e cobertura",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T21",
+    "path": "/#/alertas",
+    "title": "Alertas e acompanhamentos",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T22",
+    "path": "/#/administracao",
+    "title": "Administração e perfis",
+    "state": "demonstrative"
+  },
+  {
+    "id": "T23",
+    "path": "/#/memoria",
+    "title": "Memória de cálculo",
+    "state": "demonstrative"
+  }
+]

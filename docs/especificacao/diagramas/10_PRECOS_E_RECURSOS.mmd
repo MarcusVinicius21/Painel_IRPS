@@ -1,0 +1,15 @@
+flowchart TD
+A[Resultados físicos revisáveis por item/cidade] --> B{Preço de referência compatível?}
+B -->|Ausente, sigiloso ou incompatível| C[Valor ausente e subtotal parcial]
+B -->|Sim| D[Multiplicar Q por referência e arredondar linha]
+D --> E[Conciliar soma por cidade, item e cenário]
+C --> F[Mostrar quantidade de faltas]
+E --> G{Recurso específico comprovado?}
+G -->|Não| H[Pendência financeira; não inferir saldo de receita]
+G -->|Sim| I{Recurso cobre o valor?}
+I -->|Não| J[Mostrar diferença; preservar Q física]
+I -->|Sim| K[Conferência financeira para revisão]
+F --> L[Relatório parcial ou retorno à fonte]
+H --> L
+J --> L
+K --> M[Revisão da versão, não aprovação automática]

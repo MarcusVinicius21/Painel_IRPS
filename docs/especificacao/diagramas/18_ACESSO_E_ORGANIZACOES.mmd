@@ -1,0 +1,19 @@
+flowchart TD
+A[Pedido de rota, fonte, arquivo ou operação] --> B[Validar sessão e organização no servidor]
+B --> C{Ação e recurso no escopo vigente?}
+C -->|Não| D[Negar sem payload privado]
+C -->|Sim| E{Classe do dado}
+E -->|Pública| F[Consulta permitida conforme origem]
+E -->|Planejamento| G[Validar órgão, cidade, participação e competência]
+E -->|Empresa privada| H[Validar mesma organização e ação específica]
+G --> I{Permissão suficiente?}
+H --> I
+I -->|Não| D
+I -->|Sim| J[Autorizar busca, cache, job e export na mesma classe]
+F --> J
+J --> K[Auditar sem copiar segredos]
+K --> L{Revogação ou sessão expirada?}
+L -->|Sim| M[Invalidar contexto e entrega; revalidar antes de retomar]
+M --> B
+L -->|Não| N[Retornar somente dados autorizados]
+A --> DEM[Na demo: bloqueios visuais e dados fictícios; não segurança real]

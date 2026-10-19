@@ -1,0 +1,22 @@
+
+> irps-app-real@0.1.0 qa
+> playwright test
+
+
+Running 11 tests using 1 worker
+
+(node:15124) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 qa\real.spec.ts:17:44 › Observatório real · 320px (11.9s)
+  ok  2 qa\real.spec.ts:17:44 › Observatório real · 390px (13.6s)
+  ok  3 qa\real.spec.ts:17:44 › Observatório real · 768px (6.1s)
+  ok  4 qa\real.spec.ts:17:44 › Observatório real · 1024px (9.2s)
+  ok  5 qa\real.spec.ts:17:44 › Observatório real · 1440px (17.4s)
+  ok  6 qa\real.spec.ts:37:1 › Custos privados · documentos e encerramento da sessão (4.4s)
+  ok  7 qa\real.spec.ts:45:1 › Teclado · consulta oficial · identidade e fontes (3.9s)
+  ok  8 qa\real.spec.ts:58:1 › Esforço real · procurar comprador e comparar preços (3.4s)
+  ok  9 qa\recovery.spec.ts:4:1 › Falha controlada e recuperação sem perder documentos (2.2s)
+  ok 10 qa\routes.spec.ts:5:31 › Rotas conectadas e linguagem · 390px (6.6s)
+  ok 11 qa\routes.spec.ts:5:31 › Rotas conectadas e linguagem · 1440px (5.3s)
+
+  11 passed (1.5m)

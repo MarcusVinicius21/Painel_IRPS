@@ -1,0 +1,59 @@
+RELATÓRIO HISTÓRICO DA RODADA ORIGINAL
+Caminhos e estado Git abaixo se referem à entrega anterior. Consulte ../../README.md e ../validacao/RESULTADOS.md para esta cópia.
+
+IRPS — RESULTADO DA RODADA DE IMPLEMENTAÇÃO REAL LOCAL
+19 de outubro de 2026 · CONSORMULTI
+
+O IRPS agora possui aplicação executável, com FastAPI, PostgreSQL e o Observatório conectado. O código está na pasta irps-app-real. O projeto anterior foi preservado.
+
+FUNCIONA NESTE AMBIENTE
+
+• Entrada com contas fictícias, sessão assinada, permissões no servidor e separação entre organizações.
+• Montar licitação com necessidades individuais ou quantidade global justificada. Dados desconhecidos geram pendências.
+• Cenários com 3, 10, 20 e 118 municípios. Foram calculadas e gravadas 11.800 linhas para 118 municípios e 100 itens.
+• Preços de referência, valor estimado, memória, versões, recuperação de rascunho e revisão interna.
+• Simulação privada de aquisição, venda, frete, despesas, tributos, lucro e margem.
+• Leitura local de PDF textual, DOCX, XLSX e CSV. Originais preservados; fórmulas não são executadas.
+• Relatórios PDF, CSV e XLSX gerados pelo serviço e reabertos nos testes.
+• Assistente local com perguntas simples e ferramentas limitadas. Nenhuma chamada paga foi realizada.
+
+CONSULTAS OFICIAIS COMPROVADAS
+
+IBGE: identidade municipal de Ipatinga, com nome, UF e código.
+PNCP: duas consultas de publicações, com 10 e 2 registros, e duas páginas de itens, com 10 itens cada.
+Compras.gov.br: dez descrições CATMAT e dez CATSER.
+
+O banco contém 32 registros oficiais PNCP: 12 publicações e 20 itens publicados. Não são 32 compras realizadas. Cabeçalhos e itens não devem ser somados juntos.
+
+Dez itens possuem orçamento sigiloso. Seus preços e valores permaneceram ausentes. Quantidades publicadas não comprovam consumo, entrega ou pagamento.
+
+A coleta é pequena e delimitada. Não comprova histórico completo dos 118 municípios. O cadastro inicial de 118 identidades foi reutilizado do Comando 5.
+
+TESTES
+
+115 casos Python aprovados: 65 regressões históricas do V4 e 50 casos da integração atual. Há mais 200 verificações internas, sem contá-las como casos independentes.
+21 testes do pacote de referência aprovados, em contagem separada.
+11 roteiros Playwright aprovados, com 320, 390, 768, 1024 e 1440 pixels.
+Migrações aplicadas, revertidas e reaplicadas em banco descartável PostgreSQL real.
+Testes de contas A/B, assinatura e validade da sessão, revogação, documentos, custos privados, relatórios, filtros e fontes indisponíveis.
+As falhas encontradas e as correções foram preservadas nas evidências.
+
+O QUE AINDA FALTA PARA PRODUÇÃO
+
+Configurar o acesso com pessoas reais e um provedor de identidade autorizado.
+Ampliar e conciliar dados de compras, contratos, preços, pagamentos e consumo. Validar equivalências e previsões.
+Concluir aprovações administrativas, anuência municipal e comprovação de recursos por item.
+Preparar análise isolada de arquivos, antivírus/OCR, workers distribuídos, quotas distribuídas e operação produtiva.
+Autorizar separadamente eventuais serviços OpenAI/Google e definir limites de custo, se forem necessários.
+
+ESTIMATIVA DE AVANÇO
+
+78 de 100 pontos no recorte técnico desta rodada, segundo os pesos detalhados em GATE_EXECUCAO.md. É uma avaliação de engenharia, não uma medida de cobertura dos municípios nem percentual de prontidão comercial. O gate de produção permanece fechado.
+
+COMO ABRIR
+
+Aplicação local: http://127.0.0.1:5210/
+Contratos da API: http://127.0.0.1:5211/docs
+Instruções: irps-app-real/README.md e docs/IRPS_IMPL_REAL_RODADA_01/COMO_EXECUTAR_LOCAL.md.
+
+O pacote físico inclui código, relatórios e capturas. Não inclui chaves, senhas, banco ou skills privadas. Nenhum deploy, commit ou push foi realizado.

@@ -1,0 +1,52 @@
+[
+  {
+    "file": "1440-inicio.png",
+    "sha256": "5527bba164891f8f4b365616f6d13eb642e73c17dfa0d44bf605f206b7cde50d",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "390-inicio.png",
+    "sha256": "e2abc3229bec5745b08b0dfaaa622f58ad52d5a0ff2d30552d2c312819d5c75d",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "1440-licitacao.png",
+    "sha256": "d63930dc0846822514e7302b69501816407f2cbdf8e2107e359bde28237d95b6",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "390-licitacao.png",
+    "sha256": "5eb794c810933e898ee75386ebfc6b77514ea2e9550bec679548fdeb13b3e0af",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "1440-quantidades.png",
+    "sha256": "5cd01ae456a86a94b3f33aac9cab38c7c979d968597de6a7325d22028735e848",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "390-quantidades.png",
+    "sha256": "4530c3c1e20200a182c8bf749c396aeef64b4381db48852f208db9e7fab7e2fe",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "1440-negocio.png",
+    "sha256": "7dfff1ea7eed506ea6e55636955b85e4b33665cd04d2b1a873ee9ba7671a2c5f",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "1440-documentos.png",
+    "sha256": "ed30ae2b6e5bf98b0739b53a2ae725da9a5ea476c17ab8bd5c7f23db9e58427e",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "390-fontes.png",
+    "sha256": "e4c031db93cf561a69594da9b02aabeb8db79954c4348132b925cc0b786a9156",
+    "text_or_exif_metadata": false
+  },
+  {
+    "file": "390-recuperacao-documentos.png",
+    "sha256": "7fc3539f4f24722b03c25cc64ff152b4151d772322a2aba9f4dad8fa360d19d4",
+    "text_or_exif_metadata": false
+  }
+]

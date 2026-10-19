@@ -1,0 +1,25 @@
+flowchart TD
+A[Abrir processo e item de origem] --> B[Conferir órgão, identificador e datas]
+B --> C{Documentos identificam a mesma versão e objeto?}
+C -->|Não| D[Conflito documental; preservar ambos e pedir esclarecimento]
+D --> B
+C -->|Sim| E[Separar edital, resultado, contrato e minuta]
+E --> F{Contrato assinado comprovado?}
+F -->|Não| G[Não chamar minuta ou homologação de contrato]
+F -->|Sim| H[Registrar obrigação contratual e vigência]
+G --> I[Manter fase documental disponível]
+H --> I
+I --> J{Quantidade e unidade físicas documentadas?}
+J -->|Não| K[Quantidade ausente; lote igual a 1 não vira área ou horas]
+J -->|Sim| L[Quantidade da fase, unidade e item original]
+K --> M[Ver origem, página e limites]
+L --> M
+M --> N{Retificação, cancelamento ou resultado deserto?}
+N -->|Retificação| O[Substituir observação; não somar versões]
+N -->|Cancelado ou deserto| P[Não apresentar aquisição concluída]
+N -->|Sem alteração| Q[Manter observação elegível]
+O --> R[Histórico por obrigação e fase]
+P --> R
+Q --> R
+R --> S[Pagamentos em fluxo próprio; consumo sem prova continua ausente]
+S --> T[Voltar ao mesmo item, comprador e recorte]

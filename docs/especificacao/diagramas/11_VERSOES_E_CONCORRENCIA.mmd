@@ -1,0 +1,15 @@
+flowchart TD
+A[Abrir cenário autorizado] --> B[Carregar snapshot e versão esperada]
+B --> C[Editar seleção, parâmetros ou preço]
+C --> D{Salvar, cancelar ou desfazer?}
+D -->|Cancelar| E[Manter versão anterior]
+D -->|Desfazer| F[Restaurar alteração local anterior]
+D -->|Salvar| G{If-Match coincide com versão vigente?}
+G -->|Não| H[Conflito; preservar edição e comparar versões]
+H --> I[Reaplicar escolhas explicitamente sobre nova base]
+I --> G
+G -->|Sim| J[Transação grava derivada imutável]
+J --> K[Invalidar revisão da derivada, manter anterior]
+K --> L[Comparar antes/depois e continuar revisão]
+E --> L
+F --> L

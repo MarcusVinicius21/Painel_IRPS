@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.png binary
+*.ttf binary
+*.woff* binary
+# Preserve the exact original V4 bytes, including its line endings.
+backend/irps_core/*.py -text
+dados/municipios_118_origem.csv -text

@@ -1,0 +1,17 @@
+flowchart TD
+A[Abrir espaço da empresa] --> B{Servidor autoriza organização e ação?}
+B -->|Não em produção| C[Negar sem expor custos]
+B -->|Demo identificada| D[Usar apenas valores fictícios]
+B -->|Sim| E[Informar Q de venda, aquisição e variável]
+D --> E
+E --> F[Informar venda, frete, fixos e tributos]
+F --> G{Campos conhecidos, não negativos e taxa menor que 100%?}
+G -->|Não| H[Explicar erro; custo vazio não vira zero]
+H --> F
+G -->|Sim| I[Receita, custo total e resultado]
+I --> J{Q ou receita sem base?}
+J -->|Sim| K[Margem/equilíbrio ausentes; manter eventual perda fixa]
+J -->|Não| L[Margem, acréscimo e equilíbrio arredondado para cima]
+K --> M[Salvar/exportar na mesma organização]
+L --> M
+M --> N[Não incluir em relatório público ou necessidade municipal]

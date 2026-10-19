@@ -1,0 +1,18 @@
+flowchart TD
+A[Arrastar ou escolher lote autorizado] --> B{Formato e tamanho aceitos?}
+B -->|Não| C[Erro do arquivo; manter demais itens do lote]
+B -->|Sim| D[Preservar original e calcular identidade de conteúdo]
+D --> E{Duplicado?}
+E -->|Sim| F[Referenciar original sem duplicar item]
+E -->|Não| G{Leitor disponível?}
+G -->|Não na demo binária| H[Recebimento local identificado, sem falsa extração]
+G -->|Sim| I[Extrair campos com página/célula e confiança]
+I --> J{Conflito, unidade ou confiança insuficiente?}
+J -->|Sim| K[Revisar campo e conferir documento]
+J -->|Não| L[Conferir vínculo e seleção]
+K --> L
+L --> M[Adicionar somente itens conferidos; parâmetros municipais próprios]
+C --> N[Retomar falhas sem repetir sucesso]
+F --> N
+H --> N
+M --> N

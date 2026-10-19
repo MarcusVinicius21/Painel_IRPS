@@ -1,0 +1,22 @@
+flowchart TD
+A[Abrir seletor com conjunto atual] --> B[Buscar por nome, UF ou IBGE]
+B --> C{Escopo da seleção em lote}
+C -->|Resultados filtrados| D[Adicionar IDs do resultado declarado]
+C -->|Cadastro completo| E[Selecionar 118 identidades do exemplo]
+C -->|Individual| F[Incluir ou retirar ID]
+D --> G[Contar selecionados e visíveis separadamente]
+E --> G
+F --> G
+G --> H{Aplicar ou cancelar?}
+H -->|Cancelar ou Escape| I[Descartar rascunho e devolver foco]
+H -->|Aplicar| J[Atualizar conjunto; invalidar revisão]
+J --> K{Modo atual}
+K -->|A| L[Preservar Q das cidades restantes]
+K -->|B| M[Exigir nova confirmação de meta]
+L --> N[Oferecer desfazer e mostrar impacto]
+M --> N
+N --> O{Desfazer?}
+O -->|Sim| P[Restaurar conjunto e revisão anteriores]
+O -->|Não| Q[Continuar cenário]
+I --> Q
+P --> Q

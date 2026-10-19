@@ -1,0 +1,53 @@
+{
+  "scope": "Amostras públicas preservadas da execução anterior; sem nova coleta neste envio. Não representam pagamentos ou consumo.",
+  "original_capture_sha256": "4d34784ecde34ae4cc2fababfc0eb7be67d445f1e16e26fae6759e8d2cb32abb",
+  "total_original_records": 32,
+  "selected_records": [
+    {
+      "provider": "PNCP",
+      "description": "eventual aquisição de TÉCNICO HOSPITALAR: SOLDA OU LÂMINA PARA CONEXÃO ESTÉRIL COM 02 (dois) EQUIPAMENTOS DE CONEXÃO ESTÉRIL EM COMODATO",
+      "unit": null,
+      "quantity": null,
+      "unit_price": null,
+      "amount": "275788.80000000",
+      "phase": "publicado_estimado",
+      "event_date": "2026-10-18",
+      "buyer": "FUNDACAO SANTA CASA DE MISERICORDIA DO PARA",
+      "cnpj": "04929345000185",
+      "municipality_ibge": null,
+      "url": "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=20261018&dataFinal=20261019&codigoModalidadeContratacao=6&pagina=1&tamanhoPagina=10",
+      "consulted_at": "2026-10-19T12:51:09.882170-03:00"
+    },
+    {
+      "provider": "PNCP_ITENS",
+      "description": "AGULHA GENGIVAL CURTA DESCARTÁVEL, 30G, CÂNULA EM AÇO INOX  SILICONIZADA, BISEL TRIGACETADO, CAIXA COM 100 UNIDADES",
+      "unit": "CAIXA",
+      "quantity": "330.00000000",
+      "unit_price": "48.84000000",
+      "amount": "16117.20000000",
+      "phase": "publicado_estimado",
+      "event_date": "2026-10-19",
+      "buyer": "MUNICIPIO DE IPATINGA",
+      "cnpj": "19876424000142",
+      "municipality_ibge": "3131307",
+      "url": "https://pncp.gov.br/api/pncp/v1/orgaos/19876424000142/compras/2026/142/itens?pagina=1&tamanhoPagina=10",
+      "consulted_at": "2026-10-19T13:02:33.363543-03:00"
+    },
+    {
+      "provider": "PNCP_ITENS",
+      "description": "0006686 - ESFIGMOMANOMETRO, AJUSTE ANALOGICO, ANEROIDE, TIPO DE BRACO FAIXA DE OPERACAO ATE 300 MMHG, MATERIAL BRACADEIRA EM NYLON, TIPO FECHO EM VELCRO, TAMANHO ADULTO",
+      "unit": "Unidade",
+      "quantity": "2.00000000",
+      "unit_price": null,
+      "amount": null,
+      "phase": "publicado_estimado",
+      "event_date": "2026-10-18",
+      "buyer": "MUNICIPIO DE MACAU",
+      "cnpj": "08184434000109",
+      "municipality_ibge": null,
+      "url": "https://pncp.gov.br/api/pncp/v1/orgaos/08184434000109/compras/2026/340/itens?pagina=1&tamanhoPagina=10",
+      "consulted_at": "2026-10-19T13:02:34.545441-03:00"
+    }
+  ],
+  "internal_ids_removed": true
+}

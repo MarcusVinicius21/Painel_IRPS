@@ -1,0 +1,15 @@
+flowchart TD
+A[Nova família, variante ou regra] --> B[Definir descrição, dimensão, unidade e atributos]
+B --> C[Definir entradas, fontes, horizonte e algoritmo seguro]
+C --> D{Há justificativa técnica e responsável?}
+D -->|Não| E[Cadastrar item sem quantidade conclusiva]
+D -->|Sim| F[Testar limites, ausência, precisão e casos independentes]
+F --> G{Revisão técnica aceita?}
+G -->|Não| C
+G -->|Sim| H[Publicar versão do método e equivalências]
+H --> I{Cenário anterior depende da regra?}
+I -->|Sim| J[Oferecer derivada com diferenças; não reescrever aprovado]
+I -->|Não| K[Disponibilizar para novos cálculos]
+J --> K
+E --> L[Fila de curadoria contextual]
+L --> C

@@ -1,0 +1,19 @@
+flowchart TD
+A[Abrir compra ou município] --> B[Resolver CNPJ e unidade compradora]
+B --> C{Vínculo territorial comprovado?}
+C -->|Não| D[Registrar pendência sem escolher município por suposição]
+D --> B
+C -->|Sim| E{Natureza institucional}
+E -->|Universidade| F[Comprador federal; não atribuir à prefeitura]
+E -->|Consórcio| G[Separar sede, comprador e participantes]
+E -->|Município ou autarquia| H[Manter identidade do órgão próprio]
+F --> I[Mostrar compras do recorte por órgão]
+G --> I
+H --> I
+I --> J{Adicionar participante oficial?}
+J -->|Sim| K{Ato e anuência vigentes?}
+K -->|Não| L[Cadastro selecionável; aprovação pendente]
+K -->|Sim| M[Participação por cenário e objeto]
+J -->|Não| N[Voltar ao histórico do órgão]
+L --> N
+M --> N

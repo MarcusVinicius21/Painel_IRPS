@@ -1,0 +1,19 @@
+flowchart TD
+A[Cidade, órgãos, fonte, janela e objeto] --> B{Jurisdição e acesso aplicáveis?}
+B -->|Não| C[Registrar fora de jurisdição ou sem autorização]
+B -->|Sim| D[Coleta por páginas/janelas com checkpoint]
+D --> E{Resultado}
+E -->|429 ou timeout| F[Respeitar limite, repetir com espera e manter último sucesso]
+E -->|TLS inválido| G[Interromper sem bypass; corrigir confiança]
+E -->|Disponível| H[Gravar bruto e versão; normalizar]
+F --> D
+G --> I[Fonte indisponível no recorte]
+H --> J{Paginação e órgãos completos no recorte?}
+J -->|Não| K[Cobertura parcial, com cursor e lacunas]
+J -->|Sim sem resultados| L[Vazio somente neste recorte]
+J -->|Sim com resultados| M[Resultados e atualização datada]
+C --> N[Mostrar matriz e próxima prova]
+I --> N
+K --> N
+L --> N
+M --> N

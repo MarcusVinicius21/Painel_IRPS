@@ -1,0 +1,18 @@
+flowchart TD
+A[Escolher item e horizonte] --> B[Meta física, justificativa e responsável]
+B --> C[Participantes, pesos, pisos, tetos e passo]
+C --> D{Meta e limites em passos válidos?}
+D -->|Não| E[Explicar inviabilidade; não distribuir]
+E --> B
+D -->|Sim| F{Soma dos pisos menor ou igual à meta e meta cabe nos tetos?}
+F -->|Não| E
+F -->|Sim| G[Atribuir pisos e calcular saldo]
+G --> H{Há peso positivo e capacidade?}
+H -->|Não com saldo| E
+H -->|Sim| I[Saturar capacidades e distribuir saldo]
+I --> J[Maiores restos da mesma rodada; desempate IBGE]
+J --> K[Conferir soma, limites e memória por cidade]
+K --> L{Mudou participante ou premissa?}
+L -->|Sim| M[Invalidar revisão; não reaplicar meta antiga]
+M --> B
+L -->|Não| N[Revisão competente da nova versão]
