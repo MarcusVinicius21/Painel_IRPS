@@ -7,7 +7,7 @@ import calendar,hashlib,json,re
 from .db import encoded,identifier,normalize
 from .security import fail
 from .schemas import ScenarioCreate,Snapshot
-from . import scenarios
+from . import scenarios,catalogue
 
 VERSION='opportunities-v1'
 MAX_FACTS=20000
@@ -56,7 +56,9 @@ def facts(ctx,f,include_inactive=False):
         JOIN source_observation s ON s.id=f.source_id WHERE """+' AND '.join(where)+' ORDER BY f.event_date,f.event_identity LIMIT :cap',params)
     if len(rows)>MAX_FACTS:fail(422,'O recorte tem muitos registros para esta análise. Reduza o período ou selecione municípios.','ANALYSIS_LIMIT')
     if f.categories:
-        reviewed=ctx.db.all('SELECT members FROM opportunity_equivalence WHERE org_id=:o AND category=ANY(:categories)',{'o':ctx.org_id,'categories':f.categories})
+        reviewed=(catalogue.active_products(ctx) if f.grouping=='canonical' else
+            ctx.db.all('SELECT members FROM opportunity_equivalence WHERE org_id=:o AND category=ANY(:categories)',{'o':ctx.org_id,'categories':f.categories}))
+        reviewed=[group for group in reviewed if group['category'] in f.categories]
         members={(m['id'],m['version']) for e in reviewed for m in e['members']}
         rows=[r for r in rows if (r['metadata'].get('category') or r['family']) in f.categories or (r['item_id'],r['item_version']) in members]
     return rows,cities
@@ -67,6 +69,10 @@ def coverage(ctx,f,cities):
         if (not f.months or current.month in f.months) and (not f.years or current.year in f.years):days.append(current)
         current+=timedelta(days=1)
     denominator=len(days)*len(cities)
+    if f.dataset=='official' and f.phase=='publicado_estimado' and not f.modalities:
+        return {'phase':f.phase,'verified_days':None,'requested_city_days':denominator,
+            'verified_ratio':None,'complete_months':[],'proof':[],'status':'not_established',
+            'dataset':f.dataset,'message':'Escolha as modalidades para medir as consultas planejadas. Sem esse recorte, não há percentual verificável.'},set()
     if f.dataset=='official' and f.phase!='publicado_estimado':
         # Result endpoints enumerate known items reached through publication searches.
         # Their consultation time is evidence of that item query, never a complete
@@ -201,8 +207,23 @@ def review_context_fingerprint(rows,definition,filters,cities,cov):
 
 def build(ctx,f):
     rows,cities=facts(ctx,f);cov,complete=coverage(ctx,f,cities)
-    equivalences=ctx.db.all('SELECT * FROM opportunity_equivalence WHERE org_id=:o ORDER BY created_at DESC,id',{'o':ctx.org_id})
-    assigned,definitions=equivalence_index(equivalences)
+    if f.grouping=='canonical':
+        assigned={};definitions={}
+        for product in catalogue.active_products(ctx):
+            if product['classification']!=f.dataset:continue
+            key='p-'+str(product['id'])
+            definitions[key]={'key':key,'name':product['name'],'category':product['category'],
+                'unit':product['unit_key'],'package_signature':product['package_signature'],
+                'members':product['members'],'canonical_product':True,
+                'equivalence':{'reviewed':True,'justification':product['justification'],
+                    'evidence':product['evidence'],'reviewed_at':product['created_at']}}
+            for member in product['members']:
+                ref=(member['id'],member['version'])
+                if ref in assigned:fail(409,'Um item aparece em dois produtos revisados. Confira o catálogo.','CANONICAL_OVERLAP')
+                assigned[ref]=key
+    else:
+        equivalences=ctx.db.all('SELECT * FROM opportunity_equivalence WHERE org_id=:o ORDER BY created_at DESC,id',{'o':ctx.org_id})
+        assigned,definitions=equivalence_index(equivalences)
     grouped=defaultdict(list)
     for row in rows:
         key=assigned.get((row['item_id'],row['item_version'])) or item_key(row['item_id'],row['item_version'],row['unit'])
@@ -275,7 +296,7 @@ def equivalence_create(ctx,body):
 
 def review_save(ctx,key,body):
     ctx.require('opportunity.manage')
-    if not re.fullmatch(r'(i-[0-9a-f]{24}|g-[0-9a-f-]{36})',key):fail(422,'Confira a oportunidade escolhida.')
+    if not re.fullmatch(r'(i-[0-9a-f]{24}|[gp]-[0-9a-f-]{36})',key):fail(422,'Confira a oportunidade escolhida.')
     ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':ctx.org_id+':review:'+key})
     candidates,_,_=build(ctx,body.filters)
     current=next((candidate for candidate in candidates if candidate['key']==key),None)

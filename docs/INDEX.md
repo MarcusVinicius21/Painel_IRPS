@@ -8,6 +8,7 @@
 - [Integridade dos oito módulos V4](validacao/integridade-v4.json).
 - [Galeria revisada](validacao/GALERIA.md).
 - [Resultados de Oportunidades](validacao/OPORTUNIDADES_RESULTADOS.md).
+- [Piloto real de cobertura em MG](validacao/PILOTO_COBERTURA_CATALOGO.md) e [comprovantes resumidos](validacao/PILOTO_PNCP_MG_2026-10-20.json).
 
 ## Implementação local entregue
 
@@ -23,6 +24,7 @@
 - [LOG TESTES](implementacao/LOG_TESTES.md).
 - [MATRIZ FONTES](implementacao/MATRIZ_FONTES.md).
 - [OPORTUNIDADES CONSORMULTI](implementacao/OPORTUNIDADES_CONSORMULTI.md).
+- [COBERTURA HISTÓRICA E CATÁLOGO INTELIGENTE](implementacao/COBERTURA_HISTORICA_CATALOGO.md).
 - [FLUXO DE OPORTUNIDADES](implementacao/FLUXO_OPORTUNIDADES.mmd).
 - [MATRIZ INTERACOES](implementacao/MATRIZ_INTERACOES.md).
 - [MATRIZ SEGURANCA](implementacao/MATRIZ_SEGURANCA.md).

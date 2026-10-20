@@ -45,9 +45,10 @@ def public_get(url,params=None,transport=None):
 def cached_get(ctx,provider,url,params=None,transport=None):
  resolved=str(httpx.Request('GET',url,params=params).url)
  if transport is None:
-  cached=ctx.db.one("SELECT body,http_status FROM source_observation WHERE provider=:p AND url=:u AND classification='official' AND consulted_at>now()-interval '5 minutes' ORDER BY consulted_at DESC LIMIT 1",{'p':provider,'u':resolved})
+  cached=ctx.db.one("SELECT body,http_status FROM source_observation WHERE provider=:p AND url=:u AND classification='official' AND http_status IN (200,204) AND consulted_at>now()-interval '5 minutes' ORDER BY consulted_at DESC LIMIT 1",{'p':provider,'u':resolved})
   if cached:
-   raw=cached['body'].encode();return resolved,cached['http_status'],raw,json.loads(raw,parse_float=Decimal)
+   raw=cached['body'].encode()
+   return resolved,cached['http_status'],raw,None if cached['http_status']==204 else json.loads(raw,parse_float=Decimal)
  return public_get(url,params,transport)
 
 def observe(ctx,provider,url,status,content,metadata):
@@ -117,7 +118,9 @@ def sync(ctx,args,transport=None):
   if not 0<=(end-start).days<=6:fail(422,'Consulte até sete dias por vez nesta rodada.')
   params={'dataInicial':start.strftime('%Y%m%d'),'dataFinal':end.strftime('%Y%m%d'),'codigoModalidadeContratacao':args['modality'],'pagina':args['page'],'tamanhoPagina':args['size']}
   if args.get('municipality_ibge'):params['codigoMunicipioIbge']=args['municipality_ibge']
-  url,status,content,data=cached_get(ctx,provider,'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao',params,transport)
+  if provider not in ('PNCP','PNCP_ATUALIZACAO'):fail(422,'Esta fonte ainda não está configurada para consulta.')
+  endpoint='atualizacao' if provider=='PNCP_ATUALIZACAO' else 'publicacao'
+  url,status,content,data=cached_get(ctx,provider,'https://pncp.gov.br/api/consulta/v1/contratacoes/'+endpoint,params,transport)
   if data is None:data={'data':[],'totalPaginas':0}
   if not isinstance(data,dict) or not isinstance(data.get('data'),list):raise SourceFault('INVALID_SOURCE_FORMAT')
   sid=observe(ctx,provider,url,status,content,meta);count=0

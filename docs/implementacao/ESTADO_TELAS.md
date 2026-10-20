@@ -28,6 +28,7 @@ Todas as telas abaixo usam o serviço local ou a identidade autenticada. Não h�
 | `negocio` | Custo, venda, despesas, tributos, lucro/margem e versões privadas | Hipóteses preenchidas pelo usuário; sem conclusão tributária |
 | `documentos` | Vários arquivos, leitura local, original, localização e conferência | Não aplica extração automaticamente; sem OCR/antivírus |
 | `fontes` | Consultas reais, jobs, origem/data e cobertura | Recortes pequenos e fontes adicionais pendentes |
+| `catalogo-inteligente` | Produtos revisados, sugestões de equivalência, preços pontuais Compras.gov.br e inventário de cobertura por município/órgão/fonte/fase | Cobertura histórica completa e viabilidade jurídica/operacional não presumidas |
 | `alertas` | Consulta guardada por ator; remoção confirmada | Não envia notificações automáticas |
 | `administracao` | Meu acesso e minhas atividades | Não é administração completa de usuários |
 | Assistente contextual | Perguntas e fontes por ferramentas offline | Sem modelo pago ou interpretação universal de linguagem |

@@ -1,0 +1,268 @@
+{
+  "consulted_at_utc": "2026-10-20T05:44:17.603032+00:00",
+  "collection_id": "8f9c6a32-afa6-4dcd-8a9b-7ed01e9a7f11",
+  "scope": {
+    "end": "2025-09-07",
+    "pca": false,
+    "atas": false,
+    "size": 10,
+    "items": true,
+    "start": "2025-09-01",
+    "results": true,
+    "updates": false,
+    "contracts": false,
+    "max_pages": 100,
+    "modalities": [
+      6
+    ],
+    "publications": true,
+    "municipalities": [
+      "3131307",
+      "3101607",
+      "3169703"
+    ],
+    "contract_updates": false,
+    "organization_cnpjs": []
+  },
+  "state": "limited",
+  "pages_completed": 100,
+  "source_requests": 100,
+  "error_code": null,
+  "coverage_basis": "Consultas concluídas nos recortes configurados. Ausência de registro não prova ausência de compra.",
+  "records": [
+    {
+      "municipality_ibge": "3101607",
+      "municipality_name": "Alfenas",
+      "provider": "PNCP",
+      "phase": "publicado_estimado",
+      "modality": 6,
+      "tasks": 1,
+      "completed_tasks": 1,
+      "records_returned": 6,
+      "planned_days": 7,
+      "reconciled_days": 7,
+      "request_completion_ratio": "1",
+      "source_completeness_ratio": null,
+      "status": "request_reconciled",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=20250901&dataFinal=20250907&codigoModalidadeContratacao=6&pagina=1&tamanhoPagina=10&codigoMunicipioIbge=3101607",
+          "sha256": "9eb795fb85a9fe7cf8c8d491bcfb15ad584d81ca3b0e99cca767deb6f6dadc9f",
+          "consulted_at": "2026-10-20T02:29:11.494642-03:00",
+          "record_count": 6,
+          "task_id": "bbffa7e9-d0e2-42f3-b53a-b6bf804a74aa"
+        }
+      ]
+    },
+    {
+      "municipality_ibge": "3101607",
+      "municipality_name": "Alfenas",
+      "provider": "PNCP_ITENS",
+      "phase": "publicado_estimado",
+      "modality": null,
+      "tasks": 33,
+      "completed_tasks": 33,
+      "records_returned": 291,
+      "planned_days": null,
+      "reconciled_days": null,
+      "request_completion_ratio": null,
+      "source_completeness_ratio": null,
+      "status": "partial",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/11436319000180/compras/2025/26/itens?pagina=14&tamanhoPagina=10",
+          "sha256": "a5bfe9686a4cb32715d498cbdc5855a01f2c3fc9d6f788186d9dc3562388bcd2",
+          "consulted_at": "2026-10-20T02:31:12.255739-03:00",
+          "record_count": 10,
+          "task_id": "75bae4cf-2e95-4b9d-a805-15a194781bc5"
+        },
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/11436319000180/compras/2025/26/itens?pagina=25&tamanhoPagina=10",
+          "sha256": "be3300201136036cd21101aef832218fddee5066a45beb838659ffe6c666303c",
+          "consulted_at": "2026-10-20T02:31:20.591213-03:00",
+          "record_count": 10,
+          "task_id": "0fae6cce-3f93-4b94-b4c7-7ca1e2ea4ab7"
+        },
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/11436319000180/compras/2025/26/itens?pagina=10&tamanhoPagina=10",
+          "sha256": "669e9f44b25a60e74c2f571a7543ef0bdb7a5d2f57843cb9189cc4cbda34f9ab",
+          "consulted_at": "2026-10-20T02:30:34.249949-03:00",
+          "record_count": 10,
+          "task_id": "f5f1411e-5427-4c15-9366-f87121d3e67c"
+        }
+      ]
+    },
+    {
+      "municipality_ibge": "3101607",
+      "municipality_name": "Alfenas",
+      "provider": "PNCP_RESULTADOS",
+      "phase": "homologado",
+      "modality": null,
+      "tasks": 263,
+      "completed_tasks": 40,
+      "records_returned": 125,
+      "planned_days": null,
+      "reconciled_days": null,
+      "request_completion_ratio": null,
+      "source_completeness_ratio": null,
+      "status": "partial",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/11436319000180/compras/2025/26/itens/170/resultados",
+          "sha256": "17319ca7a45da2b02d2a66515cec6a2138ad92529dc5a63961c44df6e4f3068f",
+          "consulted_at": "2026-10-20T02:32:09.727523-03:00",
+          "record_count": 2,
+          "task_id": "434b8e25-4c20-409c-bb60-736e63f1ec09"
+        },
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/11436319000180/compras/2025/26/itens/133/resultados",
+          "sha256": "6bd1c3ffba2c53b61c554532389e74762f8be80e9be96e2747c152c5b7916c24",
+          "consulted_at": "2026-10-20T02:32:12.895363-03:00",
+          "record_count": 3,
+          "task_id": "41e28670-3345-4857-b7cb-5567169127a5"
+        },
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/11436319000180/compras/2025/26/itens/54/resultados",
+          "sha256": "311bd906a67346f4eab4d65c58d996ea3a7c8aa562639cb26c29673b1ae76ff1",
+          "consulted_at": "2026-10-20T02:32:17.073252-03:00",
+          "record_count": 5,
+          "task_id": "06d60836-d417-497a-bcd3-f9432adc3433"
+        }
+      ]
+    },
+    {
+      "municipality_ibge": "3131307",
+      "municipality_name": "Ipatinga",
+      "provider": "PNCP",
+      "phase": "publicado_estimado",
+      "modality": 6,
+      "tasks": 1,
+      "completed_tasks": 1,
+      "records_returned": 2,
+      "planned_days": 7,
+      "reconciled_days": 7,
+      "request_completion_ratio": "1",
+      "source_completeness_ratio": null,
+      "status": "request_reconciled",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=20250901&dataFinal=20250907&codigoModalidadeContratacao=6&pagina=1&tamanhoPagina=10&codigoMunicipioIbge=3131307",
+          "sha256": "106e0050f037cdbb82eb940021779eb84bf999e26860a48dfef93d4cb4a9cd9d",
+          "consulted_at": "2026-10-20T02:29:11.718906-03:00",
+          "record_count": 2,
+          "task_id": "65382768-0e78-4129-86b4-c443671645e4"
+        }
+      ]
+    },
+    {
+      "municipality_ibge": "3131307",
+      "municipality_name": "Ipatinga",
+      "provider": "PNCP_ITENS",
+      "phase": "publicado_estimado",
+      "modality": null,
+      "tasks": 2,
+      "completed_tasks": 1,
+      "records_returned": 5,
+      "planned_days": null,
+      "reconciled_days": null,
+      "request_completion_ratio": null,
+      "source_completeness_ratio": null,
+      "status": "partial",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/00853908000148/compras/2025/12/itens?pagina=1&tamanhoPagina=10",
+          "sha256": "7e99341b3cdca43d917ff5e3afabc483a8755e1f790218665fde561f75200261",
+          "consulted_at": "2026-10-20T02:29:14.188748-03:00",
+          "record_count": 5,
+          "task_id": "83e77a18-be67-437f-8608-440b4ef49b58"
+        }
+      ]
+    },
+    {
+      "municipality_ibge": "3131307",
+      "municipality_name": "Ipatinga",
+      "provider": "PNCP_RESULTADOS",
+      "phase": "homologado",
+      "modality": null,
+      "tasks": 5,
+      "completed_tasks": 1,
+      "records_returned": 1,
+      "planned_days": null,
+      "reconciled_days": null,
+      "request_completion_ratio": null,
+      "source_completeness_ratio": null,
+      "status": "partial",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/00853908000148/compras/2025/12/itens/3/resultados",
+          "sha256": "e4e262f0ea0da04930c63907fb8009c2ba2b4d359b8bdca8c460d68be22d239f",
+          "consulted_at": "2026-10-20T02:32:10.028431-03:00",
+          "record_count": 1,
+          "task_id": "3100551a-9db8-4883-a6bd-f3c19bebda5b"
+        }
+      ]
+    },
+    {
+      "municipality_ibge": "3169703",
+      "municipality_name": "Turmalina",
+      "provider": "PNCP",
+      "phase": "publicado_estimado",
+      "modality": 6,
+      "tasks": 1,
+      "completed_tasks": 1,
+      "records_returned": 4,
+      "planned_days": 7,
+      "reconciled_days": 7,
+      "request_completion_ratio": "1",
+      "source_completeness_ratio": null,
+      "status": "request_reconciled",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=20250901&dataFinal=20250907&codigoModalidadeContratacao=6&pagina=1&tamanhoPagina=10&codigoMunicipioIbge=3169703",
+          "sha256": "2034770d3d6223d0abc74912f406d54d826af94c60a1d62edf909bd84a6e91e1",
+          "consulted_at": "2026-10-20T02:29:11.164935-03:00",
+          "record_count": 4,
+          "task_id": "7a77b609-27ce-46cd-880c-8d1ae23d2a23"
+        }
+      ]
+    },
+    {
+      "municipality_ibge": "3169703",
+      "municipality_name": "Turmalina",
+      "provider": "PNCP_ITENS",
+      "phase": "publicado_estimado",
+      "modality": null,
+      "tasks": 25,
+      "completed_tasks": 22,
+      "records_returned": 210,
+      "planned_days": null,
+      "reconciled_days": null,
+      "request_completion_ratio": null,
+      "source_completeness_ratio": null,
+      "status": "partial",
+      "proof": [
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/25324187000100/compras/2025/94/itens?pagina=4&tamanhoPagina=10",
+          "sha256": "8d9fe3feb77d889b48ac7f8ac00c38d624d45e68caf15b0393333126dc37111d",
+          "consulted_at": "2026-10-20T02:31:25.187165-03:00",
+          "record_count": 10,
+          "task_id": "d021ebf9-0792-4275-acba-37ba688ecd88"
+        },
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/25324187000100/compras/2025/92/itens?pagina=1&tamanhoPagina=10",
+          "sha256": "95d69a6f67858b859756141be6c2d3a229f022825a32b0506acab090ec37b8a6",
+          "consulted_at": "2026-10-20T02:29:11.876169-03:00",
+          "record_count": 10,
+          "task_id": "34286478-1d7b-49a5-9869-627fa585f30a"
+        },
+        {
+          "url": "https://pncp.gov.br/api/pncp/v1/orgaos/25324187000100/compras/2025/94/itens?pagina=5&tamanhoPagina=10",
+          "sha256": "1b207c9c5f58cbf77327e8e5a2a07cdb1654476c3f275450950ecf55b4b7cf2f",
+          "consulted_at": "2026-10-20T02:31:28.023156-03:00",
+          "record_count": 10,
+          "task_id": "2583037b-d915-4ca9-adb6-b12a0a0e32d0"
+        }
+      ]
+    }
+  ]
+}

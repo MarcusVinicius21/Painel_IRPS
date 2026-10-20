@@ -1,6 +1,6 @@
 """Durable, bounded PNCP pagination. Each successful page commits with its checkpoint."""
 from datetime import date,datetime,timedelta,timezone
-import hashlib,json,time
+import hashlib,json,re,time
 from .db import identifier,encoded
 from .security import fail
 from . import sources,history_sources
@@ -32,8 +32,18 @@ def create(ctx,body):
         if body.publications:
             for city in body.municipalities:
                 for modality in body.modalities:queue(ctx,cid,'PNCP',{**dates,'municipality_ibge':city,'modality':modality,'provider':'PNCP'})
+        if body.updates:
+            for city in body.municipalities:
+                for modality in body.modalities:queue(ctx,cid,'PNCP_ATUALIZACAO',{**dates,'municipality_ibge':city,'modality':modality,'provider':'PNCP_ATUALIZACAO'})
         if body.contracts:
             for cnpj in body.organization_cnpjs:queue(ctx,cid,'PNCP_CONTRATOS',{**dates,'cnpj':cnpj})
+        if body.contract_updates:
+            for cnpj in body.organization_cnpjs:queue(ctx,cid,'PNCP_CONTRATOS_ATUALIZACAO',{**dates,'cnpj':cnpj})
+        if body.pca:
+            for cnpj in body.organization_cnpjs:queue(ctx,cid,'PNCP_PCA',{'cnpj':cnpj,'year':start.year})
+        for cnpj in body.organization_cnpjs:
+            if body.atas:queue(ctx,cid,'PNCP_ATAS_ATUALIZACAO',{**dates,'cnpj':cnpj})
+            if body.pca:queue(ctx,cid,'PNCP_PCA_ATUALIZACAO',{**dates,'cnpj':cnpj})
         start=end+timedelta(days=1)
     ctx.audit('history.created',cid,{'municipalities':len(body.municipalities),'network_requests':0})
     return get(ctx,cid)
@@ -56,16 +66,29 @@ def action(ctx,cid,action,max_pages=None):
 
 def children(ctx,cid,scope,provider,args,result):
     observation=ctx.db.one('SELECT body FROM source_observation WHERE id=:s',{'s':result['source_id']})
-    data=json.loads(observation['body']) if observation else None
-    if provider in ('PNCP','PNCP_CONTRATOS'):
+    data=json.loads(observation['body']) if observation and observation['body'] else None
+    if provider in ('PNCP','PNCP_ATUALIZACAO','PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO',
+                    'PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
         total=result.get('expected_pages')
         if not isinstance(total,int) or total<0:raise sources.SourceFault('PAGINATION_UNVERIFIED')
         if total>10000:raise sources.SourceFault('SOURCE_PAGE_RANGE')
         if args['page']<total:queue(ctx,cid,provider,{**args,'page':args['page']+1})
-        if provider=='PNCP' and scope['items']:
+        if provider in ('PNCP','PNCP_ATUALIZACAO'):
             for record in (data or {}).get('data',[]):
                 parent=ctx.db.one("SELECT id FROM procurement_fact WHERE provider='PNCP' AND obligation_id=:i AND is_current AND classification='official'",{'i':record.get('numeroControlePNCP')})
-                if parent:queue(ctx,cid,'PNCP_ITENS',{'provider':'PNCP_ITENS','procurement_id':str(parent['id']),'page':1,'size':scope['size']})
+                if not parent:continue
+                if scope['items']:queue(ctx,cid,'PNCP_ITENS',{'provider':'PNCP_ITENS','procurement_id':str(parent['id']),'page':1,'size':scope['size']})
+                entity=record.get('orgaoEntidade') or {};cnpj=entity.get('cnpj')
+                valid_cnpj=bool(re.fullmatch(r'\d{14}',str(cnpj or '')))
+                if valid_cnpj and scope.get('atas'):queue(ctx,cid,'PNCP_ATAS',{'procurement_id':str(parent['id'])})
+                if valid_cnpj and scope.get('pca') and isinstance(record.get('anoCompra'),int):
+                    queue(ctx,cid,'PNCP_PCA',{'cnpj':str(cnpj),'year':record['anoCompra']})
+                if valid_cnpj and scope.get('atas'):
+                    queue(ctx,cid,'PNCP_ATAS_ATUALIZACAO',{'cnpj':str(cnpj),'start_date':args['start_date'],
+                        'end_date':args['end_date'],'page':1,'size':scope['size']})
+                if valid_cnpj and scope.get('pca'):
+                    queue(ctx,cid,'PNCP_PCA_ATUALIZACAO',{'cnpj':str(cnpj),'start_date':args['start_date'],
+                        'end_date':args['end_date'],'page':1,'size':scope['size']})
     elif provider=='PNCP_ITENS':
         if not isinstance(data,list):raise sources.SourceFault('INVALID_ITEM_FORMAT')
         # An exact full page schedules one more request; no count is inferred from a full page.
@@ -89,7 +112,11 @@ def advance(database,org,actor,cid,budget=1,transport=None):
             if collection['pages']>=collection['scope']['max_pages']:
                 db.execute("UPDATE history_collection SET state='limited',updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid});return {'pages':done}
             if db.one("SELECT id FROM history_task WHERE org_id=:o AND collection_id=:c AND state='running' AND lease_until>now()",{'o':org,'c':cid}):return {'pages':done}
-            task=db.one("SELECT * FROM history_task WHERE org_id=:o AND collection_id=:c AND (state IN ('ready','failed') OR (state='running' AND lease_until<now())) ORDER BY attempts,task_key LIMIT 1 FOR UPDATE SKIP LOCKED",{'o':org,'c':cid})
+            task=db.one("""SELECT * FROM history_task WHERE org_id=:o AND collection_id=:c
+                AND (state IN ('ready','failed') OR (state='running' AND lease_until<now()))
+                ORDER BY attempts,CASE provider WHEN 'PNCP' THEN 0 WHEN 'PNCP_ATUALIZACAO' THEN 0
+                  WHEN 'PNCP_RESULTADOS' THEN 1 WHEN 'PNCP_ITENS' THEN 2 ELSE 3 END,task_key
+                LIMIT 1 FOR UPDATE SKIP LOCKED""",{'o':org,'c':cid})
             if not task:
                 db.execute("UPDATE history_collection SET state='completed',updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid});return {'pages':done}
             pause=db.one('SELECT resume_after FROM source_backoff WHERE org_id=:o AND provider=:p AND resume_after>now()',{'o':org,'p':task['provider']})
@@ -101,8 +128,13 @@ def advance(database,org,actor,cid,budget=1,transport=None):
             with database.transaction(org,actor) as db:
                 ctx=sources.job_context(db,org,actor);ctx.require('sources.sync')
                 args=task['arguments'];provider=task['provider']
-                if provider=='PNCP_CONTRATOS':result=history_sources.contracts(ctx,args,transport)
+                if provider in ('PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO'):
+                    result=history_sources.contracts(ctx,args,transport,updated=provider.endswith('ATUALIZACAO'))
                 elif provider=='PNCP_RESULTADOS':result=history_sources.results(ctx,args,transport)
+                elif provider=='PNCP_ATAS':result=history_sources.atas(ctx,args,transport)
+                elif provider=='PNCP_PCA':result=history_sources.pca(ctx,args,transport)
+                elif provider in ('PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
+                    result=history_sources.updated_index(ctx,provider,args,transport)
                 else:result=sources.sync(ctx,args,transport)
                 children(ctx,cid,collection['scope'],provider,args,result)
                 db.execute('INSERT INTO history_page(org_id,collection_id,task_id,source_id,record_count,result) VALUES (:o,:c,:t,:s,:n,CAST(:r AS jsonb))',{'o':org,'c':cid,'t':task['id'],'s':result['source_id'],'n':result['records'],'r':encoded(result)})

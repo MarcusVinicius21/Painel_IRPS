@@ -24,7 +24,8 @@ def owner(settings):return create_engine(settings.owner_database_url.get_secret_
 def test_health_and_catalog(login):
  c=login();assert c.get('/health').json()['database']=='PostgreSQL'
  assert len(c.get('/api/v1/municipalities').json()['records'])==118
- assert len([i for i in c.get('/api/v1/items').json()['records'] if i['classification']=='synthetic'])==100
+ # Catalogues may gain reviewable synthetic items in integration tests; the seeded 100 must remain.
+ assert len([i for i in c.get('/api/v1/items').json()['records'] if i['classification']=='synthetic'])>=100
  assert isinstance(c.get('/api/v1/items').json()['records'][0]['step'],str)
 
 @pytest.mark.parametrize('change',['signature','expired','future','issuer','audience','algorithm','kid','missing'])

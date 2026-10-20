@@ -78,13 +78,15 @@ def results(ctx,args,transport=None):
     return {'provider':'PNCP_RESULTADOS','records':len(data),'new_revisions':new,'source_id':str(sid),'state':'partial','pages_fetched':1,
         'expected_pages':1,'scope':args,'phase':'homologado','payments_collected':False,'pagination':'Endpoint não recebe paginação no contrato consultado.'}
 
-def contracts(ctx,args,transport=None):
+def contracts(ctx,args,transport=None,updated=False):
     params={'dataInicial':date.fromisoformat(args['start_date']).strftime('%Y%m%d'),'dataFinal':date.fromisoformat(args['end_date']).strftime('%Y%m%d'),
         'pagina':args.get('page',1),'tamanhoPagina':args.get('size',10),'cnpjOrgao':args['cnpj']}
-    url,status,content,data=sources.cached_get(ctx,'PNCP_CONTRATOS','https://pncp.gov.br/api/consulta/v1/contratos',params,transport)
+    source_provider='PNCP_CONTRATOS_ATUALIZACAO' if updated else 'PNCP_CONTRATOS'
+    endpoint='https://pncp.gov.br/api/consulta/v1/contratos'+('/atualizacao' if updated else '')
+    url,status,content,data=sources.cached_get(ctx,source_provider,endpoint,params,transport)
     if data is None:data={'data':[],'totalPaginas':0}
     if not isinstance(data,dict) or not isinstance(data.get('data'),list):raise sources.SourceFault('INVALID_CONTRACT_FORMAT')
-    sid=observe(ctx,'PNCP_CONTRATOS',url,status,content,data,args);new=0
+    sid=observe(ctx,source_provider,url,status,content,data,args);new=0
     for record in data['data'][:args.get('size',10)]:
         entity=record.get('orgaoEntidade') or {};unit=record.get('unidadeOrgao') or {};cnpj=str(entity.get('cnpj') or '')
         if cnpj!=args['cnpj'] or not record.get('numeroControlePNCP'):continue
@@ -105,5 +107,79 @@ def contracts(ctx,args,transport=None):
                 'amount_kind':'valorInicial','global_value':sources.documented_number(record.get('valorGlobal')),
                 'receipt':record.get('receita'),'items_unavailable':True,'quantity_is_consumption':False,
                 'commitment_instrument_only':is_commitment,'financial_execution_proven':False}})
-    return {'provider':'PNCP_CONTRATOS','records':len(data['data']),'new_revisions':new,'source_id':str(sid),'state':'partial',
+    return {'provider':source_provider,'records':len(data['data']),'new_revisions':new,'source_id':str(sid),'state':'partial',
         'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'scope':args,'quantities_collected':False,'unit_prices_collected':False}
+
+
+def purchase_identity(ctx,procurement_id):
+    parent=ctx.db.one("SELECT * FROM procurement_fact WHERE id=:i AND provider='PNCP' AND classification='official'",{'i':procurement_id})
+    if not parent:fail(404,'A publicação de origem não está disponível.')
+    purchase=parent['metadata'].get('purchase') or {}
+    cnpj,year,sequence=purchase.get('cnpj'),purchase.get('year'),purchase.get('sequence')
+    if not re.fullmatch(r'\d{14}',str(cnpj or '')) or not isinstance(year,int) or not isinstance(sequence,int):
+        raise sources.SourceFault('INVALID_PURCHASE_IDENTITY')
+    return parent,cnpj,year,sequence
+
+
+def optional_not_found(ctx,provider,url,args,phase):
+    sid=sources.observe(ctx,provider,url,404,b'{}',{'scope':args,'not_found_unclassified':True,
+        'response_body_not_stored':True,'absence_of_plan_or_ata_not_proven':True})
+    return {'provider':provider,'records':0,'source_id':str(sid),'state':'not_found_unclassified',
+        'pages_fetched':1,'expected_pages':1,'scope':args,'phase':phase,
+        'purchase_inferred':False,'absence_proven':False}
+
+
+def atas(ctx,args,transport=None):
+    parent,cnpj,year,sequence=purchase_identity(ctx,args['procurement_id'])
+    url=f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{year}/{sequence}/atas'
+    try:url,status,content,data=sources.cached_get(ctx,'PNCP_ATAS',url,transport=transport)
+    except sources.SourceFault as exc:
+        if exc.status==404:return optional_not_found(ctx,'PNCP_ATAS',url,args,'ata_registro')
+        raise
+    if data is None:data=[]
+    records=data if isinstance(data,list) else (data.get('data') if 'data' in data else data.get('atas')) if isinstance(data,dict) else None
+    if not isinstance(records,list) or len(records)>2000:raise sources.SourceFault('INVALID_ATA_FORMAT')
+    sid=observe(ctx,'PNCP_ATAS',url,status,content,data,args)
+    return {'provider':'PNCP_ATAS','records':len(records),'source_id':str(sid),'state':'observed_only',
+        'pages_fetched':1,'expected_pages':data.get('totalPaginas') if isinstance(data,dict) else 1,
+        'pagination_unverified':isinstance(data,dict) and (data.get('totalPaginas') or 1)>1,
+        'scope':args,'phase':'ata_registro',
+        'parent_publication':str(parent['id']),'quantities_collected':False,'purchase_inferred':False}
+
+
+def pca(ctx,args,transport=None):
+    cnpj=str(args['cnpj']);year=args['year']
+    if not re.fullmatch(r'\d{14}',cnpj) or not isinstance(year,int) or year<2021 or year>date.today().year+2:
+        fail(422,'Confira o CNPJ e o ano do plano anual.')
+    url=f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/pca/{year}/consolidado'
+    try:url,status,content,data=sources.cached_get(ctx,'PNCP_PCA',url,transport=transport)
+    except sources.SourceFault as exc:
+        if exc.status==404:return optional_not_found(ctx,'PNCP_PCA',url,args,'planejado')
+        raise
+    if data is not None and not isinstance(data,dict):raise sources.SourceFault('INVALID_PCA_FORMAT')
+    sid=observe(ctx,'PNCP_PCA',url,status,content,data or {},args)
+    return {'provider':'PNCP_PCA','records':1 if data else 0,'source_id':str(sid),'state':'observed_only',
+        'pages_fetched':1,'expected_pages':1,'scope':args,'phase':'planejado',
+        'items_collected':False,'purchase_inferred':False}
+
+
+def updated_index(ctx,provider,args,transport=None):
+    if provider not in ('PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
+        fail(422,'Esta consulta não está configurada.')
+    start=date.fromisoformat(args['start_date']).strftime('%Y%m%d')
+    end=date.fromisoformat(args['end_date']).strftime('%Y%m%d')
+    if provider=='PNCP_ATAS_ATUALIZACAO':
+        endpoint='https://pncp.gov.br/api/consulta/v1/atas/atualizacao'
+        params={'dataInicial':start,'dataFinal':end,'cnpj':args['cnpj']}
+    else:
+        endpoint='https://pncp.gov.br/api/consulta/v1/pca/atualizacao'
+        params={'dataInicio':start,'dataFim':end,'cnpj':args['cnpj']}
+    params.update(pagina=args.get('page',1),tamanhoPagina=args.get('size',10))
+    url,status,content,data=sources.cached_get(ctx,provider,endpoint,params,transport)
+    if data is None:data={'data':[],'totalPaginas':0}
+    if not isinstance(data,dict) or not isinstance(data.get('data'),list):raise sources.SourceFault('INVALID_SOURCE_FORMAT')
+    sid=observe(ctx,provider,url,status,content,data,args)
+    return {'provider':provider,'records':len(data['data']),'source_id':str(sid),'state':'observed_only',
+        'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'scope':args,
+        'phase':'ata_registro' if provider=='PNCP_ATAS_ATUALIZACAO' else 'planejado',
+        'quantities_collected':False,'purchase_inferred':False}
