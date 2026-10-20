@@ -36,4 +36,4 @@ Critérios referem-se ao recorte local. Produção permanece bloqueada conforme 
 - [x] Rotina limitada para acionamento por agendador externo.
 - [ ] Contrato estável e utilizável de TCE-MG/Sicom e portais municipais ainda requer validação específica.
 - [ ] Cobertura histórica ampla, execução financeira e identidade jurídica municipal permanecem sem comprovação completa.
-- [ ] Concluir auditoria, testes finais, evidências e abrir PR deste incremento.
+- [x] Auditoria, testes finais e evidências concluídos; [PR #2](https://github.com/MarcusVinicius21/Painel_IRPS/pull/2) aberto para revisão.
