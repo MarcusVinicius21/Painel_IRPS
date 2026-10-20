@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'backend'))
-os.environ['IRPS_LOCAL_CONFIG']=str(ROOT/'.runtime/config-test.json')
+os.environ.setdefault('IRPS_LOCAL_CONFIG',str(ROOT/'.runtime/config-test.json'))
 from app.config import load_settings
 from app.seed import seed
 from app.main import create_app

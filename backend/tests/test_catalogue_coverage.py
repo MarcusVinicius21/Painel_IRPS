@@ -29,6 +29,8 @@ def test_normalization_preserves_original_and_package_conflicts():
     assert catalogue.fold('Álcool etílico 70%')=='ALCOOL ETILICO 70'
     assert catalogue.token_key('Papel A4 para escritório')==catalogue.token_key('Escritório: papel A4')
     assert catalogue.token_key('Papel A4 75 g')!=catalogue.token_key('Papel A4 90 g')
+    assert catalogue.reliable_obligation({'classification':'official','provider':'PNCP_ITENS','obligation_id':'00000000000001-1-42/2025'})
+    assert catalogue.reliable_obligation({'classification':'official','provider':'PNCP_ITENS','obligation_id':'local-42'}) is None
 
 
 def test_reprocess_is_idempotent_and_private(prepared,login):
@@ -219,3 +221,93 @@ def test_empty_publication_response_keeps_checkpoint_without_inventing_records(a
     assert result['pages']==1
     state=c.get('/api/v1/history-collections/'+cid).json()
     assert state['state']=='completed' and state['records']==0
+
+
+def test_product_history_filters_cities_revisions_units_and_tenants(app,login,prepared):
+    from sqlalchemy import create_engine
+    from app.config import load_settings
+    from app.db import DB
+    client=login('compras-a');identity=client.get('/api/v1/auth/context').json()
+    engine=create_engine(load_settings().owner_database_url.get_secret_value(),hide_parameters=True)
+    item='history-'+uuid4().hex;item2='history-'+uuid4().hex;prefix=uuid4().hex
+    with engine.begin() as conn:
+        db=DB(conn);db.execute("SELECT set_config('irps.org_id',:o,true)",{'o':identity['org_id']})
+        cities=db.all('SELECT ibge FROM municipality ORDER BY ibge LIMIT 4')
+        assert len(cities)==4
+        codes=[r['ibge'] for r in cities]
+        original=db.one("SELECT * FROM procurement_fact WHERE org_id=:o AND item_id='papel' AND provider='SYNTHETIC_OPPORTUNITIES' LIMIT 1",{'o':identity['org_id']})
+        db.execute("INSERT INTO item_version(id,version,name,family,unit,step,classification) VALUES (:i,1,'Material histórico de teste','Material','caixa de 10 resmas',1,'synthetic')",{'i':item})
+        db.execute("INSERT INTO item_version(id,version,name,family,unit,step,classification) VALUES (:i,1,'Material histórico de teste','Material','caixa de 10 resmas',1,'synthetic')",{'i':item2})
+        def fact(city,event,quantity,unit='caixa de 10 resmas',current=True,phase='homologado',day='2025-02-01'):
+            db.execute("""INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,
+                source_id,buyer_id,municipality_ibge,item_id,item_version,description,unit,quantity,amount,unit_price,
+                phase,event_date,obligation_id,metadata,is_current)
+                VALUES (:id,:o,'synthetic','SYNTHETIC_OPPORTUNITIES',:event,:revision,:source,:buyer,:city,
+                :item,1,'Papel A4 caixa com 10 resmas',:unit,:qty,:amount,10,:phase,:day,:obligation,'{}',:current)""",
+                {'id':str(uuid4()),'o':identity['org_id'],'event':event,'revision':uuid4().hex,
+                 'source':original['source_id'],'buyer':original['buyer_id'],'city':city,'item':item,
+                 'unit':unit,'qty':quantity,'amount':quantity*10,'phase':phase,'day':day,
+                 'obligation':'process-'+event.split(':')[0],'current':current})
+        fact(codes[0],prefix+'a:1',2)
+        db.execute("UPDATE procurement_fact SET is_current=false WHERE provider='SYNTHETIC_OPPORTUNITIES' AND event_identity=:event AND item_id=:item",{'event':prefix+'a:1','item':item})
+        fact(codes[0],prefix+'a:1',3)
+        fact(codes[0],prefix+'a:2',4)
+        fact(codes[3],prefix+'d:1',100)
+        db.execute("""INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,
+            source_id,buyer_id,municipality_ibge,item_id,item_version,description,unit,quantity,amount,unit_price,
+            phase,event_date,obligation_id,metadata)
+            VALUES (:id,:o,'synthetic','SYNTHETIC_OPPORTUNITIES',:event,:revision,:source,:buyer,:city,
+            :item,1,'Papel A4 caixa com 10 resmas','caixa de 10 resmas',6,60,10,'homologado','2025-02-01',:event,'{}')""",
+            {'id':str(uuid4()),'o':identity['org_id'],'event':'second-'+item2,'revision':uuid4().hex,
+             'source':original['source_id'],'buyer':original['buyer_id'],'city':codes[3],'item':item2})
+        fact(codes[0],prefix+'a:publication',500,phase='publicado_estimado')
+    engine.dispose()
+    assert client.post('/api/v1/catalogue-intelligent/reprocess?limit=500').status_code==200
+    reviewed=client.post('/api/v1/catalogue-intelligent/products',json={
+        'name':'Papel A4 caixa de 10 resmas','category':'Materiais',
+        'justification':'Unidade e embalagem conferidas no teste de histórico.',
+        'evidence':'Fonte sintética local para regressão.',
+        'members':[{'id':item,'version':1},{'id':item2,'version':1}],'confirmed':True})
+    assert reviewed.status_code==201,reviewed.text
+    pid=reviewed.json()['id']
+    engine=create_engine(load_settings().owner_database_url.get_secret_value(),hide_parameters=True)
+    with engine.begin() as conn:
+        db=DB(conn);db.execute("SELECT set_config('irps.org_id',:o,true)",{'o':identity['org_id']})
+        db.execute("""INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,
+            source_id,buyer_id,municipality_ibge,item_id,item_version,description,unit,quantity,amount,unit_price,
+            phase,event_date,obligation_id,metadata)
+            VALUES (:id,:o,'synthetic','SYNTHETIC_OPPORTUNITIES',:event,:revision,:source,:buyer,:city,
+            :item,1,'Papel A4 caixa com 10 resmas','caixa de 20 resmas',5,50,10,'homologado','2025-02-01',:event,'{}')""",
+            {'id':str(uuid4()),'o':identity['org_id'],'event':prefix+'b:1','revision':uuid4().hex,
+             'source':original['source_id'],'buyer':original['buyer_id'],'city':codes[1],'item':item})
+    engine.dispose()
+    query='phase=homologado&start=2025-01-01&end=2025-12-31'
+    for code in codes[:3]:query+='&municipalities='+code
+    result=client.get(f'/api/v1/catalogue-intelligent/products/{pid}/history?{query}')
+    assert result.status_code==200,result.text
+    by_code={r['municipality']['ibge']:r for r in result.json()['municipalities']}
+    assert set(by_code)==set(codes[:3])
+    assert by_code[codes[0]]['observed_records']==2
+    assert by_code[codes[0]]['distinct_processes']==1
+    assert float(by_code[codes[0]]['observed_quantity'])==7
+    assert by_code[codes[0]]['recurrence_percentage'] is None
+    assert by_code[codes[1]]['observed_records']==1
+    assert by_code[codes[1]]['observed_quantity'] is None
+    assert by_code[codes[1]]['excluded_from_totals']
+    assert by_code[codes[2]]['observed_records']==0
+    assert by_code[codes[2]]['observed_quantity'] is None
+    assert by_code[codes[2]]['coverage_state']=='demonstration'
+    assert all(x['evidence'][0]['url'] for x in by_code.values() if x['evidence'])
+    summary=client.get('/api/v1/catalogue-intelligent/products?'+query)
+    assert summary.status_code==200,summary.text
+    row=next(r for r in summary.json()['records'] if r['id']==pid)
+    assert row['observed_records']==3 and float(row['observed_quantity'])==7
+    assert row['quantity_complete'] is False
+    only=client.get('/api/v1/catalogue-intelligent/products?'+query.replace('&municipalities='+codes[1],'').replace('&municipalities='+codes[2],''))
+    row=next(r for r in only.json()['records'] if r['id']==pid)
+    assert row['observed_records']==2 and float(row['observed_quantity'])==7
+    assert login('compras-b').get(f'/api/v1/catalogue-intelligent/products/{pid}/history?{query}').status_code==404
+    publication=client.get(f'/api/v1/catalogue-intelligent/products/{pid}/history?'+query.replace('homologado','publicado_estimado')).json()['municipalities']
+    assert next(r for r in publication if r['municipality']['ibge']==codes[0])['observed_records']==1
+    older=client.get(f'/api/v1/catalogue-intelligent/products/{pid}/history?'+query.replace('2025-01-01','2024-01-01').replace('2025-12-31','2024-12-31')).json()['municipalities']
+    assert all(r['observed_records']==0 for r in older)

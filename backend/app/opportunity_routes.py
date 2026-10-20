@@ -38,9 +38,19 @@ def catalogue_product_create(body:CanonicalProductReview,ctx:Auth):
     return catalogue.create_product(ctx,body)
 
 @router.get('/catalogue-intelligent/products')
-def catalogue_products(ctx:Auth,phase:PHASES='homologado',start:date=date(2020,1,1),end:date=Query(default_factory=date.today)):
+def catalogue_products(ctx:Auth,phase:PHASES='homologado',start:date=date(2020,1,1),end:date=Query(default_factory=date.today),
+                       municipalities:list[str]|None=Query(None)):
     if end<start or (end-start).days>3653:fail(422,'Escolha um período de até dez anos.')
-    return catalogue.products(ctx,phase,start,end)
+    if municipalities is not None and len(municipalities)>118:fail(422,'Escolha até 118 municípios por consulta.')
+    return catalogue.products(ctx,phase,start,end,municipalities)
+
+@router.get('/catalogue-intelligent/products/{product_id}/history')
+def catalogue_product_history(product_id:UUID,ctx:Auth,phase:PHASES='homologado',
+                              start:date=date(2020,1,1),end:date=Query(default_factory=date.today),
+                              municipalities:list[str]=Query(default_factory=list)):
+    if end<start or (end-start).days>1826:fail(422,'Escolha um período de até cinco anos.')
+    if len(municipalities)>118:fail(422,'Escolha até 118 municípios por consulta.')
+    return catalogue.product_history(ctx,product_id,phase,start,end,municipalities)
 
 @router.get('/catalogue-intelligent/reference-prices')
 def catalogue_reference_prices(ctx:Auth,kind:str,code:str,code_type:str='codigoItemCatalogo',
@@ -51,7 +61,7 @@ def catalogue_reference_prices(ctx:Auth,kind:str,code:str,code_type:str='codigoI
 @router.get('/coverage/inventory')
 def coverage_inventory_get(ctx:Auth,start:date=date(2024,1,1),end:date=Query(default_factory=date.today),
                            municipalities:list[str]=Query(default_factory=list)):
-    if len(municipalities)>100:fail(422,'Escolha até cem municípios por consulta.')
+    if len(municipalities)>118:fail(422,'Escolha até 118 municípios por consulta.')
     return coverage_inventory.inventory(ctx,start,end,municipalities)
 
 @router.post('/opportunities/query')

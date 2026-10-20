@@ -17,13 +17,20 @@ export function Catalogue(){
  const [priceStart,setPriceStart]=useState(()=>{const value=new Date();value.setMonth(value.getMonth()-6);return value.toISOString().slice(0,10);});
  const [priceEnd,setPriceEnd]=useState(today);
  const [referencePrices,setReferencePrices]=useState<Row|null>(null);
+ const [history,setHistory]=useState<Row|null>(null);const [historyLoading,setHistoryLoading]=useState(false);
+ const [historyError,setHistoryError]=useState('');
  const [error,setError]=useState('');
  const refresh=async()=>{setLoading(true);setError('');try{
   const params=new URLSearchParams({phase,start,end});
+  for(const city of cities)params.append('municipalities',city);
   const coverageParams=new URLSearchParams({start,end});for(const city of cities)coverageParams.append('municipalities',city);
   const [p,c,s]=await Promise.all([api('/catalogue-intelligent/products?'+params),api('/coverage/inventory?'+coverageParams),api('/catalogue-intelligent/candidates')]);
-  setProducts(p.records||[]);setCoverage(c);setCandidates(s.records||[]);
+  setProducts(p.records||[]);setCoverage(c);setCandidates(s.records||[]);setHistory(null);
  }catch(reason){setError((reason as Error).message);}finally{setLoading(false);}};
+ const showHistory=async(product:Row)=>{setHistoryLoading(true);setHistoryError('');setHistory(null);try{
+  const params=new URLSearchParams({phase,start,end});for(const city of cities)params.append('municipalities',city);
+  setHistory(await api('/catalogue-intelligent/products/'+product.id+'/history?'+params));
+ }catch(reason){setHistoryError((reason as Error).message);}finally{setHistoryLoading(false);}};
  useEffect(()=>{void refresh();},[]);
  const reprocess=()=>void context.run(async()=>{let offset=0;let scanned=0;do{
   const page=await post('/catalogue-intelligent/reprocess?limit=500&offset='+offset);scanned+=page.scanned;
@@ -48,15 +55,32 @@ export function Catalogue(){
    <Field label="Situação"><select value={phase} onChange={event=>setPhase(event.target.value)}><option value="publicado_estimado">Publicado · estimado</option><option value="homologado">Homologado</option><option value="contratado">Contratado</option></select></Field>
   </div><div className="actions"><button className="button" disabled={loading||!cities.length} onClick={()=>void refresh()}>Conferir fontes e produtos</button><button className="button secondary" onClick={openOpportunities}>Ver oportunidades por produto</button></div></Panel>
   {error?<Notice tone="warning">{error}</Notice>:null}{loading?<p role="status">Conferindo as evidências do recorte…</p>:null}
-  <Panel title="Produtos revisados"><Notice>Quantidades e valores aparecem apenas quando documentados na situação escolhida. Produto revisado não significa fornecimento viável.</Notice>
+  <Panel title="Produtos revisados"><Notice>O resumo considera somente os municípios selecionados. Compras anteriores não definem necessidades futuras.</Notice>
    {!products.length?<Empty title="Ainda não há produtos revisados" description="Reanalise os itens coletados e confira as sugestões antes de agrupá-los."/>:
     <DataTable<Row> rows={products} id={row=>row.id} caption="Produtos canônicos revisados" columns={[
      {label:'Produto',render:row=><><strong>{row.name}</strong><small>{row.category} · {row.unit}{row.package_signature?' · '+row.package_signature:''}</small></>},
      {label:'Histórico observado',render:row=><>{quantity(row.observed_records)} registros<small>{quantity(row.municipalities.length)} municípios · {quantity(row.active_months)} meses</small></>},
-     {label:'Quantidade',render:row=><>{quantity(row.observed_quantity)}<small>{row.quantity_complete?'Nos registros exibidos':'Há registros sem quantidade'}</small></>},
+     {label:'Quantidade',render:row=><>{quantity(row.observed_quantity)}<small>{row.quantity_complete?'Nos registros exibidos':'Total parcial ou itens não comparáveis'}</small></>},
      {label:'Valor conhecido',render:row=>money(row.known_amount)},
-     {label:'Fonte',render:row=>row.sources?.length?<a href={row.sources[0].url} target="_blank" rel="noreferrer">Abrir origem</a>:'Não disponível'}]}/>}
+     {label:'Detalhes',render:row=><button className="text-button" onClick={()=>void showHistory(row)}>Ver por município</button>}]}/>}
   </Panel>
+  {historyLoading?<p role="status">Buscando registros por município…</p>:null}
+  {historyError?<Notice tone="warning">Não foi possível abrir o histórico. {historyError}</Notice>:null}
+  {history?<Panel title={'Histórico por município · '+history.product.name}>
+   <Notice>{history.product.classification==='synthetic'?'Dados fictícios para teste.':'Registros de fontes públicas consultadas.'} Situação: {phase==='publicado_estimado'?'publicado · estimado':phase==='homologado'?'homologado':'contratado'}. Período: {start} a {end}. {history.product.unit}{history.product.package_signature?' · '+history.product.package_signature:''}. A coleta pode estar incompleta.</Notice>
+   <DataTable<Row> rows={history.municipalities||[]} id={row=>row.municipality.ibge} caption="Registros observados por município no recorte" columns={[
+    {label:'Município',render:row=><>{row.municipality.name}/{row.municipality.uf}<small>{row.observed_records?'Registros encontrados':'Sem registros encontrados neste recorte'} · {row.coverage_state==='demonstration'?'Dados de demonstração':row.coverage_state==='not_collected'?'Consulta insuficiente':'Cobertura parcial'}</small></>},
+    {label:'Registros',render:row=><>{quantity(row.observed_records)} linhas<small>{row.distinct_processes==null?'Processos não identificados':quantity(row.distinct_processes)+' processos identificados'} · {row.observed_months.length} meses observados · {row.observed_years.join(', ')||'ano indisponível'}</small></>},
+    {label:'Quantidade documentada',render:row=><>{quantity(row.observed_quantity)}<small>{row.observed_quantity==null?'Quantidade indisponível':history.product.unit}{!row.quantity_complete&&row.observed_quantity!=null?' · total parcial':''}{row.excluded_from_totals.length?' · há itens não comparáveis':''}</small></>},
+    {label:'Valor documentado',render:row=><>{money(row.documented_amount)}<small>{row.unit_prices.length===1?'Preço unitário: '+money(row.unit_prices[0]):row.unit_prices.length>1?'Compare os preços nos documentos':'Preço unitário indisponível'}</small></>},
+    {label:'Período e fonte',render:row=><>{row.first_observed||'Data indisponível'} a {row.last_observed||'—'}<small>{history.product.classification==='synthetic'?'Fonte fictícia de teste':row.evidence.length?<a href={row.evidence[0].url} target="_blank" rel="noreferrer">Abrir documento</a>:'Sem documento neste recorte'}</small></>}]}/>
+   <div className="actions"><button className="button secondary" onClick={()=>{
+    const matching=context.scenario?.snapshot.items.find((ref:Row)=>history.product.members.some((member:Row)=>member.id===ref.id&&member.version===ref.version));
+    const city=context.scenario?.snapshot.participants.find((code:string)=>cities.includes(code));
+    nav(matching?'quantidades':'itens',matching?{item:matching.id,...(city?{cidade:city}:{})}:{});
+   }}>{context.scenario?.snapshot.items.some((ref:Row)=>history.product.members.some((member:Row)=>member.id===ref.id&&member.version===ref.version))?'Ver junto ao cálculo V4':'Escolher item no planejamento'}</button></div>
+   <p className="subtle">Meses com registros não comprovam compras recorrentes. Sem consulta completa, ausência de registro não significa ausência de compra.</p>
+  </Panel>:null}
   <Panel title="Sugestões que precisam de revisão" action={context.can('sources.sync')?<button className="button secondary" disabled={context.busy} onClick={reprocess}>Reanalisar itens coletados</button>:undefined}>
    <p className="subtle">As sugestões não juntam produtos automaticamente. Confira especificação, unidade e embalagem no documento de origem.</p>
    {!candidates.length?<Empty title="Nenhuma sugestão pronta" description="Colete itens oficiais ou refine os registros antes de criar grupos."/>:
