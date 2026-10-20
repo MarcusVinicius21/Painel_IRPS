@@ -121,7 +121,7 @@ class SourceSync(Strict):
  end_date:str|None=Field(default=None,pattern=r'^\d{4}-\d{2}-\d{2}$')
  page:int=Field(default=1,ge=1,le=1000)
  size:int=Field(default=10,ge=10,le=20)
- modality:int=Field(default=6,ge=1,le=13)
+ modality:int=Field(default=6,ge=1,le=14)
  @model_validator(mode='after')
  def source_scope(self):
   allowed={'IBGE':{'municipality_ibge'},'PNCP':{'municipality_ibge','start_date','end_date','page','size','modality'},'PNCP_ITENS':{'procurement_id','page','size'},'COMPRAS_CATMAT':{'page','size'},'COMPRAS_CATSER':{'page','size'}}[self.provider]|{'provider'}

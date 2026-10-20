@@ -46,3 +46,7 @@ Fonte para necessidade física depende do item: população isolada não calcula
 ## Evidências reproduzíveis
 
 `evidencias/fontes-publicas-execucao.json`, `fontes-itens-catalogos-execucao.json`, `registros-oficiais-persistidos.json`, OpenAPIs salvos e jobs com estado concluído. Os scripts `validar_fontes_publicas.py` e `validar_itens_e_catalogos.py` repetem consultas públicas pequenas; não precisam de chaves e não ativam serviços pagos.
+
+## Atualização do incremento de cobertura (20/10/2026)
+
+O quadro acima documenta a execução anterior e mantém suas contagens históricas. Nesta branch há coleta real adicional de resultados PNCP e pesquisa pontual de preços Compras.gov.br; as contagens, comprovantes, recortes e limites atuais estão em [`PILOTO_COBERTURA_CATALOGO.md`](../validacao/PILOTO_COBERTURA_CATALOGO.md). Atas/PCA e seus índices têm conectores limitados e testes controlados; não são compras adicionais. TCE-MG/Sicom e portais municipais continuam sem conector autenticado por contrato público verificado. Consulte [`COBERTURA_HISTORICA_CATALOGO.md`](COBERTURA_HISTORICA_CATALOGO.md) para a matriz de rotas e estados vigente.

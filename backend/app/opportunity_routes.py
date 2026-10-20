@@ -1,10 +1,11 @@
 from typing import Annotated
+from datetime import date
 from uuid import UUID
 from fastapi import APIRouter,Depends,Request,BackgroundTasks,Header,Query
 from .security import authenticate,fail,PERMISSIONS
 from .db import normalize
-from .opportunity_schemas import HistoricalScope,Advance,MunicipalGroup,OpportunityFilter,Equivalence,ViabilityReview,ScenarioFromOpportunity,OpportunityWatch
-from . import history,opportunities,opportunity_alerts
+from .opportunity_schemas import HistoricalScope,Advance,MunicipalGroup,OpportunityFilter,Equivalence,CanonicalProductReview,ViabilityReview,ScenarioFromOpportunity,OpportunityWatch,PHASES
+from . import history,opportunities,opportunity_alerts,catalogue,coverage_inventory
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 router=APIRouter(prefix='/api/v1')
@@ -23,6 +24,35 @@ def group_create(body:MunicipalGroup,ctx:Auth):return opportunities.group_create
 
 @router.post('/opportunity-equivalences',status_code=201)
 def equivalence_create(body:Equivalence,ctx:Auth):return opportunities.equivalence_create(ctx,body)
+
+@router.post('/catalogue-intelligent/reprocess')
+def catalogue_reprocess(ctx:Auth,limit:int=Query(500,ge=1,le=500),offset:int=Query(0,ge=0,le=1000000)):
+    return catalogue.reprocess(ctx,limit,offset)
+
+@router.get('/catalogue-intelligent/candidates')
+def catalogue_candidates(ctx:Auth,limit:int=Query(100,ge=1,le=100)):
+    return catalogue.candidates(ctx,limit)
+
+@router.post('/catalogue-intelligent/products',status_code=201)
+def catalogue_product_create(body:CanonicalProductReview,ctx:Auth):
+    return catalogue.create_product(ctx,body)
+
+@router.get('/catalogue-intelligent/products')
+def catalogue_products(ctx:Auth,phase:PHASES='homologado',start:date=date(2020,1,1),end:date=Query(default_factory=date.today)):
+    if end<start or (end-start).days>3653:fail(422,'Escolha um período de até dez anos.')
+    return catalogue.products(ctx,phase,start,end)
+
+@router.get('/catalogue-intelligent/reference-prices')
+def catalogue_reference_prices(ctx:Auth,kind:str,code:str,code_type:str='codigoItemCatalogo',
+                               start:date=date(2025,1,1),end:date=Query(default_factory=date.today),
+                               page:int=Query(1,ge=1,le=100)):
+    return catalogue.reference_prices(ctx,kind,code,code_type,start,end,page)
+
+@router.get('/coverage/inventory')
+def coverage_inventory_get(ctx:Auth,start:date=date(2024,1,1),end:date=Query(default_factory=date.today),
+                           municipalities:list[str]=Query(default_factory=list)):
+    if len(municipalities)>100:fail(422,'Escolha até cem municípios por consulta.')
+    return coverage_inventory.inventory(ctx,start,end,municipalities)
 
 @router.post('/opportunities/query')
 def query(body:OpportunityFilter,ctx:Auth):return opportunities.query(ctx,body)

@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from typing import Literal
+from uuid import UUID
 from pydantic import Field, model_validator
 from .schemas import Strict, Code, ItemRef, Number
 
@@ -12,7 +13,11 @@ class HistoricalScope(Strict):
     end: date
     modalities: list[int] = Field(default_factory=lambda:[6],min_length=1,max_length=14)
     publications: bool = True
+    updates: bool = False
     contracts: bool = False
+    contract_updates: bool = False
+    atas: bool = False
+    pca: bool = False
     organization_cnpjs: list[str] = Field(default_factory=list,max_length=200)
     items: bool = True
     results: bool = True
@@ -23,12 +28,18 @@ class HistoricalScope(Strict):
         if self.end<self.start or (self.end-self.start).days>1826 or self.end>date.today():raise ValueError('Escolha até cinco anos encerrados na data atual.')
         if len(set(self.municipalities))!=len(self.municipalities):raise ValueError('Município repetido.')
         if len(set(self.modalities))!=len(self.modalities) or any(m<1 or m>14 for m in self.modalities):raise ValueError('Modalidade inválida.')
-        if not self.publications and not self.contracts:raise ValueError('Escolha ao menos uma fonte.')
+        if not any((self.publications,self.updates,self.contracts,self.contract_updates,self.atas,self.pca)):
+            raise ValueError('Escolha ao menos uma consulta.')
         if self.results and not self.items:raise ValueError('Resultados precisam dos itens.')
-        if self.contracts and not self.organization_cnpjs:raise ValueError('Contratos exigem CNPJ do órgão; a fonte não filtra por município.')
+        if (self.contracts or self.contract_updates) and not self.organization_cnpjs:
+            raise ValueError('Contratos exigem CNPJ do órgão; a fonte não filtra por município.')
+        if self.pca and not self.publications and not self.updates and not self.organization_cnpjs:
+            raise ValueError('Para consultar planos anuais, informe o CNPJ do órgão ou inclua publicações.')
         if any(not __import__('re').fullmatch(r'\d{14}',x) for x in self.organization_cnpjs):raise ValueError('CNPJ do órgão inválido.')
         windows=((self.end-self.start).days//7)+1
-        if windows*(len(self.municipalities)*len(self.modalities)*self.publications+len(self.organization_cnpjs)*self.contracts)>6000:raise ValueError('Divida o período em recortes menores.')
+        if windows*(len(self.municipalities)*len(self.modalities)*(self.publications+self.updates)
+                    +len(self.organization_cnpjs)*(self.contracts+self.contract_updates+self.pca))>6000:
+            raise ValueError('Divida o período em recortes menores.')
         return self
 
 class Advance(Strict):
@@ -40,6 +51,7 @@ class MunicipalGroup(Strict):
 
 class OpportunityFilter(Strict):
     dataset: Literal['official','synthetic']='official'
+    grouping: Literal['reviewed_equivalence','canonical']='reviewed_equivalence'
     phase: PHASES='homologado'
     start: date = date(2024,1,1)
     end: date = Field(default_factory=date.today)
@@ -81,6 +93,15 @@ class Equivalence(Strict):
     members: list[ItemRef] = Field(min_length=2,max_length=100)
     justification: str = Field(min_length=20,max_length=2000)
     evidence: str = Field(min_length=10,max_length=2000)
+    confirmed: Literal[True]
+
+class CanonicalProductReview(Strict):
+    name: str = Field(min_length=5,max_length=160)
+    category: str = Field(min_length=3,max_length=120)
+    members: list[ItemRef] = Field(min_length=2,max_length=100)
+    justification: str = Field(min_length=20,max_length=2000)
+    evidence: str = Field(min_length=10,max_length=2000)
+    supersedes_id: UUID|None = None
     confirmed: Literal[True]
 
 class Criterion(Strict):

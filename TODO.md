@@ -25,3 +25,15 @@
 - [x] Relatório de execução, limitações, instruções e pacote físico final.
 
 Critérios referem-se ao recorte local. Produção permanece bloqueada conforme GATE_EXECUCAO.md.
+
+## Cobertura histórica e catálogo — branch de revisão
+
+- [x] Rotas PNCP documentadas de publicação/atualização, itens, resultados, contratos, atas e PCA separadas por fase.
+- [x] Piloto real limitado em Alfenas, Ipatinga e Turmalina com comprovantes e lacunas explícitas.
+- [x] Inventário de consultas por município/fonte/modalidade/fase e fatos observados por órgão/CNPJ.
+- [x] Normalização imutável e produtos canônicos revisados com bloqueio de incompatibilidades/sobreposições.
+- [x] Consulta pontual de preços Compras.gov.br e catálogo no Observatório.
+- [x] Rotina limitada para acionamento por agendador externo.
+- [ ] Contrato estável e utilizável de TCE-MG/Sicom e portais municipais ainda requer validação específica.
+- [ ] Cobertura histórica ampla, execução financeira e identidade jurídica municipal permanecem sem comprovação completa.
+- [ ] Concluir auditoria, testes finais, evidências e abrir PR deste incremento.

@@ -17,6 +17,7 @@ O frontend Observatório usa React e TypeScript. O backend FastAPI grava no Post
 - Assistente offline com ferramentas validadas. Chamadas pagas a IA permanecem desativadas.
 - Observatório responsivo conectado às APIs, incluindo estados de erro e informações ausentes.
 - Área **Oportunidades**: coleta PNCP paginada e retomável, filtros históricos, cobertura explícita, equivalências revisadas, prioridade condicionada a dados e revisão humana, rascunho de licitação e acompanhamentos locais.
+- **Catálogo inteligente e cobertura**: normalização auditável, produtos equivalentes revisados, inventário por município/órgão/fonte/fase, publicações e atualizações PNCP, consulta pontual de preços Compras.gov.br e execução limitada por agendador local.
 
 Os conectores não representam cobertura histórica completa. Quantidade contratada não comprova consumo; valor contratado não significa valor pago. A instalação limpa inclui dados sintéticos, não uma cópia do banco utilizado anteriormente.
 
@@ -52,6 +53,15 @@ Em dois terminais, na raiz do repositório:
 
 Escolha uma conta fictícia para começar. As equipes A/B e empresas A/B permitem conferir o isolamento. As consultas oficiais são acionadas em **Fontes e cobertura**; não exigem credenciais.
 
+Em **Catálogo e cobertura**, confira as páginas realmente coletadas, reanalise os itens e revise sugestões antes de agrupá-las. Para repetir o piloto público limitado ou avançar coletas já autorizadas no ambiente local:
+
+```powershell
+& .\.venv\Scripts\python.exe .\scripts\piloto_cobertura.py --pages 24
+& .\.venv\Scripts\python.exe .\scripts\avancar_coletas.py --collections 5 --pages-each 1
+```
+
+Veja [o relatório técnico deste incremento](docs/implementacao/COBERTURA_HISTORICA_CATALOGO.md) e [a evidência do piloto MG](docs/validacao/PILOTO_COBERTURA_CATALOGO.md). O piloto não comprova toda a história de um município.
+
 Para reiniciar o banco e encerrar os serviços:
 
 ```powershell
@@ -86,7 +96,7 @@ Resultados brutos, downloads dos testes e capturas ficam em `.runtime/evidencias
 ```text
 backend/app/          API, permissões, cenários, documentos, fontes e assistente
 backend/irps_core/    Oito módulos originais V4, sem alteração de fórmulas
-backend/migrations/  Schema PostgreSQL e sete revisões Alembic
+backend/migrations/  Schema PostgreSQL e oito revisões Alembic
 backend/tests/       Regressões V4 e testes de integração/segurança
 backend/seed_data/   Cadastro municipal conciliado e catálogo fictício
 frontend/src/        Observatório conectado ao backend

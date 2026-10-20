@@ -2,6 +2,14 @@
 
 Chrome e serviços reais locais, sobre dados sintéticos identificados. Contas de teste, valores comerciais fictícios e fontes sem cobertura presumida.
 
+## Catálogo e cobertura — incremento atual
+
+![Catálogo e cobertura no desktop](telas/1440-catalogo-primeira-dobra.png)
+
+![Catálogo e cobertura no mobile](telas/390-catalogo-primeira-dobra.png)
+
+[Capturas completas e critérios de validação](QA_COBERTURA_CATALOGO.md).
+
 ## 1440 inicio
 
 ![1440-inicio.png](telas/1440-inicio.png)

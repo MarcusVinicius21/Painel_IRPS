@@ -70,3 +70,10 @@ Gerado do FastAPI em execução. Login de teste é restrito ao ambiente local.
 | POST | `/api/v1/opportunity-watches` | Cria acompanhamento local do conjunto de versões |
 | POST | `/api/v1/opportunity-alerts/refresh` | Compara somente dados já coletados |
 | DELETE | `/api/v1/opportunity-watches/{wid}` | Desativa acompanhamento e preserva histórico |
+| GET | `/api/v1/coverage/inventory` | Inventário por município, fonte, modalidade, fase e órgão/CNPJ observado |
+| POST | `/api/v1/catalogue-intelligent/reprocess` | Normalização imutável, por página, dos fatos armazenados |
+| GET | `/api/v1/catalogue-intelligent/candidates` | Sugestões de equivalência técnica ainda não aprovadas |
+| GET/POST | `/api/v1/catalogue-intelligent/products` | Produtos revisados e histórico observado por fase; cria nova versão imutável |
+| GET | `/api/v1/catalogue-intelligent/reference-prices` | Uma página pública de preços praticados do Compras.gov.br por código oficial |
+
+O contrato OpenAPI atualizado está em [`OPENAPI_IMPLEMENTADO.json`](OPENAPI_IMPLEMENTADO.json). A cobertura exibida é de requisições planejadas, não da totalidade das compras do município.
