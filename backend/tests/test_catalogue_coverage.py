@@ -297,6 +297,9 @@ def test_product_history_filters_cities_revisions_units_and_tenants(app,login,pr
     assert by_code[codes[2]]['observed_records']==0
     assert by_code[codes[2]]['observed_quantity'] is None
     assert by_code[codes[2]]['coverage_state']=='demonstration'
+    duplicate=client.get(f'/api/v1/catalogue-intelligent/products/{pid}/history?{query}&municipalities={codes[0]}')
+    assert duplicate.status_code==200 and len(duplicate.json()['municipalities'])==3
+    assert duplicate.json()['scope']['municipalities']==codes[:3]
     assert all(x['evidence'][0]['url'] for x in by_code.values() if x['evidence'])
     summary=client.get('/api/v1/catalogue-intelligent/products?'+query)
     assert summary.status_code==200,summary.text

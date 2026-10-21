@@ -23,3 +23,18 @@ Executar migrações, testes negativos, regressões V4, contratos de fontes, exp
 ## Execução
 
 P0/P1/P2 locais implementados e testados. Entrega em docs/implementacao. O fluxo Observatório e o V4 foram preservados; provedores pagos e produção seguem fora desta rodada.
+
+## Diretriz Mestra V2 — pacote A local
+Preservar o diff de estabilização anterior e os oito hashes V4. Importar snapshots CATMAT/CATSER com índices PostgreSQL e paginação. Uma tela no Observatório reúne código, recorte, histórico 1/3/6/12 meses, meta preliminar e criação de estudo/cenário. O estudo é imutável, mantém evidências e não fornece entradas V4 por inferência. Minutas derivadas usam campos estruturados, revisão de coerência, versões e exportação DOCX/PDF. Itens internos recebem escopo de organização para não vazar especificações entre contas. Modelos jurídicos permanecem pendentes de validação; nenhuma publicação oficial ou assinatura será simulada.
+# Telas aprovadas — incremento local de 20/10/2026
+
+Auditoria inicial: branch feat/cobertura-historica-catalogo-inteligente, HEAD e65375414792d4baef6ec1eaa6d7384c398448ca. Diff preexistente preservado; inventário de hashes em .runtime/sete-telas/estado-inicial.json. Sem AGENTS.md aplicável encontrado. Sete PNGs conceituais e três capturas anteriores examinados individualmente. Pacote anterior disponível, sem aplicação de patches.
+
+Reutilizar catálogo paginado, vínculos revisados, histórico municipal, cenários V4, minutas, operações e documentos. Separar Director em seleção, histórico, planejamento, preparação, manifestações e consolidação, usando o estudo persistido como contexto. Dashboard consulta métricas oficiais separadas por fase. UI institucional clara, azul, sidebar clara, tabelas compactas e painel contextual como referências, sem copiar números fictícios ou aprovação jurídica.
+
+Arquivos previstos: App, Director, IRPRegister, componentes de jornada, dashboard e CSS compartilhado; director_routes e serviços focados de dashboard/exportação. Não duplicar cálculo nem alterar núcleo V4. Reaproveitar schema; novas migrações somente se inevitáveis. Quantidade sugerida utiliza irp_operation e conferência vigente.
+
+Validar PostgreSQL isolado, catálogo, histórico, cenários, V4, documentos, isolamento, exportações, build e Playwright em 1440/390. Capturar antes/depois por tela e documentar diferenças. Testes prévios não são aceitos como evidências atuais. Vínculos oficiais, séries comparáveis e revisão jurídica permanecem dependências reais, sem bloquear estados honestos ou o fluxo interno.
+
+## Refinamento visual rigoroso — 21/10/2026
+Preservar estado local e oito hashes. Comparar 00 em 1536×1024 e 01–06 em 1672×941. Shell e tokens compartilhados; três colunas de seleção, modos/decisão compactos, prévia A4 e estados municipais. Evidências em docs/IRPS_REFINAMENTO_PIXEL_PERFECT. Não alterar V4, fórmulas, produção ou remotos. APIs atuais, contratos e autenticação reutilizados. QA: banco isolado, suíte Python, build, Playwright, documento renderizado e geometrias por seletor. Dados sem vínculo exigem placeholders. Nenhuma alegação de fidelidade sem medição.

@@ -1,10 +1,13 @@
 import {useEffect,useState} from 'react';
-import {api,nav,post,quantity,money,useApi} from '../api';
+import {api,nav,post,quantity,money,useApi,businessDate} from '../api';
 import type {Row} from '../api';
 import {Action,Badge,DataTable,Empty,Field,Notice,Page,Panel,Stats} from '../components/ui';
 
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>businessDate();
 const defaultStart='2024-01-01';
+const coverageLabel=(state:string)=>({demonstration:'Dados de demonstração',not_collected:'Ainda não consultado',
+ pending:'Consulta pendente',failed:'Consulta falhou',consulted:'Consulta concluída neste recorte',
+ partial:'Parte das consultas concluída',scope_complete:'Consultas deste recorte concluídas'} as Record<string,string>)[state]||'Cobertura não verificada';
 
 export function Catalogue(){
  const context=useApi();const [cities,setCities]=useState<string[]>(['3131307','3101607','3169703']);
@@ -19,15 +22,23 @@ export function Catalogue(){
  const [referencePrices,setReferencePrices]=useState<Row|null>(null);
  const [history,setHistory]=useState<Row|null>(null);const [historyLoading,setHistoryLoading]=useState(false);
  const [historyError,setHistoryError]=useState('');
- const [error,setError]=useState('');
- const refresh=async()=>{setLoading(true);setError('');try{
+ const [error,setError]=useState('');const [coverageError,setCoverageError]=useState('');
+ const coveragePeriodTooLong=(new Date(end).getTime()-new Date(start).getTime())/86400000>1826;
+ const refresh=async()=>{setLoading(true);setError('');setCoverageError('');setHistory(null);
   const params=new URLSearchParams({phase,start,end});
   for(const city of cities)params.append('municipalities',city);
   const coverageParams=new URLSearchParams({start,end});for(const city of cities)coverageParams.append('municipalities',city);
-  const [p,c,s]=await Promise.all([api('/catalogue-intelligent/products?'+params),api('/coverage/inventory?'+coverageParams),api('/catalogue-intelligent/candidates')]);
-  setProducts(p.records||[]);setCoverage(c);setCandidates(s.records||[]);setHistory(null);
- }catch(reason){setError((reason as Error).message);}finally{setLoading(false);}};
- const showHistory=async(product:Row)=>{setHistoryLoading(true);setHistoryError('');setHistory(null);try{
+  const [p,c,s]=await Promise.allSettled([api('/catalogue-intelligent/products?'+params),
+   coveragePeriodTooLong?Promise.resolve(null):api('/coverage/inventory?'+coverageParams),
+   api('/catalogue-intelligent/candidates')]);
+  if(p.status==='fulfilled')setProducts(p.value.records||[]);else{setProducts([]);setError((p.reason as Error).message);}
+  if(c.status==='fulfilled'){setCoverage(c.value);if(coveragePeriodTooLong)setCoverageError('Cobertura não verificada para todo o período. Escolha até cinco anos para conferir as consultas.');}
+  else{setCoverage(null);setCoverageError('Cobertura não verificada para todo o período. '+(c.reason as Error).message);}
+  if(s.status==='fulfilled')setCandidates(s.value.records||[]);else{setCandidates([]);setError(previous=>[previous,(s.reason as Error).message].filter(Boolean).join(' '));}
+  setLoading(false);};
+ const showHistory=async(product:Row)=>{setHistoryError('');setHistory(null);
+  if(coveragePeriodTooLong){setHistoryError('Para ver o histórico por município, escolha até cinco anos.');return;}
+  setHistoryLoading(true);try{
   const params=new URLSearchParams({phase,start,end});for(const city of cities)params.append('municipalities',city);
   setHistory(await api('/catalogue-intelligent/products/'+product.id+'/history?'+params));
  }catch(reason){setHistoryError((reason as Error).message);}finally{setHistoryLoading(false);}};
@@ -69,7 +80,7 @@ export function Catalogue(){
   {history?<Panel title={'Histórico por município · '+history.product.name}>
    <Notice>{history.product.classification==='synthetic'?'Dados fictícios para teste.':'Registros de fontes públicas consultadas.'} Situação: {phase==='publicado_estimado'?'publicado · estimado':phase==='homologado'?'homologado':'contratado'}. Período: {start} a {end}. {history.product.unit}{history.product.package_signature?' · '+history.product.package_signature:''}. A coleta pode estar incompleta.</Notice>
    <DataTable<Row> rows={history.municipalities||[]} id={row=>row.municipality.ibge} caption="Registros observados por município no recorte" columns={[
-    {label:'Município',render:row=><>{row.municipality.name}/{row.municipality.uf}<small>{row.observed_records?'Registros encontrados':'Sem registros encontrados neste recorte'} · {row.coverage_state==='demonstration'?'Dados de demonstração':row.coverage_state==='not_collected'?'Consulta insuficiente':'Cobertura parcial'}</small></>},
+    {label:'Município',render:row=><>{row.municipality.name}/{row.municipality.uf}<small>{row.observed_records?'Registros encontrados':'Sem registros encontrados neste recorte'} · {coverageLabel(row.coverage_state)}</small></>},
     {label:'Registros',render:row=><>{quantity(row.observed_records)} linhas<small>{row.distinct_processes==null?'Processos não identificados':quantity(row.distinct_processes)+' processos identificados'} · {row.observed_months.length} meses observados · {row.observed_years.join(', ')||'ano indisponível'}</small></>},
     {label:'Quantidade documentada',render:row=><>{quantity(row.observed_quantity)}<small>{row.observed_quantity==null?'Quantidade indisponível':history.product.unit}{!row.quantity_complete&&row.observed_quantity!=null?' · total parcial':''}{row.excluded_from_totals.length?' · há itens não comparáveis':''}</small></>},
     {label:'Valor documentado',render:row=><>{money(row.documented_amount)}<small>{row.unit_prices.length===1?'Preço unitário: '+money(row.unit_prices[0]):row.unit_prices.length>1?'Compare os preços nos documentos':'Preço unitário indisponível'}</small></>},
@@ -112,6 +123,7 @@ export function Catalogue(){
      {label:'Preço unitário',render:row=>money(row.unit_price)}]}/><a href={referencePrices.url} target="_blank" rel="noreferrer">Abrir consulta original no Compras.gov.br</a></>:null}
   </Panel>
   <Panel title="O que a coleta comprovou"><Notice>O percentual abaixo mede páginas planejadas e conciliadas no recorte. Ele não mede todas as compras do município, nem a completude de resultados, pagamentos ou consumo.</Notice>
+   {coverageError?<Notice tone="warning">{coverageError}</Notice>:null}
    <DataTable<Row> rows={rows} id={row=>[row.municipality_ibge,row.provider,row.modality].join(':')} caption="Cobertura por município, fonte, modalidade e situação" columns={[
     {label:'Município',render:row=><>{row.municipality_name}<small>{row.municipality_ibge}</small></>},
     {label:'Fonte e situação',render:row=><>{row.source_label}<small>{row.phase} · {row.modality?'modalidade '+row.modality:'todas ou não aplicável'}</small></>},

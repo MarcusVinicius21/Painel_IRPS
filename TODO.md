@@ -37,3 +37,31 @@ Critérios referem-se ao recorte local. Produção permanece bloqueada conforme 
 - [ ] Contrato estável e utilizável de TCE-MG/Sicom e portais municipais ainda requer validação específica.
 - [ ] Cobertura histórica ampla, execução financeira e identidade jurídica municipal permanecem sem comprovação completa.
 - [x] Auditoria, testes finais e evidências concluídos; [PR #2](https://github.com/MarcusVinicius21/Painel_IRPS/pull/2) aberto para revisão.
+
+## Diretriz Mestra V2 — validação desta rodada
+- [x] Importação integral/idempotente e busca dos dois CSVs.
+- [x] Histórico temporal sem médias ou zeros presumidos.
+- [x] Estudo contextualizado, meta separada de V4 e isolamento de itens internos.
+- [x] Minutas coerentes, bloqueios e exportação local revisável.
+- [x] PostgreSQL, regressões, build, navegador e integridade V4.
+- [x] Relatório fiel e diff local sem commit/push.
+# Telas aprovadas: critérios desta rodada
+
+- [x] Dashboard com APIs independentes, fases separadas e atividades reais.
+- [x] Seis etapas navegáveis com contexto persistido e retorno aos módulos existentes.
+- [x] Catálogo paginado, filtros e histórico sem médias inventadas.
+- [x] Planejamento e sugestão independentes do V4; meta nunca distribuída automaticamente.
+- [x] Minutas recuperáveis, revisão e exportação documental real.
+- [x] Manifestações com prova, conferência, prazos e estados explícitos.
+- [x] Consolidação exclusiva de manifestações válidas, exportação XLSX/PDF e dossiê.
+- [x] Capturas separadas antes/depois desktop/mobile, regressões e galeria.
+- [x] Diff auditado, oito hashes V4 intactos, sem commit/push/deploy.
+
+## Gate visual rigoroso
+- [x] Ler prompt e auditoria; preservar baseline físico e capturas exatas.
+- [x] Examinar sete referências e inventariar áreas e controles.
+- [x] Medir geometrias, refinar sete telas e registrar resíduos.
+- [x] QA funcional, responsivo, acessibilidade, documentos e V4.
+- [x] Galeria e ZIP auditado, sem commit/push/deploy.
+
+- [ ] Gate de reprodução visual integral: divergências internas documentadas; não aprovado por testes de caixas.

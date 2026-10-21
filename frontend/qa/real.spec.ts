@@ -7,7 +7,7 @@ const diagnostics=new WeakMap();
 test.beforeEach(async({page})=>{const d={console:[],http_errors:[],network_failures:[]};diagnostics.set(page,d);page.on('console',m=>{if(['error','warning'].includes(m.type()))d.console.push({type:m.type(),line:m.location().lineNumber||0,source:m.location().url?new URL(m.location().url).pathname:'unknown',content_recorded:false});});page.on('response',r=>{if(r.status()>=400)d.http_errors.push({path:new URL(r.url()).pathname,status:r.status(),expected:r.status()===401&&new URL(r.url()).pathname.endsWith('/auth/context')});});page.on('requestfailed',r=>d.network_failures.push({path:new URL(r.url()).pathname,failure:r.failure()?.errorText}));});
 test.afterEach(async({page},info)=>{const d=diagnostics.get(page);fs.writeFileSync(path.join(out,'browser-'+info.title.replace(/[^a-zA-Z0-9]+/g,'-')+'.json'),JSON.stringify(d,null,2));expect(d.network_failures.filter(x=>!x.failure?.includes('ERR_ABORTED'))).toEqual([]);expect(d.http_errors.filter(x=>!x.expected)).toEqual([]);});
 async function login(page,user='Equipe de compras A'){
- await page.goto('/');await page.getByRole('button',{name:user,exact:true}).click();await expect(page.getByRole('heading',{level:1})).toContainText('Uma boa decisão');
+ await page.goto('/');await page.getByRole('button',{name:user,exact:true}).click();await expect(page.getByRole('heading',{level:1})).toContainText('Inteligência e planejamento de compras');
  await expect(page.locator('.identity-label')).toContainText(user);
 }
 async function measure(page){await page.evaluate(()=>{window.__irpsMetrics={clicks:0,fields:[],screens:[],start:performance.now()};});}
@@ -57,7 +57,7 @@ test('Teclado · consulta oficial · identidade e fontes',async({page})=>{
 
 test('Esforço real · procurar comprador e comparar preços',async({page})=>{
  await page.setViewportSize({width:1440,height:1000});await login(page);await measure(page);
- await page.getByLabel('Pesquisar produto, serviço, obra ou município').fill('Papel A4');await page.getByRole('button',{name:'Pesquisar compras',exact:true}).click();await page.getByLabel('Dados',{exact:true}).selectOption('synthetic');await expect(page.locator('.desktop-records').getByText('Órgão fictício compras-a').first()).toBeVisible();
+ await page.goto('/#/pesquisa');await page.getByLabel('Pesquisar produto, serviço, obra ou município').fill('Papel A4');await page.getByRole('button',{name:'Pesquisar compras',exact:true}).click();await page.getByLabel('Dados',{exact:true}).selectOption('synthetic');await expect(page.locator('.desktop-records').getByText('Órgão fictício compras-a').first()).toBeVisible();
  fs.writeFileSync(path.join(out,'ux-comprador.json'),JSON.stringify(await metrics(page,'Procurar comprador de papel A4 com dados fictícios'),null,2));await page.screenshot({path:path.join(out,'telas/1440-comprador.png'),fullPage:true});
  await page.goto('/#/comparar');await measure(page);await page.getByLabel('Dados',{exact:true}).selectOption('synthetic');await page.getByRole('button',{name:'Consultar recorte',exact:true}).click();await expect(page.getByText('Encontramos registros no recorte escolhido. Confira a situação de cada compra.').first()).toBeVisible();
  fs.writeFileSync(path.join(out,'ux-comparacao.json'),JSON.stringify(await metrics(page,'Comparar preços contratados de três municípios'),null,2));await page.screenshot({path:path.join(out,'telas/1440-comparacao.png'),fullPage:true});

@@ -169,28 +169,40 @@ def create_product(ctx,body):
     return {'id':pid,'members':members,'reviewed':True,'supersedes_id':body.supersedes_id}
 
 
+def validated_municipalities(ctx,municipalities):
+    """None means the unrestricted summary; an explicit empty list is invalid."""
+    cities=list(dict.fromkeys(municipalities))
+    if not cities:fail(422,'Selecione pelo menos um município.','MUNICIPALITY_REQUIRED')
+    if any(not re.fullmatch(r'\d{7}',code) for code in cities):
+        fail(422,'Confira os códigos dos municípios selecionados.','MUNICIPALITY_UNKNOWN')
+    known=ctx.db.all('SELECT ibge FROM municipality WHERE ibge=ANY(:ids)',{'ids':cities})
+    if len(known)!=len(cities):fail(422,'Confira os municípios selecionados.','MUNICIPALITY_UNKNOWN')
+    return cities
+
+
 def products(ctx,phase='homologado',start=None,end=None,municipalities=None):
     ctx.require('read')
     start=start or date(2020,1,1);end=end or date.today()
     if municipalities is not None:
-        municipalities=list(dict.fromkeys(municipalities))
-        if not municipalities:fail(422,'Selecione pelo menos um município.','MUNICIPALITY_REQUIRED')
+        municipalities=validated_municipalities(ctx,municipalities)
     result=[]
     for product in active_products(ctx):
-        refs={(m['id'],m['version']) for m in product['members']}
+        members=encoded([{'item_id':m['id'],'item_version':m['version']} for m in product['members']])
         rows=ctx.db.all("""SELECT f.id,f.provider,f.classification,f.item_id,f.item_version,f.obligation_id,f.municipality_ibge,f.event_date,
             f.quantity,f.amount,f.unit_price,f.description,f.unit,f.source_id,s.url,s.consulted_at
             FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id
             WHERE f.classification=:dataset AND f.phase=:phase AND f.is_current
               AND (:phase<>'homologado' OR COALESCE(f.metadata->>'eligible_result','true')='true')
-              AND f.event_date BETWEEN :start AND :end AND f.item_id=ANY(:ids)
+              AND f.event_date BETWEEN :start AND :end
+              AND (f.item_id,f.item_version) IN (
+                SELECT member.item_id,member.item_version FROM jsonb_to_recordset(CAST(:members AS jsonb))
+                AS member(item_id text,item_version integer))
               AND (:all_cities OR f.municipality_ibge=ANY(:cities))
               AND (f.classification='official' OR f.org_id=:o)
             ORDER BY f.event_date,f.id LIMIT 20001""",
-            {'dataset':product['classification'],'phase':phase,'start':start,'end':end,'ids':[m['id'] for m in product['members']],'o':ctx.org_id,
+            {'dataset':product['classification'],'phase':phase,'start':start,'end':end,'members':members,'o':ctx.org_id,
              'all_cities':municipalities is None,'cities':municipalities or []})
-        if len(rows)>20000:fail(422,'Selecione um período menor para analisar este produto.','CATALOGUE_LIMIT')
-        rows=[r for r in rows if (r['item_id'],r['item_version']) in refs]
+        if len(rows)>20000:fail(422,'Selecione um período ou municípios menores para analisar este produto.','CATALOGUE_LIMIT')
         comparable=[r for r in rows if (n:=normalized_fact(r))['unit_key']==product['unit_key']
             and n['package_signature']==product['package_signature'] and n['confidence']!='incomplete']
         quantities=[r['quantity'] for r in comparable if r['quantity'] is not None]
@@ -216,31 +228,31 @@ def products(ctx,phase='homologado',start=None,end=None,municipalities=None):
 def product_history(ctx,product_id,phase,start,end,municipalities):
     """Observed facts per selected city. Unknown coverage never becomes zero demand."""
     ctx.require('read')
-    if not municipalities:fail(422,'Selecione pelo menos um município.','MUNICIPALITY_REQUIRED')
-    cities=list(dict.fromkeys(municipalities))
+    cities=validated_municipalities(ctx,municipalities)
     known=ctx.db.all('SELECT ibge,name,uf FROM municipality WHERE ibge=ANY(:ids) ORDER BY name',{'ids':cities})
-    if len(known)!=len(cities):fail(422,'Confira os municípios selecionados.','MUNICIPALITY_UNKNOWN')
     product=next((p for p in active_products(ctx) if str(p['id'])==str(product_id)),None)
     if product is None:fail(404,'Este produto revisado não está disponível.','PRODUCT_NOT_FOUND')
-    refs={(m['id'],m['version']) for m in product['members']}
+    members=encoded([{'item_id':m['id'],'item_version':m['version']} for m in product['members']])
     rows=ctx.db.all("""SELECT f.id,f.provider,f.classification,f.event_identity,f.revision_hash,f.obligation_id,
         f.municipality_ibge,f.item_id,f.item_version,f.event_date,f.quantity,f.unit_price,f.amount,
         f.description,f.unit,f.metadata,f.source_id,s.url,s.consulted_at,s.sha256
         FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id
         WHERE f.classification=:dataset AND (f.classification='official' OR f.org_id=:org)
-          AND f.is_current AND f.item_id=ANY(:items) AND f.phase=:phase
+          AND f.is_current AND f.phase=:phase
+          AND (f.item_id,f.item_version) IN (
+            SELECT member.item_id,member.item_version FROM jsonb_to_recordset(CAST(:members AS jsonb))
+            AS member(item_id text,item_version integer))
           AND f.event_date BETWEEN :start AND :end AND f.municipality_ibge=ANY(:cities)
           AND (:phase<>'homologado' OR COALESCE(f.metadata->>'eligible_result','true')='true')
         ORDER BY f.event_date,f.id LIMIT 20001""",
-        {'dataset':product['classification'],'org':ctx.org_id,'items':[m['id'] for m in product['members']],
+        {'dataset':product['classification'],'org':ctx.org_id,'members':members,
          'phase':phase,'start':start,'end':end,'cities':cities})
-    if len(rows)>20000:fail(422,'Escolha um período menor para analisar este produto.','CATALOGUE_LIMIT')
+    if len(rows)>20000:fail(422,'Escolha um período ou municípios menores para analisar este produto.','CATALOGUE_LIMIT')
     # A later revision replaces a fact. A repeated event identity is one observed line,
     # whereas several item lines in one obligation are not several purchases.
     unique={}
     for row in rows:
-        if (row['item_id'],row['item_version']) in refs:
-            unique[(row['provider'],row['event_identity'])]=row
+        unique[(row['provider'],row['event_identity'])]=row
     by_city=defaultdict(list)
     for row in unique.values():by_city[row['municipality_ibge']].append(row)
     coverage=coverage_inventory.inventory(ctx,start,end,cities) if product['classification']=='official' else {'records':[]}
@@ -273,6 +285,27 @@ def product_history(ctx,product_id,phase,start,end,municipalities):
             for r in facts]
         related=[r for r in coverage['records'] if r['municipality_ibge']==city['ibge'] and r['phase']==phase
                  and r['tasks']]
+        coverage_state=coverage_inventory.phase_state(related,start,end)
+        windows=[]
+        for count in (1,3,6,12):
+            index=end.year*12+end.month-count
+            requested=date(index//12,index%12+1,1)
+            first=max(start,requested)
+            selected=[r for r in compatible if first<=r['event_date']<=end]
+            vals=[r['quantity'] for r in selected if r['quantity'] is not None]
+            windows.append({'months':count,'requested_start':requested,'start':first,'end':end,
+                'observed_quantity':sum(vals,Decimal(0)) if vals else None,
+                'comparable_records':len(selected),'processes_identified':len({p for r in selected if (p:=reliable_obligation(r))}),
+                'fact_ids':[str(r['id']) for r in selected],
+                'partial':True,'monthly_average':None,'recurrence_percentage':None,
+                'limitation':'Total observado parcial. Não há denominador comprovado de toda a demanda municipal.',
+                'scope_covers_requested_window':start<=requested})
+        annual=[]
+        for year in sorted(years):
+            annual_rows=[r for r in compatible if r['event_date'].year==year]
+            annual_q=[r['quantity'] for r in annual_rows if r['quantity'] is not None]
+            annual.append({'year':year,'observed_quantity':sum(annual_q,Decimal(0)) if annual_q else None,
+                'comparable_records':len(annual_rows),'partial':True})
         output.append({'municipality':city,'classification':product['classification'],'phase':phase,
             'observed_records':len(facts),'distinct_processes':len(processes) if processes else None,
             'processes_identified':len(processes),'comparable_records':len(compatible),
@@ -283,8 +316,9 @@ def product_history(ctx,product_id,phase,start,end,municipalities):
             'last_observed':max((r['event_date'] for r in facts if r['event_date']),default=None),
             'observed_months':sorted(months),'observed_years':sorted(years),
             'interval_days':[ (b-a).days for a,b in zip(dates,dates[1:])],
+            'temporal_windows':windows,'annual':annual,
             'recurrence_percentage':None,'coverage_state':('demonstration' if product['classification']=='synthetic'
-                else 'partial' if related else 'not_collected'),
+                else coverage_state),
             'source_completeness_ratio':None,'coverage':related,'excluded_from_totals':excluded,
             'evidence':evidence[:100],'evidence_truncated':len(evidence)>100,
             'notice':'Meses observados não comprovam recorrência. Ausência de registro não comprova ausência de compra.'})

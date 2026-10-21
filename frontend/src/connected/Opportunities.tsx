@@ -1,10 +1,10 @@
 import {useEffect,useState} from 'react';
-import {api,nav,phases,post,money,quantity,route,useApi} from '../api';
+import {api,nav,phases,post,money,quantity,route,useApi,businessDate} from '../api';
 import type {Row} from '../api';
 import {Action,Badge,Bars,DataTable,Dialog,Empty,Field,Link,Notice,Page,Panel,Stats} from '../components/ui';
 
 type Filters={dataset:string;grouping:string;phase:string;start:string;end:string;municipalities:string[];groups:string[];buyers:string[];categories:string[];item_ids:string[];modalities:number[];suppliers:string[];months:number[];years:number[];q:string;min_quantity:string;max_quantity:string;min_amount:string;max_amount:string;min_price:string;max_price:string;weights:Record<string,number>;order:string;};
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>businessDate();
 const emptyFilters=():Filters=>({dataset:'official',grouping:'reviewed_equivalence',phase:'publicado_estimado',start:'2024-01-01',end:today(),municipalities:[],groups:[],buyers:[],categories:[],item_ids:[],modalities:[],suppliers:[],months:[],years:[],q:'',min_quantity:'',max_quantity:'',min_amount:'',max_amount:'',min_price:'',max_price:'',weights:{recurrence:30,spread:20,price:20,ease:30},order:'recurrence'});
 const selected=(event:React.ChangeEvent<HTMLSelectElement>)=>Array.from(event.target.selectedOptions,x=>x.value);
 const selectedNumber=(event:React.ChangeEvent<HTMLSelectElement>)=>selected(event).map(Number);

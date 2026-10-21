@@ -1,0 +1,20 @@
+{
+  "backend": {
+    "passed": 185,
+    "subtests_passed": 200,
+    "warnings": 2
+  },
+  "playwright": {
+    "startTime": "2026-10-21T05:27:01.224Z",
+    "duration": 230605.891,
+    "expected": 32,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "build": "passed",
+  "migration": "fresh upgrade + second upgrade passed, head 0012",
+  "geometry": "32 main boxes within ±4px; not all internal controls measured",
+  "visual_full_acceptance": "not_approved",
+  "no_commit_push_merge_pr_deploy": true
+}

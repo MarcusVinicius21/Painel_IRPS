@@ -32,6 +32,21 @@ def dates(start,end):
         current+=timedelta(days=1)
 
 
+def phase_state(records,start=None,end=None):
+    """State of the evidenced request scopes, never municipal purchase completeness."""
+    if not records:return 'not_collected'
+    successful=sum(row['completed_tasks'] for row in records)
+    if successful:
+        requested_days=(end-start).days+1 if start and end else None
+        if all(row['status']=='request_reconciled' and
+               (requested_days is None or row['planned_days']==requested_days) for row in records):
+            return 'scope_complete'
+        if all(row['status'] in ('consulted','request_reconciled') for row in records):return 'consulted'
+        return 'partial'
+    if any(row['failed_tasks'] for row in records):return 'failed'
+    return 'pending'
+
+
 def inventory(ctx,start,end,cities):
     ctx.require('read')
     if end<start or (end-start).days>1826:fail(422,'Escolha até cinco anos para conferir a cobertura.')
@@ -53,7 +68,7 @@ def inventory(ctx,start,end,cities):
         {'start':start,'end':end,'cities':list(selected)})
     if len(buyer_inventory)>10000:fail(422,'Divida o período para conferir os órgãos compradores.','BUYER_INVENTORY_LIMIT')
     tasks=ctx.db.all("""SELECT t.id,t.provider,t.arguments,t.state,t.collection_id,c.state AS collection_state,
-        c.scope,p.record_count,p.result,s.url,s.sha256,s.consulted_at,
+        c.scope,p.record_count,p.result,s.url,s.sha256,s.consulted_at,s.http_status,
         parent.municipality_ibge AS parent_city,parent.event_date AS parent_date
         FROM history_task t JOIN history_collection c ON c.id=t.collection_id AND c.org_id=t.org_id
         LEFT JOIN history_page p ON p.task_id=t.id AND p.org_id=t.org_id
@@ -86,10 +101,15 @@ def inventory(ctx,start,end,cities):
             if not keys:keys=[(code,provider,None)]
             for key in sorted(keys,key=lambda x:(x[2] is None,x[2] or 0)):
                 rows=grouped.get(key,[])
-                complete=sum(r['state']=='done' and r['url'] is not None for r in rows)
-                observed=sum(r['record_count'] or 0 for r in rows)
+                successful=[r for r in rows if r['state']=='done' and r['url'] and r['sha256']
+                    and r['consulted_at'] and r['http_status'] is not None and 200<=r['http_status']<300]
+                successful_ids={r['id'] for r in successful}
+                complete=len(successful_ids)
+                failed=len({r['id'] for r in rows if r['state']=='failed'})
+                pending=len({r['id'] for r in rows if r['state']!='failed' and r['id'] not in successful_ids})
+                observed=sum(r['record_count'] or 0 for r in successful)
                 proof=[{'url':r['url'],'sha256':r['sha256'],'consulted_at':r['consulted_at'],
-                    'record_count':r['record_count'],'task_id':str(r['id'])} for r in rows if r['url']][:25]
+                    'record_count':r['record_count'],'task_id':str(r['id'])} for r in successful][:25]
                 planned_days=set();verified_days=set();pagination=[]
                 if provider in ('PNCP','PNCP_ATUALIZACAO'):
                     for seed in (r for r in rows if r['arguments'].get('page')==1):
@@ -102,22 +122,25 @@ def inventory(ctx,start,end,cities):
                             and r['arguments'].get('start_date')==args['start_date']
                             and r['arguments'].get('end_date')==args['end_date']]
                         expected=seed['result'].get('expected_pages') if seed['result'] else None
-                        pages={r['arguments'].get('page') for r in siblings if r['state']=='done' and r['url']}
+                        pages={r['arguments'].get('page') for r in siblings if r['id'] in successful_ids}
                         reconciled=isinstance(expected,int) and expected>=0 and set(range(1,max(1,expected)+1))<=pages
                         if reconciled:verified_days.update(window)
                         pagination.append({'start':args['start_date'],'end':args['end_date'],
                             'expected_pages':expected,'completed_pages':len(pages),'pages_reconciled':reconciled})
                 denominator=len(planned_days)
                 ratio=Decimal(len(verified_days))/denominator if denominator else None
-                status='request_reconciled' if denominator and verified_days==planned_days else 'partial' if rows else 'not_collected'
+                status=('request_reconciled' if denominator and verified_days==planned_days and complete==len({r['id'] for r in rows})
+                    else 'partial' if complete and (failed or pending or complete<len({r['id'] for r in rows}))
+                    else 'consulted' if complete else 'failed' if failed else 'pending' if pending else 'not_collected')
                 if provider in ('TCE_MG_SICOM','PORTAL_MUNICIPAL') and not rows:status='connector_pending'
                 records.append({'municipality_ibge':code,'municipality_name':city['name'],'uf':city['uf'],
                     'provider':provider,'source_label':label,'phase':phase,'modality':key[2],
                     'buyer_count':len(city_buyers[code]),'buyers':city_buyers[code][:20],
-                    'tasks':len(rows),'completed_tasks':complete,'records_returned':observed,
+                    'tasks':len({r['id'] for r in rows}),'completed_tasks':complete,'failed_tasks':failed,
+                    'pending_tasks':pending,'records_returned':observed,
                     'planned_days':denominator or None,'reconciled_days':len(verified_days) if denominator else None,
                     'request_completion_ratio':ratio,'source_completeness_ratio':None,
-                    'pagination':pagination[:25],'proof':proof,'proof_truncated':len(rows)>25,
+                    'pagination':pagination[:25],'proof':proof,'proof_truncated':len(successful)>25,
                     'status':status,'message':('Percentual mostra somente consultas planejadas e paginadas; não mede todas as compras do município.'
                         if ratio is not None else 'Ainda não há denominador verificável para medir esta situação.')})
     return normalize({'start':start,'end':end,'municipalities':known,'records':records,

@@ -1,0 +1,35 @@
+flowchart TD
+  A[Pesquisar CATMAT CATSER ou objeto livre] --> B[Conferir versão descrição e situação]
+  B --> C[Selecionar municípios fase e período]
+  C --> D{Há vínculo técnico revisado?}
+  D -- Não --> E[Histórico indisponível e revisão pendente]
+  D -- Sim --> F[Histórico por município e janelas comparáveis]
+  F --> G[Evidências e limitações de cobertura]
+  E --> H[Definir especificação e meta opcional]
+  G --> H
+  H --> I[Conferência técnica e estudo imutável]
+  I --> J[Cenário existente sem entradas V4 inventadas]
+  J --> K{Entradas V4 suficientes?}
+  K -- Não --> L[Dados insuficientes e parâmetros pendentes]
+  K -- Sim --> M[Cálculo V4 preservado e memória]
+  I --> N[Sugestão municipal independente e revisável]
+  I --> O[Preparar minuta]
+  O --> P{Objeto unidade e versão coerentes?}
+  P -- Não --> Q[Correção necessária sem exportação]
+  Q --> O
+  P -- Sim --> R[DOCX PDF em revisão]
+  R --> S[Ação externa obrigatória]
+  S --> T[Registrar comunicação e comprovantes]
+  T --> U{Manifestação recebida?}
+  U -- Não --> V[Sem resposta sem recusa presumida]
+  U -- Sim --> W[Documento competência e quantidade conferidos]
+  W --> X{Conferência válida na versão atual?}
+  X -- Não --> Y[Pendência excluída do confirmado]
+  X -- Sim --> Z[Total confirmado conhecido e pendências]
+  M --> AA[Dossiê interno ZIP]
+  L --> AA
+  N --> AA
+  R --> AA
+  Z --> AA
+  AB[Mudança no cenário ou revisão documental] --> Y
+  AB --> Q

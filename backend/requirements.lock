@@ -4,7 +4,7 @@ annotated-types==0.8.0
 anyio==4.15.1
 boolean.py==5.0
 CacheControl==0.14.4
-certifi==2026.10.18
+certifi==2026.10.19
 cffi==2.1.1
 charset-normalizer==3.5.2
 click==8.5.0
@@ -12,6 +12,8 @@ colorama==0.4.6
 cryptography==50.0.2
 cyclonedx-python-lib==11.12.0
 defusedxml==0.7.1
+python-docx==1.2.0
+lxml==6.1.1
 et_xmlfile==2.0.0
 fastapi==0.148.0
 filelock==4.2.4

@@ -1,0 +1,48 @@
+flowchart TD
+ D[Dashboard: dados oficiais e operações internas] --> S[Selecionar código e snapshot CATMAT/CATSER]
+ S --> H[Escolher municípios, período e fase]
+ H --> L{Existe vínculo técnico revisado?}
+ L -- Sim --> E[Histórico comparável e evidências por município]
+ L -- Não --> U[Informação insuficiente: não presumir zero]
+ E --> P[Planejamento e meta preliminar justificada]
+ U --> P
+ H --> SAVE[Salvar progresso incompleto e imutável]
+ P --> SAVE
+ SAVE --> REOPEN[Reabrir rascunho sem aprovação técnica]
+ REOPEN --> P
+ P --> T{Especificação e unidade conferidas?}
+ T -- Não --> FIX[Completar ou revisar parâmetros]
+ FIX --> P
+ T -- Sim --> ST[Salvar estudo e cenário vinculados]
+ ST --> A[Modo A: necessidades independentes V4]
+ ST --> B[Modo B: meta fundamentada e critérios confirmados]
+ A --> V{Entradas validadas suficientes?}
+ B --> V
+ V -- Não --> N[Pendências explícitas: não calcular por suposição]
+ V -- Sim --> CALC[Cálculo no núcleo V4 preservado]
+ N --> R[Preparação de minuta em revisão]
+ CALC --> R
+ ST --> R
+ R --> CHECK{Objeto e contexto conferidos?}
+ CHECK -- Não --> R
+ CHECK -- Sim --> DOC[Prévia real, DOCX e PDF versionados]
+ DOC --> COMM[Comunicação pelo canal externo competente]
+ COMM --> PROOF[Operador registra comprovantes no IRPS]
+ PROOF --> M{Resposta recebida?}
+ M -- Não --> WAIT[Aguardar ou registrar prazo vencido: não é recusa]
+ M -- Sim --> REVIEW[Conferir documento, competência e quantidade]
+ REVIEW --> VALID{Manifestação válida?}
+ VALID -- Não --> INVALID[Inválida ou em conferência: sem quantidade consolidada]
+ VALID -- Sim --> YES[Confirmação ou recusa expressa documentada]
+ YES --> C[Consolidação: somente confirmações vigentes]
+ WAIT --> C
+ INVALID --> C
+ C --> TOTAL{Todos os convites resolvidos?}
+ TOTAL -- Não --> PART[Total conhecido parcial; total final indisponível]
+ TOTAL -- Sim --> COMPLETE[Quadro dos participantes confirmados, sem somar recusas]
+ PART --> OUT[Excel, PDF, dossiê e rastreabilidade]
+ COMPLETE --> OUT
+ OUT --> EXT[Validação institucional e atos oficiais em ambiente externo]
+ REVIEW --> CHANGE{Mudou cenário, documento ou manifestação?}
+ CHANGE -- Sim --> STALE[Invalidar contexto anterior e exigir nova conferência]
+ STALE --> R

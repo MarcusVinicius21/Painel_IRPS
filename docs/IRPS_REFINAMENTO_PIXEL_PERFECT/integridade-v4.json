@@ -1,0 +1,13 @@
+{
+  "unchanged": true,
+  "sha256": {
+    "allocate.py": "dd377f14bb3f2b08b4cd352b2383eee8d728f1d33d6b94edb15cdc6b31c5fb2e",
+    "domain.py": "d56b49f7a41844eb3fc0403b2c56504685fd67de89884c88f56f158d8d524768",
+    "finance.py": "52895617e36c2badbcc7a2c95730f6c13f19e67bdd7537b398286fb160a99c3b",
+    "forecast.py": "29b45fe28b0fd7cec3518aa202fe9d8e56b11af862e59581ac49da942a6f0b9a",
+    "market.py": "31f8651d065c0bf395e07602f7c7f9bc7df375c4861a14acc2365400e450db86",
+    "permissions.py": "440d6bfd75eb0eafa7f3a4313ad839e8d51960e2b25217d6f21f8a2cf16988ab",
+    "tender.py": "65aa7705432f06d3577990a60da7a6feeaa8f143686b985304db519a579b770e",
+    "__init__.py": "c7d680aa5e521206e800534ccdf9c528109510ed37dc586d93a49227bbf85204"
+  }
+}

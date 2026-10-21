@@ -15,6 +15,7 @@ from .security import authenticate,Verifier,TEST_USERS,stable_id,establish_sessi
 from .schemas import Login,ScenarioCreate,Snapshot,SyntheticCreate,QuoteBody,DocumentReview,AssistantBody,ToolCall,SourceSync,WatchBody
 from . import scenarios,documents,exports,assistant,sources
 from .opportunity_routes import router as opportunity_router
+from .director_routes import router as director_router
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 
@@ -146,6 +147,24 @@ def create_app(settings=None):
   count=ctx.db.one('SELECT count(*) AS n FROM calculation_line l WHERE '+filt,params)['n']
   records=ctx.db.all('SELECT l.*,m.name AS municipality_name,v.name AS item_name FROM calculation_line l JOIN municipality m ON m.ibge=l.ibge JOIN item_version v ON v.id=l.item_id AND v.version=l.item_version WHERE '+filt+' ORDER BY l.ibge,l.item_id LIMIT :n OFFSET :offset',params)
   return normalize({'records':records,'total':count,'offset':offset,'limit':limit,'revision':calc['revision']})
+ @app.get('/api/v1/calculations/{cid}/item-lines')
+ def item_lines(cid:UUID,ctx:Auth,item_id:str,item_version:int=Query(ge=1),municipalities:list[str]=Query(default_factory=list)):
+  ctx.require('read')
+  cities=list(dict.fromkeys(municipalities))
+  if not cities or len(cities)>118:fail(422,'Selecione de um a 118 municípios.','MUNICIPALITY_SCOPE')
+  calc=ctx.db.one('SELECT scenario_id,revision FROM calculation WHERE org_id=:o AND id=:i',{'o':ctx.org_id,'i':cid})
+  if not calc:fail(404,'Este cálculo não está disponível neste espaço.')
+  scenario=ctx.db.one('SELECT current_revision FROM scenario WHERE org_id=:o AND id=:s',{'o':ctx.org_id,'s':calc['scenario_id']})
+  if not scenario or calc['revision']!=scenario['current_revision']:
+   fail(409,'Este cálculo pertence a uma versão anterior. Calcule novamente.','CALCULATION_STALE')
+  records=ctx.db.all('''SELECT l.*,m.name AS municipality_name,v.name AS item_name
+   FROM calculation_line l JOIN municipality m ON m.ibge=l.ibge
+   JOIN item_version v ON v.id=l.item_id AND v.version=l.item_version
+   WHERE l.org_id=:o AND l.calculation_id=:i AND l.item_id=:item
+     AND l.item_version=:version AND l.ibge=ANY(:cities) ORDER BY l.ibge''',
+   {'o':ctx.org_id,'i':cid,'item':item_id,'version':item_version,'cities':cities})
+  return normalize({'records':records,'calculation_id':cid,'revision':calc['revision'],
+                    'item_id':item_id,'item_version':item_version,'municipalities':cities})
  @app.post('/api/v1/scenarios/{sid}/exports/{fmt}')
  def scenario_export(sid:UUID,fmt:Literal['csv','xlsx','pdf'],ctx:Auth,calculation_id:UUID):return exports.create(ctx,settings.runtime,str(sid),fmt,str(calculation_id))
  @app.get('/api/v1/artifacts/{aid}/download')
@@ -235,6 +254,7 @@ def create_app(settings=None):
  @app.get('/api/v1/audit')
  def audit(ctx:Auth):return {'records':ctx.db.all('SELECT action,resource_id,metadata,created_at FROM audit_event WHERE org_id=:o AND actor_id=:a ORDER BY created_at DESC LIMIT 100',{'o':ctx.org_id,'a':ctx.actor_id})}
  app.include_router(opportunity_router)
+ app.include_router(director_router)
  return app
 
 app=create_app()

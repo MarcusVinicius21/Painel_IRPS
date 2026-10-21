@@ -1,5 +1,5 @@
 from typing import Annotated
-from datetime import date
+from datetime import date,timedelta
 from uuid import UUID
 from fastapi import APIRouter,Depends,Request,BackgroundTasks,Header,Query
 from .security import authenticate,fail,PERMISSIONS
@@ -46,7 +46,8 @@ def catalogue_products(ctx:Auth,phase:PHASES='homologado',start:date=date(2020,1
 
 @router.get('/catalogue-intelligent/products/{product_id}/history')
 def catalogue_product_history(product_id:UUID,ctx:Auth,phase:PHASES='homologado',
-                              start:date=date(2020,1,1),end:date=Query(default_factory=date.today),
+                              start:date=Query(default_factory=lambda:date.today()-timedelta(days=1826)),
+                              end:date=Query(default_factory=date.today),
                               municipalities:list[str]=Query(default_factory=list)):
     if end<start or (end-start).days>1826:fail(422,'Escolha um período de até cinco anos.')
     if len(municipalities)>118:fail(422,'Escolha até 118 municípios por consulta.')

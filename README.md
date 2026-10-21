@@ -117,3 +117,6 @@ Nenhuma credencial, banco local, sessão, documento privado, skill privada ou ex
 Antes de produção: identidade externa HTTPS, gestão de segredos, proteção dos parsers, workers e limites distribuídos, backups/restauração, cobertura de dados e revisão independente. Este repositório não configura implantação nem ativa serviços pagos.
 
 As licenças das dependências e da fonte Manrope estão documentadas [aqui](docs/implementacao/DEPENDENCIAS_E_LICENCAS.md). O envio a um repositório privado não concede uma licença pública sobre o código do projeto.
+
+## Diretriz Mestra V2 — incremento local
+A área **Inteligência e planejamento** reúne catálogo nacional, histórico por município, meta preliminar, estudo versionado e minutas IRP revisáveis. Consulte [a entrega local](docs/DIRETRIZ_MESTRA_V2/README.md) para contratos, execução, testes e limites. Os 348.679 códigos importados não representam compras nem cobertura municipal. Alterações desta rodada aguardam revisão antes de commit ou push.

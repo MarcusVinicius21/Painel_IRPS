@@ -36,4 +36,6 @@ export function nav(path:string,params:Record<string,string>={}){location.hash='
 export function param(key:string,value:string){const r=route();r.params.set(key,value);location.hash='/'+r.path+'?'+r.params;}
 export const money=(v:unknown)=>v==null?'Não disponível':new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v));
 export const quantity=(v:unknown)=>v==null?'Não disponível':new Intl.NumberFormat('pt-BR',{maximumFractionDigits:8}).format(Number(v));
+// Date-only filters follow the operating calendar, not the next UTC day at 21h.
+export const businessDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 export const phases:Record<string,string>={publicado_estimado:'Publicado · estimado',homologado:'Homologado',contratado:'Contratado',solicitado:'Solicitado',entregue:'Entregue',consumido:'Consumo comprovado',empenhado:'Empenhado',liquidado:'Liquidado',pago:'Pago',estorno:'Estorno'};
