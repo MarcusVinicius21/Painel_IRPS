@@ -1,0 +1,63 @@
+{
+  "purpose": "Design reference originals, not product data",
+  "created_for": "IRPS / CONSORMULTI",
+  "reference_count": 7,
+  "images": [
+    {
+      "filename": "00_visao_geral.png",
+      "label": "Visão geral e jornada",
+      "sha256": "a01be15bc702e96ebf8421c120cbd6df57a6b07fd55d898c3039566ff8a0b131",
+      "width": 1536,
+      "height": 1024,
+      "size_bytes": 1438854
+    },
+    {
+      "filename": "01_dashboard_produto.png",
+      "label": "Dashboard com produto selecionado",
+      "sha256": "683719eec12c625542d83172b31ec97d621643341a0da65c24ee14342af727bc",
+      "width": 1672,
+      "height": 941,
+      "size_bytes": 1619850
+    },
+    {
+      "filename": "02_inteligencia_por_produto.png",
+      "label": "Inteligência por produto",
+      "sha256": "bb7862d06e7a02db5a14625a54a13c555f080b0f9a782a05f02925578cee629a",
+      "width": 1672,
+      "height": 941,
+      "size_bytes": 1623752
+    },
+    {
+      "filename": "03_planejamento_municipal.png",
+      "label": "Planejamento municipal",
+      "sha256": "206c065424809adb82260752a5b1d8d7758ab9c68f62fd492a03fa0a5615b72f",
+      "width": 1672,
+      "height": 941,
+      "size_bytes": 1646054
+    },
+    {
+      "filename": "04_preparacao_irp.png",
+      "label": "Preparação da IRP",
+      "sha256": "9f9b81f4a75af77913171ae977af899d7cfbabe5c629176db83efd9a50d38df8",
+      "width": 1672,
+      "height": 941,
+      "size_bytes": 1711918
+    },
+    {
+      "filename": "05_manifestacoes.png",
+      "label": "Manifestações municipais",
+      "sha256": "ab6fcf0e730bc66e74b49aaee9dbbd8f3b597d1ca99507116897f84d4800658c",
+      "width": 1672,
+      "height": 941,
+      "size_bytes": 1643960
+    },
+    {
+      "filename": "06_consolidacao.png",
+      "label": "Consolidação da IRP",
+      "sha256": "73d4f6986088141974241497905b4c51a006e4575c77979a19f8ebc7ae23d790",
+      "width": 1672,
+      "height": 941,
+      "size_bytes": 1622857
+    }
+  ]
+}
