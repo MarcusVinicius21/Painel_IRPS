@@ -56,7 +56,12 @@ def save(ctx,sid,body):
     if body.kind=='manifestation' and body.status in ('confirmed','adjusted_confirmed') and body.quantity is None:
         fail(422,'Informe a quantidade expressa no documento conferido.','FORMAL_QUANTITY_REQUIRED')
     if body.kind=='manifestation' and body.status=='not_participating' and body.quantity is not None:fail(422,'Uma recusa não informa quantidade confirmada.')
-    if body.kind=='suggestion' and body.quantity is None:fail(422,'Informe a sugestão e sua justificativa.')
+    if body.kind=='suggestion':
+        if body.quantity is None:fail(422,'Informe a sugestão e sua justificativa.')
+        if len(body.note.strip())<10:fail(422,'Justifique a quantidade proposta com pelo menos dez caracteres.','SUGGESTION_REASON_REQUIRED')
+        step=Decimal(data['payload']['quantity_step'])
+        if body.quantity % step != 0:
+            fail(422,'A quantidade proposta deve respeitar a unidade e o passo definidos para este item.','SUGGESTION_STEP_MISMATCH')
     key=f'{ctx.org_id}:{sid}:{body.kind}:{body.municipality_ibge}'
     ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':key})
     old=ctx.db.one('SELECT id,revision FROM irp_operation WHERE org_id=:o AND study_id=:s AND kind=:k AND municipality_ibge=:c ORDER BY revision DESC LIMIT 1',
@@ -65,6 +70,7 @@ def save(ctx,sid,body):
     payload=body.model_dump(mode='json');payload.update({'unit':data['payload']['unit'],'item':data['payload']['planning_item'],
         'document_revision':doc['revision'] if doc else None,'document_sha256':doc['sha256'] if doc else None,
         'official_act_performed_by_irps':False})
+    if body.kind=='suggestion':payload.update({'note':body.note.strip(),'quantity_step':data['payload']['quantity_step']})
     oid=identifier();revision=body.expected_revision+1
     ctx.db.execute('''INSERT INTO irp_operation(org_id,id,study_id,scenario_revision,kind,municipality_ibge,revision,supersedes_id,payload,created_by)
         VALUES (:o,:i,:s,:sv,:k,:c,:r,:previous,CAST(:p AS jsonb),:a)''',
@@ -76,7 +82,7 @@ def save(ctx,sid,body):
 
 def summary(ctx,sid):
     data=director.study(ctx,sid)
-    rows=ctx.db.all('''SELECT DISTINCT ON(kind,municipality_ibge) id,kind,municipality_ibge,revision,scenario_revision,payload,created_by,created_at
+    rows=ctx.db.all('''SELECT DISTINCT ON(kind,municipality_ibge) id,kind,municipality_ibge,revision,scenario_revision,payload,created_by,(SELECT name FROM actor WHERE actor.id=irp_operation.created_by) AS created_by_name,created_at
         FROM irp_operation WHERE org_id=:o AND study_id=:s ORDER BY kind,municipality_ibge,revision DESC''',{'o':ctx.org_id,'s':sid})
     indexed={(r['kind'],r['municipality_ibge']):r for r in rows};cities=[]
     for code in data['payload']['municipalities']:
@@ -95,9 +101,14 @@ def summary(ctx,sid):
             display_state='awaiting_response'
         else:
             display_state='communication_pending'
-        proposed=bool(data['context_current'] and suggestion and suggestion['payload']['status']=='reviewed')
+        suggestion_current=bool(data['context_current'] and suggestion and suggestion['scenario_revision']==data['scenario_revision'])
+        if suggestion_current and suggestion['payload'].get('document_id'):
+            proof=ctx.db.one('SELECT revision FROM extracted_document WHERE org_id=:o AND document_id=:d ORDER BY revision DESC LIMIT 1',{'o':ctx.org_id,'d':suggestion['payload']['document_id']})
+            suggestion_current=bool(proof and proof['revision']==suggestion['payload']['document_revision'])
+        proposed=bool(suggestion_current and suggestion['payload']['status']=='reviewed')
         cities.append({'ibge':code,'suggested_quantity':suggestion['payload']['quantity'] if proposed else None,
-            'suggestion_state':suggestion['payload']['status'] if suggestion else 'not_proposed',
+            'suggestion_state':('requires_reconfirmation' if not suggestion_current else suggestion['payload']['status']) if suggestion else 'not_proposed',
+            'suggestion_context_current':suggestion_current,
             'confirmed_quantity':manifest['payload']['quantity'] if confirmed else None,
             'manifestation_state':manifest['payload']['status'] if manifest else 'not_received',
             'confirmation_current':bool(confirmed),'non_participation_current':declined,'display_state':display_state,
@@ -107,7 +118,7 @@ def summary(ctx,sid):
     suggestions=[Decimal(r['suggested_quantity']) for r in cities if r['suggested_quantity'] is not None]
     declined=sum(r['non_participation_current'] for r in cities)
     resolved=len(known)+declined
-    history=ctx.db.all('''SELECT id,kind,municipality_ibge,revision,scenario_revision,payload,created_by,created_at
+    history=ctx.db.all('''SELECT id,kind,municipality_ibge,revision,scenario_revision,payload,created_by,(SELECT name FROM actor WHERE actor.id=irp_operation.created_by) AS created_by_name,created_at
         FROM irp_operation WHERE org_id=:o AND study_id=:s ORDER BY created_at DESC,id DESC LIMIT 501''',{'o':ctx.org_id,'s':sid})
     return normalize({'study_id':sid,'scenario_revision':data['scenario']['current_revision'],'context_current':data['context_current'],
         'municipalities':cities,'operations':rows,'history':history[:500],'history_truncated':len(history)>500,
@@ -119,3 +130,39 @@ def summary(ctx,sid):
         'consolidated_total':sum(known,Decimal(0)) if known and resolved==len(cities) else None,
         'pending_municipalities':len(cities)-resolved,'legal_procedure_approved':False,
         'notice':'Somente manifestações documentadas e conferidas entram no total conhecido. Pendências não valem zero. A competência e o rito dependem de validação institucional.'})
+
+
+def evidence(ctx,sid):
+    """Read-only provenance. Kept outside summary to preserve immutable draft snapshots."""
+    ctx.require('document.read')
+    register=summary(ctx,sid)
+    ids=list({op['payload']['document_id'] for op in register['operations'] if op['payload'].get('document_id')})
+    docs=ctx.db.all('''SELECT DISTINCT ON(d.id) d.id,d.filename,d.sha256,d.created_at AS uploaded_at,
+        uploader.name AS uploaded_by_name,e.revision AS current_revision,e.review_state,
+        reviewer.name AS reviewer_name,review_event.created_at AS reviewed_at
+        FROM document d JOIN extracted_document e ON e.org_id=d.org_id AND e.document_id=d.id
+        JOIN actor uploader ON uploader.id=d.created_by LEFT JOIN actor reviewer ON reviewer.id=e.reviewer
+        LEFT JOIN LATERAL (SELECT a.created_at FROM audit_event a WHERE a.org_id=d.org_id
+          AND a.resource_id=d.id::text AND a.action='document.reviewed'
+          AND a.metadata->>'revision'=e.revision::text ORDER BY a.created_at DESC LIMIT 1) review_event ON true
+        WHERE d.org_id=:o AND d.id::text=ANY(:ids) AND d.classification!='business_private'
+        ORDER BY d.id,e.revision DESC''',{'o':ctx.org_id,'ids':ids}) if ids else []
+    indexed={str(d['id']):d for d in docs};cities=[]
+    for municipality in register['municipalities']:
+        records=[]
+        for op in register['operations']:
+            if op['municipality_ibge']!=municipality['ibge']:continue
+            payload=op['payload'];did=payload.get('document_id');doc=indexed.get(did)
+            proof=None
+            if doc:
+                proof={**doc,'recorded_revision':payload.get('document_revision'),
+                    'revision_matches':doc['current_revision']==payload.get('document_revision'),
+                    'original_url':'/api/v1/documents/'+did+'/original'}
+            records.append({'operation_id':op['id'],'kind':op['kind'],'revision':op['revision'],
+                'recorded_by_name':op['created_by_name'],'recorded_at':op['created_at'],
+                'channel':payload.get('channel'),'event_date':payload.get('event_date'),'protocol':payload.get('protocol'),
+                'declared_responsible':payload.get('responsible_name'),'competence_evidence':payload.get('competence_evidence'),
+                'document':proof,'qualification':'reviewed_document' if proof and proof['revision_matches'] and proof['review_state']=='reviewed' else 'review_pending' if proof else 'missing'})
+        cities.append({'ibge':municipality['ibge'],'records':records})
+    return normalize({'study_id':sid,'municipalities':cities,'history_truncated':register['history_truncated'],
+        'notice':'Upload não comprova origem municipal. Canal, data e competência exigem conferência responsável.'})

@@ -28,6 +28,8 @@ Requisitos: **Python 3.12**, **Node.js 24 com npm**, PowerShell e Google Chrome 
 ```powershell
 git clone git@github.com:MarcusVinicius21/Painel_IRPS.git
 Set-Location Painel_IRPS
+# Estado integrado I01–I17 desta entrega:
+git switch checkpoint/irps-integrado-i17-04-2026-10-22
 & .\scripts\preparar_ambiente.ps1 -PythonExe 'python'
 ```
 
@@ -75,8 +77,9 @@ Se as portas estiverem ocupadas, configure `IRPS_PG_PORT`, `IRPS_API_PORT` e `IR
 ## Testar
 
 ```powershell
-# Exclusivamente no banco descartável irps_migration_test:
-& .\.venv\Scripts\python.exe .\scripts\validar_migracoes.py
+# Exclusivamente no PostgreSQL local; cria um banco novo descartável para upgrade/reaplicação:
+$env:IRPS_LOCAL_CONFIG=(Resolve-Path .runtime/config-test.json).Path
+& .\.venv\Scripts\python.exe .\scripts\validar_migracoes_diretriz.py
 Push-Location backend
 & ..\.venv\Scripts\python.exe -m pytest -q --junitxml=../.runtime/evidencias/pytest.xml
 Pop-Location
@@ -96,7 +99,7 @@ Resultados brutos, downloads dos testes e capturas ficam em `.runtime/evidencias
 ```text
 backend/app/          API, permissões, cenários, documentos, fontes e assistente
 backend/irps_core/    Oito módulos originais V4, sem alteração de fórmulas
-backend/migrations/  Schema PostgreSQL e oito revisões Alembic
+backend/migrations/  Schema PostgreSQL até a revisão Alembic 0014
 backend/tests/       Regressões V4 e testes de integração/segurança
 backend/seed_data/   Cadastro municipal conciliado e catálogo fictício
 frontend/src/        Observatório conectado ao backend
@@ -116,7 +119,17 @@ Nenhuma credencial, banco local, sessão, documento privado, skill privada ou ex
 
 Antes de produção: identidade externa HTTPS, gestão de segredos, proteção dos parsers, workers e limites distribuídos, backups/restauração, cobertura de dados e revisão independente. Este repositório não configura implantação nem ativa serviços pagos.
 
-As licenças das dependências e da fonte Manrope estão documentadas [aqui](docs/implementacao/DEPENDENCIAS_E_LICENCAS.md). O envio a um repositório privado não concede uma licença pública sobre o código do projeto.
+As licenças das dependências e da fonte Manrope estão documentadas [aqui](docs/implementacao/DEPENDENCIAS_E_LICENCAS.md). Este repositório é público; os avisos de licença existentes devem ser preservados.
 
 ## Diretriz Mestra V2 — incremento local
-A área **Inteligência e planejamento** reúne catálogo nacional, histórico por município, meta preliminar, estudo versionado e minutas IRP revisáveis. Consulte [a entrega local](docs/DIRETRIZ_MESTRA_V2/README.md) para contratos, execução, testes e limites. Os 348.679 códigos importados não representam compras nem cobertura municipal. Alterações desta rodada aguardam revisão antes de commit ou push.
+A área **Inteligência e planejamento** reúne catálogo nacional, histórico por município, meta preliminar, estudo versionado e minutas IRP revisáveis. Consulte [a entrega local](docs/DIRETRIZ_MESTRA_V2/README.md) para contratos, execução, testes e limites. Os 348.679 códigos importados não representam compras nem cobertura municipal. O checkpoint integrado I01–I17 inclui o código acumulado; não constitui aceite visual integral ou liberação de produção.
+
+## Checkpoint integrado I01–I17 — 22/10/2026
+
+A branch `checkpoint/irps-integrado-i17-04-2026-10-22` preserva o estado funcional acumulado para auditoria posterior com dados públicos reais. Inclui os módulos de histórico filtrado, resumos verificáveis, estudos multiitem, revisão de minutas, evidências municipais, inventário e prévia de PDF, além das migrações **0013 e0014** e dos respectivos testes.
+
+As sete referências originais permanecem em [docs/design/referencias-irps](docs/design/referencias-irps/README.md). O núcleo V4 continua idêntico. A fidelidade visual ainda é parcial, e nova gravação manual de quantidade municipal permanece dependente de autorização institucional. Não foi iniciada nova coleta nem alterada regra de negócio nesta publicação.
+
+Leia [o relatório público do checkpoint](docs/implementacao/CHECKPOINT_I01_I17_2026-10-22.md). Ele separa testes executados nesta publicação de resultados anteriores. Evidências brutas, configurações, bancos e grandes ZIPs ficam somente no workspace local.
+
+A execução do frontend após instalação não depende das fixtures de QA. Já os testes visuais históricos usam estudos preparados em `.runtime`; esses dados e configurações privadas não são distribuídos. Prepare-os em ambiente isolado com os helpers guardados em `backend/tests/`, sem apontar para produção nem enfraquecer asserções. Uma instalação limpa não reproduz automaticamente o banco e os IDs de estudos do ambiente de desenvolvimento.

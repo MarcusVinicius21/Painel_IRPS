@@ -1,0 +1,7 @@
+.similar-items-content{overflow-wrap:anywhere;font-size:12px}
+.similar-items-content>ul{list-style:none;margin:12px 0;padding:0;display:grid;gap:8px}
+.similar-items-content>ul>li{border:1px solid #dbe7f7;border-radius:4px;padding:10px;background:#f8fbff}
+.similar-items-content>ul strong,.similar-items-content small{display:block;margin-bottom:4px}
+.similar-items-content a{display:inline-block;margin:4px 14px 4px 0;color:#0055ce}
+.similar-items-content a:focus-visible{outline:2px solid #0055ce;outline-offset:3px}
+.similar-items-content .actions{flex-wrap:wrap}

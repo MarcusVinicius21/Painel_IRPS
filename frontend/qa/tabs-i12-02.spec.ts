@@ -1,0 +1,12 @@
+import {test,expect} from '@playwright/test';import fs from 'node:fs';import path from 'node:path';
+const f=JSON.parse(fs.readFileSync(path.resolve('../.runtime/rodada30/testing/browser-fixture.json'),'utf8'));
+test.use({viewport:{width:1672,height:941},deviceScaleFactor:1});
+test('Abas: ordem, teclado, documento e equivalência revisada no recorte persistido',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Equipe de compras A',exact:true}).click();await expect(page.locator('.identity-label')).toBeVisible();await page.goto('/#/inteligencia?estudo='+f.base+'&etapa=selecao');await expect(page.locator('.dataset-warning')).toBeVisible();
+ const tabs=page.getByRole('tablist',{name:'Visões do histórico'});await expect(tabs.getByRole('tab')).toHaveText(['Histórico por município','Preços praticados','Fontes e documentos','Itens similares','Histórico anual']);
+ await tabs.getByRole('tab',{name:'Histórico por município',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(tabs.getByRole('tab',{name:'Preços praticados',exact:true})).toBeFocused();await expect(page).toHaveURL(/aba=precos/);await expect(page.getByRole('tabpanel')).toContainText('Preço unitário documentado');
+ await tabs.getByRole('tab',{name:'Fontes e documentos',exact:true}).click();const link=page.getByRole('tabpanel').getByRole('link',{name:'Abrir fonte',exact:false}).first();await expect(link).toHaveAttribute('href',/^https:\/\/example.invalid\//);await expect(link).toHaveAttribute('rel',/noreferrer/);
+ const reviewed=page.waitForResponse(r=>r.url().includes('/director/products/'+f.product_id+'/similar?'));await tabs.getByRole('tab',{name:'Itens similares',exact:true}).click();const r=await reviewed;expect(r.status()).toBe(200);const data=await r.json();expect(data.review.version_id).toBeTruthy();expect(data.records.length).toBeGreaterThan(0);await page.getByText('Responsável, versão e provas da equivalência',{exact:true}).click();await expect(page.getByRole('tabpanel')).toContainText(data.review.version_id);
+ await page.keyboard.press('Escape');await tabs.getByRole('tab',{name:'Histórico anual',exact:true}).click();await expect(page).toHaveURL(/aba=anual/);await expect(page.getByRole('tabpanel')).toContainText('Média mensal');await expect(page.getByRole('tabpanel')).toContainText('Indisponível sem cobertura temporal comprovada');
+ await page.reload();await expect(tabs.getByRole('tab',{name:'Histórico anual',exact:true})).toHaveAttribute('aria-selected','true');
+});

@@ -2,7 +2,7 @@
 import hashlib,json,re
 from datetime import date
 from .db import encoded,identifier
-from . import sources
+from . import sources,modality
 from .security import fail
 
 def parse_date(value):
@@ -73,6 +73,7 @@ def results(ctx,args,transport=None):
             'metadata':{'record_level':'item','parent_id':str(parent['id']),'supplier':public_supplier(record),'cancelled':cancelled,
                 'eligible_result':active,'source_phase':record.get('situacaoCompraItemResultadoNome'),'result_status':record.get('situacaoCompraItemResultadoId'),
                 'category':parent['metadata'].get('category'),'modality':parent['metadata'].get('modality'),
+                'modality_provenance':modality.inherit(parent,'PNCP_RESULTADOS'),
                 'currency':'foreign_or_unknown' if record.get('moedaEstrangeira') else 'BRL',
                 'publication_date':str(parent['event_date']) if parent['event_date'] else None,'quantity_is_consumption':False}})
     return {'provider':'PNCP_RESULTADOS','records':len(data),'new_revisions':new,'source_id':str(sid),'state':'partial','pages_fetched':1,
@@ -101,7 +102,7 @@ def contracts(ctx,args,transport=None,updated=False):
             'amount':sources.documented_number(record.get('valorInicial')),'phase':'empenhado' if is_commitment else 'contratado',
             'event_date':parse_date(record.get('dataAssinatura')),
             'obligation_id':record.get('numeroControlePncpCompra') or record.get('numeroControlePNCPCompra') or record['numeroControlePNCP'],
-            'metadata':{'record_level':'contract','supplier':public_supplier(record),'instrument':instrument,'category':(record.get('categoriaProcesso') or {}).get('nome'),
+            'metadata':{'record_level':'contract','modality_provenance':modality.unknown('contract_field_not_supported'),'supplier':public_supplier(record),'instrument':instrument,'category':(record.get('categoriaProcesso') or {}).get('nome'),
                 'publication_date':record.get('dataPublicacaoPncp'),'contract_identity':record['numeroControlePNCP'],
                 'purchase_identity':record.get('numeroControlePncpCompra') or record.get('numeroControlePNCPCompra'),
                 'amount_kind':'valorInicial','global_value':sources.documented_number(record.get('valorGlobal')),

@@ -1,20 +1,34 @@
-import {useState,useEffect,useRef,isValidElement,cloneElement} from 'react';
+import {useState,useEffect,useRef,useId,isValidElement,cloneElement} from 'react';
 import type {ReactNode} from 'react';
-import {ArrowUpRight,ArrowLeft,ChevronLeft,ChevronRight,X,Info,ArrowUpDown} from 'lucide-react';
+import {ArrowUpRight,ArrowLeft,ChevronLeft,ChevronRight,X,Info,ArrowUpDown,PanelsTopLeft} from 'lucide-react';
 import {route,param} from '../api';
+import {SelectableTable} from './SelectableTable';
 export const IconProps={'aria-hidden':true as const,size:18,strokeWidth:1.7};
-export function Link({to,children,className=''}:{to:string;children:ReactNode;className?:string}){return <a className={className} href={'#/'+to} aria-current={route().path===to.split('?')[0]?'page':undefined}>{children}</a>;}
+export function Link({to,children,className='',title}:{to:string;children:ReactNode;className?:string;title?:string}){return <a title={title} className={className} href={'#/'+to} aria-current={route().path===to.split('?')[0]?'page':undefined}>{children}</a>;}
 export function Action({to,children,secondary=false}:{to:string;children:ReactNode;secondary?:boolean}){return <Link className={'button '+(secondary?'secondary':'')} to={to}>{children}<ArrowUpRight {...IconProps}/></Link>;}
 export function Badge({children,tone=''}:{children:ReactNode;tone?:string}){return <span className={'badge '+tone}>{children}</span>;}
 export function Notice({children,tone=''}:{children:ReactNode;tone?:string}){return <div className={'notice '+tone}><Info {...IconProps}/><div>{children}</div></div>;}
-export function Page({title,description,actions,children}:{title:string;description:string;actions?:ReactNode;children:ReactNode}){return <><header className="page-heading"><div><p className="context-label">Observatório de compras</p><h1 tabIndex={-1} id="page-title">{title}</h1><p className="lede">{description}</p></div><div className="actions">{actions}</div></header>{children}</>;}
+export function Page({title,description,actions,children,icon}:{title:string;description:string;actions?:ReactNode;children:ReactNode;icon?:ReactNode}){return <><header className="page-heading"><span className="page-symbol" aria-hidden="true">{icon||<PanelsTopLeft {...IconProps}/>}</span><div><p className="context-label">Observatório de compras</p><h1 tabIndex={-1} id="page-title">{title}</h1><p className="lede">{description}</p></div><div className="actions">{actions}</div></header>{children}</>;}
 export function Panel({title,action,children,className='',scrollable=false}:{title?:string;action?:ReactNode;children:ReactNode;className?:string;scrollable?:boolean}){return <section className={'panel '+className} tabIndex={scrollable?0:undefined} role={scrollable?'region':undefined} aria-label={scrollable?title:undefined}>{title?<div className="panel-heading"><h2>{title}</h2>{action}</div>:null}{children}</section>;}
-export function Field({label,children,hint}:{label:string;children:ReactNode;hint?:string}){const control=isValidElement<Record<string,unknown>>(children)&&['input','select','textarea'].includes(String(children.type))?cloneElement(children,{'aria-label':children.props['aria-label']||label,name:children.props.name||label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-'),autoComplete:children.props.autoComplete||'off'}):children;return <label className="field"><span>{label}</span>{control}{hint?<small>{hint}</small>:null}</label>;}
+export function Field({label,children,hint}:{label:string;children:ReactNode;hint?:string}){
+ const hintId=useId();
+ const control=isValidElement<Record<string,unknown>>(children)&&['input','select','textarea'].includes(String(children.type))?cloneElement(children,{
+  'aria-label':children.props['aria-label']||label,
+  'aria-describedby':[children.props['aria-describedby'],hint?hintId:undefined].filter(Boolean).join(' ')||undefined,
+  name:children.props.name||label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-'),
+  autoComplete:children.props.autoComplete||'off',
+ }):children;
+ return <label className="field"><span>{label}</span>{control}{hint?<small id={hintId}>{hint}</small>:null}</label>;
+}
 export function Empty({title='Nenhum resultado neste recorte',description='Ajuste os filtros ou escolha outro exemplo.',children}:{title?:string;description?:string;children?:ReactNode}){return <div className="empty"><Info {...IconProps}/><h2>{title}</h2><p>{description}</p>{children}</div>;}
 export function Stats({items}:{items:{label:string;value:string;detail?:string}[]}){return <dl className="stats">{items.map(x=><div key={x.label}><dt>{x.label}</dt><dd>{x.value}{x.detail?<small>{x.detail}</small>:null}</dd></div>)}</dl>;}
-export function Dialog({title,children,onClose}:{title:string;children:ReactNode;onClose:()=>void}){const ref=useRef<HTMLDialogElement>(null);useEffect(()=>{const el=ref.current;const trigger=document.activeElement as HTMLElement;el?.showModal();return ()=>{el?.close();trigger?.focus();};},[]);return <dialog ref={ref} aria-labelledby="dialog-title" onCancel={onClose}><div className="dialog-heading"><h2 id="dialog-title">{title}</h2><button autoFocus className="icon-button" aria-label="Fechar painel" onClick={onClose}><X {...IconProps}/></button></div><div className="dialog-content">{children}</div></dialog>;}
+export function Dialog({title,children,onClose}:{title:string;children:ReactNode;onClose:()=>void}){const ref=useRef<HTMLDialogElement>(null);useEffect(()=>{const el=ref.current;const trigger=document.activeElement as HTMLElement;el?.showModal();return ()=>{el?.close();trigger?.focus();};},[]);return <dialog ref={ref} aria-labelledby="dialog-title" onCancel={onClose} onKeyDown={e=>{if(e.key!=='Tab')return;const controls=Array.from(e.currentTarget.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"])')).filter(el=>el.tabIndex>=0&&!el.matches(':disabled')&&el.checkVisibility()&&getComputedStyle(el).visibility!=='hidden');const first=controls[0],last=controls[controls.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}}><div className="dialog-heading"><h2 id="dialog-title">{title}</h2><button autoFocus className="icon-button" aria-label="Fechar painel" onClick={onClose}><X {...IconProps}/></button></div><div className="dialog-content">{children}</div></dialog>;}
 export type Col<T>={label:string;render:(r:T)=>ReactNode;sort?:(r:T)=>string|number};
-export function DataTable<T>({rows,columns,id,pageSize=8,caption='Registros da demonstração'}:{rows:T[];columns:Col<T>[];id:(r:T)=>string;pageSize?:number;caption?:string}){
+export type TableSelection<T>={selected:string[];onChange:(ids:string[])=>void;label:(row:T)=>string;rowAction?:string;pageAction?:string;mobileAction?:string};
+export function DataTable<T>(props:{rows:T[];columns:Col<T>[];id:(r:T)=>string;pageSize?:number;caption?:string;selection?:TableSelection<T>;pageSizes?:number[]}){
+ return props.pageSizes||props.selection?<SelectableTable {...props}/>:<BasicDataTable {...props}/>;
+}
+function BasicDataTable<T>({rows,columns,id,pageSize=8,caption='Registros da demonstração'}:{rows:T[];columns:Col<T>[];id:(r:T)=>string;pageSize?:number;caption?:string}){
  const [pg,setPg]=useState(Number(route().params.get('pagina')||1)),[sort,setSort]=useState(-1),[ascending,setAscending]=useState(true);
  const pages=Math.max(1,Math.ceil(rows.length/pageSize));const page=Math.max(1,Number.isFinite(pg)?Math.min(pg,pages):1);const ordered=sort<0?rows:[...rows].sort((a,b)=>{const x=columns[sort].sort!(a),y=columns[sort].sort!(b);return (typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y),'pt-BR'))*(ascending?1:-1);});
  const shown=ordered.slice((page-1)*pageSize,page*pageSize);

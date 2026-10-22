@@ -200,8 +200,13 @@ def pdf_bytes(parts):
 
 def export(ctx,runtime,did,fmt):
     ctx.require('export');row=director.draft(ctx,did)
+    from . import scenarios
+    scenarios.get_scenario(ctx,row['payload']['scenario_id'],lock=True)
+    row=director.draft(ctx,did)
     if row['validation']['errors']:fail(422,'Corrija as incoerências indicadas na minuta antes de exportar.','IRP_BLOCKED')
     if row['stale']:fail(409,'O cenário mudou. Confira o estudo antes de gerar outra minuta.','VERSION_CONFLICT')
+    from .draft_review import guard_export
+    guard_export(ctx,did)
     parts=sections(row);template=Path(runtime)/'irp-letterhead.docx'
     data=docx_bytes(parts,template) if fmt=='docx' else pdf_bytes(parts)
     aid=identifier();key=f'exports/{ctx.org_id}/{aid}.{fmt}';path=Path(runtime)/key;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
@@ -222,6 +227,9 @@ def dossier(ctx,runtime,sid):
     """
     ctx.require('export');ctx.require('document.read')
     from .irp_register import summary
+    study=director.study(ctx,sid)
+    from . import scenarios,draft_review
+    scenarios.get_scenario(ctx,study['scenario_id'],lock=True)
     study=director.study(ctx,sid);register=summary(ctx,sid)
     candidates=ctx.db.all('''SELECT * FROM irp_draft WHERE org_id=:o AND study_id=:s
         ORDER BY created_at DESC,id DESC LIMIT 501''',{'o':ctx.org_id,'s':sid})
@@ -242,21 +250,22 @@ def dossier(ctx,runtime,sid):
             name='consolidacao/quadro-municipal-e-item.'+fmt;z.writestr(name,data)
             manifest.append({'file':name,'sha256':hashlib.sha256(data).hexdigest(),'state':'internal_partial' if register['consolidated_total'] is None else 'internal_review'})
         for (kind,city),draft in current.items():
-            if draft['validation']['errors'] or not study['context_current'] or draft['payload']['scenario_revision']!=study['scenario']['current_revision'] or draft['payload'].get('register')!=register:
+            if draft_review.state(ctx,draft['id'])['export_blocked'] or draft['validation']['errors'] or not study['context_current'] or draft['payload']['scenario_revision']!=study['scenario']['current_revision'] or draft['payload'].get('register')!=register:
                 manifest.append({'id':str(draft['id']),'kind':kind,'included':False,'reason':'Minuta bloqueada ou contexto alterado.'});continue
             name=f'minutas/{kind}'+('_'+city if city else '')
             for fmt,data in [('docx',docx_bytes(sections(draft),template)),('pdf',pdf_bytes(sections(draft)))]:
                 filename=name+'.'+fmt;z.writestr(filename,data)
                 manifest.append({'draft_id':str(draft['id']),'file':filename,'sha256':hashlib.sha256(data).hexdigest(),'state':'needs_review'})
-        z.writestr('indice.json',encoded({'study_id':sid,'scenario_revision':study['scenario']['current_revision'],'context_current':study['context_current'],
-            'files':manifest,'original_documents_embedded':False,'private_quotations_included':False}))
+        index={'study_id':sid,'scenario_revision':study['scenario']['current_revision'],'context_current':study['context_current'],
+            'files':manifest,'original_documents_embedded':False,'private_quotations_included':False}
+        z.writestr('indice.json',encoded(index))
     data=output.getvalue();aid=identifier();key=f'exports/{ctx.org_id}/{aid}.zip';path=Path(runtime)/key;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
     filename='IRPS_dossie_interno_'+str(sid)+'.zip';sha=hashlib.sha256(data).hexdigest()
     ctx.db.execute('INSERT INTO artifact(org_id,id,classification,storage_key,filename,media_type,sha256,scenario_id,revision,created_by) VALUES (:o,:i,:classification,:s,:f,\'application/zip\',:h,:sid,:v,:a)',
         {'o':ctx.org_id,'i':aid,'classification':study['scenario']['classification'],'s':key,'f':filename,'h':sha,'sid':study['scenario_id'],'v':study['scenario']['current_revision'],'a':ctx.actor_id})
     ctx.audit('irp.dossier_exported',sid,{'artifact_id':aid,'sha256':sha,'original_documents_embedded':False})
     return {'id':aid,'filename':filename,'sha256':sha,'download_url':'/api/v1/artifacts/'+aid+'/download',
-        'drafts_included':sum('draft_id' in f for f in manifest),'consolidation_reports_included':2}
+        'drafts_included':sum('draft_id' in f for f in manifest),'consolidation_reports_included':2,'manifest':index}
 
 
 def consolidation_export(ctx,runtime,sid,fmt):

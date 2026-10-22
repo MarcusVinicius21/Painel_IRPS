@@ -1,0 +1,12 @@
+import {test,expect} from '@playwright/test';import fs from 'node:fs';import path from 'node:path';
+const f=JSON.parse(fs.readFileSync(path.resolve('../.runtime/rodada30/testing/browser-fixture.json'),'utf8'));
+test.use({viewport:{width:1672,height:941},deviceScaleFactor:1});
+test('Modos A/B: quatro regras, escolha apenas navega e não grava cenário ou quantidades',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Equipe de compras A',exact:true}).click();await expect(page.locator('.identity-label')).toBeVisible();await page.goto('/#/inteligencia?estudo='+f.base+'&etapa=planejamento');await expect(page.getByRole('button',{name:'Abrir cálculo individual V4',exact:true})).toBeEnabled();
+ const before=await (await page.request.get('/api/v1/director/studies/'+f.base)).json(),scenario=await (await page.request.get('/api/v1/scenarios/'+before.scenario_id)).json();const mutations:string[]=[];page.on('request',r=>{if(!['GET','HEAD'].includes(r.method())&&r.url().includes('/api/v1/'))mutations.push(r.url());});
+ await expect(page.locator('.planning-method ul li')).toHaveCount(8);for(const panel of await page.locator('.planning-method').all()){const outer=(await panel.boundingBox())!,last=(await panel.locator('.planning-method-saved').boundingBox())!;expect(last.y+last.height).toBeLessThanOrEqual(outer.y+outer.height+2);}await expect(page.locator('.planning-method-saved').first()).toContainText('Cenário salvo: Modo A');
+ await page.getByRole('radio',{name:'Modo B — Quantidade global justificada',exact:true}).check();await page.getByRole('button',{name:'Abrir critérios do modo B',exact:true}).click();await expect(page).toHaveURL(/distribuicao/);await expect(page.getByRole('button',{name:'Salvar critérios',exact:true})).toBeVisible();await page.getByRole('link',{name:'Voltar ao estudo de origem',exact:true}).click();
+ await page.getByRole('button',{name:'Abrir cálculo individual V4',exact:true}).click();await expect(page).toHaveURL(/quantidades/);await page.getByRole('link',{name:'Voltar ao estudo de origem',exact:true}).click();
+ expect((await (await page.request.get('/api/v1/director/studies/'+f.base)).json()).payload).toEqual(before.payload);expect(await (await page.request.get('/api/v1/scenarios/'+before.scenario_id)).json()).toEqual(scenario);expect(mutations).toEqual([]);
+ await page.setViewportSize({width:390,height:941});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

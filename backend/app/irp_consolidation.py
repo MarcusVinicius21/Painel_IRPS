@@ -45,7 +45,7 @@ def export(ctx,runtime,sid,fmt):
     else:
         from .irp_documents import pdf_bytes
         parts=[('title',title),('p',notice),('p',f'Estudo {sid} · cenário versão {study["scenario"]["current_revision"]} · estudo na versão atual: {"sim" if register["context_current"] else "não"}'),
-            ('p',f'Item: {p["name"]} · unidade: {p["unit"]}. Confirmado conhecido: {register["confirmed_known_total"] or "Não disponível"}.'),
+            ('p',f'Item: {p["name"]} · unidade: {p["unit"]}. Confirmado conhecido: {register["confirmed_known_total"] if register["confirmed_known_total"] is not None else "Não disponível"}.'),
             ('table',{'headers':['Município','IBGE','Unidade','Sugerida','Confirmada','Situação'],
                 'rows':[[r[0],r[1],r[3],r[4] if r[4] is not None else 'Não disponível',r[5] if r[5] is not None else 'Não disponível',r[6]] for r in rows]})]
         data=pdf_bytes(parts);mime='application/pdf'

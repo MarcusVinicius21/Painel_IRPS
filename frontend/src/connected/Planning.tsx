@@ -3,7 +3,7 @@ import {useApi,useResource,api,post,route,nav,money,quantity,businessDate} from 
 import type {Row} from '../api';
 import {Page,Panel,Link,Action,Badge,Notice,Stats,DataTable,Field,Empty,Dialog} from '../components/ui';
 const steps=[['licitacao','Visão geral'],['participantes','Municípios'],['itens','Itens'],['quantidades','Quantidades'],['distribuicao','Quantidade global'],['precos','Preços'],['revisao','Revisão'],['relatorios','Relatórios']];
-function planTo(to:string){const id=route().params.get('estudo');return id?to+(to.includes('?')?'&':'?')+'estudo='+encodeURIComponent(id):to;}
+function planTo(to:string){const r=route(),p=new URLSearchParams();for(const key of ['estudo','multi','origem']){const v=r.params.get(key);if(v)p.set(key,v);}return p.size?to+(to.includes('?')?'&':'?')+p:to;}
 function PlanNav(){return <nav className="plan-nav" aria-label="Etapas da licitação">{steps.map(([to,label])=><Link key={to} to={planTo(to)} className={route().path===to?'active':''}>{label}</Link>)}</nav>;}
 function Summary(){const c=useApi(),s=c.scenario!,r=c.calculation?.summary;return <div className="scenario-summary"><div><span>Valor estimado do cenário · {s.snapshot.period}</span><strong>{money(r?.total)}</strong><small>{r?.total==null?'Calcule ou resolva as pendências. Valores ausentes não viram zero.':'Preço de referência. Nenhum pagamento ou despesa foi autorizado.'}</small></div><div className="summary-meta"><span>{s.snapshot.participants.length} municípios</span><span>{s.snapshot.items.length} itens</span><span>Versão {s.current_revision}</span><Badge>{s.classification==='synthetic'?'Dados fictícios':'Planejamento interno'}</Badge></div></div>;}
 

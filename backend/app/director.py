@@ -8,6 +8,7 @@ from decimal import Decimal
 from uuid import UUID
 from typing import Literal
 from pydantic import Field, model_validator
+from .history_filters import HistoryFilters
 from .schemas import Strict, Number, Code, Snapshot, ScenarioCreate
 from .db import encoded, identifier, normalize
 from .security import fail
@@ -24,6 +25,7 @@ class CatalogueLink(Strict):
 
 
 class StudyCreate(Strict):
+    history_filters: HistoryFilters = Field(default_factory=HistoryFilters)
     classification: Literal['internal','synthetic'] = 'internal'
     snapshot_id: UUID | None = None
     code: str | None = Field(default=None,pattern=r'^\d{1,20}$')
@@ -117,7 +119,7 @@ def create_study(ctx, body):
             fail(422,'Revise o vínculo entre este código e os registros antes de planejar.','CATALOGUE_LINK_REQUIRED')
         if catalogue.unit_key(body.unit)!=product['unit_key'] or catalogue.pack(body.unit)!=product['package_signature']:
             fail(422,'A unidade ou embalagem não corresponde ao histórico revisado.','INCOMPATIBLE_ITEMS')
-        history=catalogue.product_history(ctx,body.product_id,body.phase,body.start,body.end,cities)
+        history=catalogue.product_history(ctx,body.product_id,body.phase,body.start,body.end,cities,body.history_filters)
     raw=body.model_dump(mode='json')
     # A new planning identity preserves the exact catalogue snapshot and technical definition.
     definition={k:raw[k] for k in ('classification','snapshot_id','code','name','category','specification','unit','quantity_step','service_period','quantity_basis')}

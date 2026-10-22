@@ -1,0 +1,13 @@
+import {test,expect} from '@playwright/test';import fs from 'node:fs';import path from 'node:path';
+const f=JSON.parse(fs.readFileSync(path.resolve('../.runtime/rodada30/testing/browser-fixture.json'),'utf8')),free=JSON.parse(fs.readFileSync(path.resolve('../.runtime/sequence-08/fixture.json'),'utf8'));
+test.use({viewport:{width:1672,height:941},deviceScaleFactor:1});
+test.beforeEach(async({page})=>{await page.goto('/');await page.getByRole('button',{name:'Equipe de compras A',exact:true}).click();await expect(page.locator('.identity-label')).toBeVisible();});
+test('Referência02 mantém fonte/período e seleção de candidatos ao avançar',async({page})=>{
+ await page.goto('/#/inteligencia?estudo='+f.base+'&etapa=selecao');await expect(page.locator('.dataset-warning')).toBeVisible();await expect(page.getByLabel('Fonte',{exact:true})).toBeEnabled();await expect(page.getByRole('list',{name:'Etapas do estudo'}).getByRole('listitem')).toHaveCount(6);
+ await page.getByLabel('Fonte',{exact:true}).selectOption('TESTE_IRPS_FONTE_B');await page.getByLabel('Histórico desde',{exact:true}).fill('2025-12-01');const response=page.waitForResponse(r=>r.url().includes('/director/history/'+f.product_id+'?'));await page.getByRole('button',{name:'Conferir histórico por município',exact:true}).click();expect((await response).status()).toBe(200);
+ await page.getByRole('checkbox',{name:'Incluir Ipatinga/MG no estudo',exact:true}).uncheck();await page.getByRole('link',{name:'Analisar histórico',exact:true}).click();await expect(page).toHaveURL(/etapa=historico/);await expect(page).toHaveURL(/incluir=3101607/);await expect(page.getByLabel('Fonte',{exact:true})).toHaveValue('TESTE_IRPS_FONTE_B');await expect(page.getByLabel('Histórico desde',{exact:true})).toHaveValue('2025-12-01');await expect(page.getByRole('checkbox',{name:'Incluir Ipatinga/MG no estudo',exact:true})).not.toBeChecked();
+});
+test('Sem histórico não inventa indicadores, consorciados ou cobertura; footer mobile utilizável',async({page})=>{
+ await page.goto('/#/inteligencia?estudo='+free.study+'&etapa=selecao');await expect(page.locator('.dataset-warning')).toBeVisible();await expect(page.locator('.selection-summary [title="Informação não disponível"]')).toHaveCount(4);await expect(page.getByLabel('Fonte',{exact:true})).toBeDisabled();await expect(page.getByLabel('Modalidade',{exact:true})).toBeDisabled();
+ await page.setViewportSize({width:390,height:941});await page.getByRole('link',{name:'Analisar histórico',exact:true}).scrollIntoViewIfNeeded();await expect(page.getByRole('link',{name:'Analisar histórico',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

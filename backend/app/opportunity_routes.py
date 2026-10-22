@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter,Depends,Request,BackgroundTasks,Header,Query
 from .security import authenticate,fail,PERMISSIONS
 from .db import normalize
+from .modality import reject_filter
 from .opportunity_schemas import HistoricalScope,Advance,MunicipalGroup,OpportunityFilter,Equivalence,CanonicalProductReview,ViabilityReview,ScenarioFromOpportunity,OpportunityWatch,PHASES
 from . import history,opportunities,opportunity_alerts,catalogue,coverage_inventory
 
@@ -45,10 +46,11 @@ def catalogue_products(ctx:Auth,phase:PHASES='homologado',start:date=date(2020,1
     return catalogue.products(ctx,phase,start,end,municipalities)
 
 @router.get('/catalogue-intelligent/products/{product_id}/history')
-def catalogue_product_history(product_id:UUID,ctx:Auth,phase:PHASES='homologado',
+def catalogue_product_history(product_id:UUID,request:Request,ctx:Auth,phase:PHASES='homologado',
                               start:date=Query(default_factory=lambda:date.today()-timedelta(days=1826)),
                               end:date=Query(default_factory=date.today),
                               municipalities:list[str]=Query(default_factory=list)):
+    reject_filter(request)
     if end<start or (end-start).days>1826:fail(422,'Escolha um período de até cinco anos.')
     if len(municipalities)>118:fail(422,'Escolha até 118 municípios por consulta.')
     return catalogue.product_history(ctx,product_id,phase,start,end,municipalities)

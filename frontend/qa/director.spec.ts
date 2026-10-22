@@ -13,7 +13,7 @@ for(const width of [1440,390])test(`Diretoria: catálogo real → estudo → min
  await expect(page.getByRole('heading',{name:'Inteligência e planejamento de compras'})).toBeVisible();
  await page.getByRole('textbox',{name:'Produto, serviço ou código',exact:true}).fill('café torrado');
  const searched=page.waitForResponse(r=>r.url().includes('/national-catalogue?')&&r.url().includes('q=caf'));
- await page.getByRole('button',{name:'Pesquisar catálogo',exact:true}).click();
+ await page.getByRole('button',{name:'Buscar no catálogo',exact:true}).click();
  const response=await searched;expect(response.status()).toBe(200);const rows=(await response.json()).records;expect(rows.length).toBeGreaterThan(0);
  await page.getByRole('button',{name:'Escolher '+rows[0].code,exact:true}).click();
  await expect(page.locator('.municipal-history-panel')).toBeVisible();

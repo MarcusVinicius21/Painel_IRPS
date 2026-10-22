@@ -1,0 +1,21 @@
+import {useEffect,useState} from 'react';
+import {useApi,api,post} from '../api';
+import type {Row} from '../api';
+import {Notice,Field,Badge,DataTable} from './ui';
+const labels:Record<string,string>={not_requested:'Revisão não solicitada',requested:'Revisão solicitada',changes_requested:'Ajustes solicitados',reviewed_internal:'Revisão interna registrada'};
+export function DraftReview({draft,resource,versions}:{draft:Row;resource:{data:Row|null;error:string;loading:boolean};versions:Row[]}){
+ const c=useApi(),[note,setNote]=useState(''),[other,setOther]=useState(''),[comparison,setComparison]=useState<Row|null>(null),[error,setError]=useState('');
+ const data=resource.data;
+ useEffect(()=>{setNote('');setOther('');setComparison(null);setError('');},[draft.id]);
+ useEffect(()=>{let active=true;setComparison(null);setError('');if(other)void api('/irp-drafts/'+draft.id+'/compare/'+other).then(v=>{if(active)setComparison(v);}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[other,draft.id]);
+ const send=(status:string)=>void c.run(async()=>{await post('/irp-drafts/'+draft.id+'/review',{status,expected_revision:data?.revision,context_sha256:data?.context_sha256,note});setNote('');},'Registro de revisão interna salvo. Nenhuma mensagem externa foi enviada.');
+ return <section className="draft-review"><h3>Revisão interna da minuta</h3>{resource.loading?<p role="status">Conferindo o estado da revisão…</p>:null}{resource.error?<Notice tone="warning">{resource.error}</Notice>:null}
+ {data?<><Badge tone={data.status==='reviewed_internal'?'':'amber'}>{labels[data.status]}</Badge><p className="subtle">Revisão {data.revision}. Não representa aprovação jurídica, assinatura ou publicação.</p>{!data.context_current||!data.latest_for_kind?<Notice tone="warning">Esta minuta está desatualizada ou tem bloqueios. Abra a versão atual antes de encaminhar.</Notice>:null}{data.status==='changes_requested'?<Notice tone="warning">Prepare uma nova versão com os ajustes. O conteúdo anterior permanece preservado.</Notice>:null}
+ <Field label="Motivo do encaminhamento ou parecer"><textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={3000}/></Field>
+ <div className="review-actions"><button className="button secondary" disabled={c.busy||!data.can_submit||note.trim().length<10||!c.can('document.write')||!c.can('scenario.write')} onClick={()=>send('requested')}>Encaminhar para revisão interna</button>
+ {c.can('document.review')&&c.can('scenario.review')?<><button className="button secondary" disabled={c.busy||!data.can_decide||note.trim().length<10} onClick={()=>send('changes_requested')}>Solicitar ajustes</button><button className="button secondary" disabled={c.busy||!data.can_decide||note.trim().length<10} onClick={()=>send('reviewed_internal')}>Registrar revisão interna</button></>:null}</div>
+ <details><summary>Histórico de revisão</summary>{data.events.map((e:Row)=><article key={e.id}><strong>{labels[e.status]} · versão {e.revision}</strong><small>{e.created_by_name} · {new Date(e.created_at).toLocaleString('pt-BR')}</small><p>{e.note}</p></article>)}{!data.events.length?<p>Nenhuma solicitação registrada para esta minuta.</p>:null}{data.history_truncated?<p>Exibindo os cem registros mais recentes.</p>:null}</details></>:null}
+ <Field label="Comparar com outra minuta preservada"><select value={other} onChange={e=>setOther(e.target.value)}><option value="">Escolha uma versão</option>{versions.filter(v=>v.id!==draft.id&&v.request.kind===draft.payload.request.kind).map(v=><option key={v.id} value={v.id}>{new Date(v.created_at).toLocaleString('pt-BR')} · {(v.request.note||v.request.object).slice(0,45)}</option>)}</select></Field>
+ {error?<Notice tone="warning">{error}</Notice>:null}{comparison?<><p>Comparação do conteúdo preservado. Nenhuma versão foi alterada.</p><DataTable<Row> rows={comparison.differences} id={r=>r.field} caption="Diferenças entre minutas" columns={[{label:'Campo',render:r=>r.label},{label:'Versão comparada',render:r=>r.before==null?'Não informado':typeof r.before==='boolean'?(r.before?'Sim':'Não'):String(r.before)},{label:'Versão aberta',render:r=>r.after==null?'Não informado':typeof r.after==='boolean'?(r.after?'Sim':'Não'):String(r.after)}]}/>{!comparison.differences.length?<p>Os campos comparados são iguais.</p>:null}</>:null}
+ </section>;
+}
