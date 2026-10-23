@@ -144,3 +144,16 @@ def test_user_pause_during_failed_request_is_not_overwritten(app, login):
     result = c.get('/api/v1/history-collections/' + cid).json()
     assert result['state'] == 'paused' and result['error_code'] == 'USER_PAUSED'
     assert not result['execution']['complete_known_plan']
+
+
+def test_host_circuit_also_blocks_single_source_enqueue(app,login):
+    from fastapi import HTTPException
+    c=login();ctx=c.get('/api/v1/auth/context').json()
+    with app.state.database.transaction(ctx['org_id'],ctx['actor_id']) as db:
+        db.execute("INSERT INTO source_backoff(org_id,provider,resume_after) VALUES (:o,'PNCP_HOST',now()+interval '120 seconds') ON CONFLICT(org_id,provider) DO UPDATE SET resume_after=EXCLUDED.resume_after",{'o':ctx['org_id']})
+    with pytest.raises(HTTPException) as error:
+        with app.state.database.transaction(ctx['org_id'],ctx['actor_id']) as db:
+            worker=sources.job_context(db,ctx['org_id'],ctx['actor_id'])
+            sources.enqueue(worker,{'provider':'PNCP','municipality_ibge':'3131307','start_date':'2025-10-01',
+                'end_date':'2025-10-07','modality':6,'page':1,'size':20},'host-circuit-qa')
+    assert error.value.status_code==429 and error.value.detail['code']=='SOURCE_BACKOFF'

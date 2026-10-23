@@ -173,7 +173,8 @@ def advance(database,org,actor,cid,budget=1,transport=None):
                 db.execute("UPDATE history_task SET state=:state,lease_until=NULL,error_code=:e WHERE org_id=:o AND id=:i",{'o':org,'i':task['id'],'e':code,'state':decision['state']})
                 db.execute("UPDATE history_collection SET state='paused',error_code=CASE WHEN error_code='USER_PAUSED' THEN error_code ELSE :e END,resume_after=now()+make_interval(secs=>:w),updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'e':code,'w':wait})
                 if wait is not None:
-                    db.execute("INSERT INTO source_backoff(org_id,provider,resume_after) VALUES (:o,:p,now()+make_interval(secs=>:w)) ON CONFLICT(org_id,provider) DO UPDATE SET resume_after=greatest(source_backoff.resume_after,EXCLUDED.resume_after)",{'o':org,'p':source_retry.host_key(task['provider']),'w':wait})
+                    for backoff_key in {task['provider'],source_retry.host_key(task['provider'])}:
+                        db.execute("INSERT INTO source_backoff(org_id,provider,resume_after) VALUES (:o,:p,now()+make_interval(secs=>:w)) ON CONFLICT(org_id,provider) DO UPDATE SET resume_after=greatest(source_backoff.resume_after,EXCLUDED.resume_after)",{'o':org,'p':backoff_key,'w':wait})
                 ctx=sources.job_context(db,org,actor)
                 ctx.audit('history.failed',cid,{'task_id':str(task['id']),'provider':task['provider'],'code':code,
                     'http_status':(exc.status if isinstance(exc,sources.SourceFault) else None) or response_evidence.get('http_status'),'attempt':task['attempts']+1,

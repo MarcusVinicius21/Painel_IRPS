@@ -262,7 +262,16 @@ def test_product_history_filters_cities_revisions_units_and_tenants(app,login,pr
              'source':original['source_id'],'buyer':original['buyer_id'],'city':codes[3],'item':item2})
         fact(codes[0],prefix+'a:publication',500,phase='publicado_estimado')
     engine.dispose()
-    assert client.post('/api/v1/catalogue-intelligent/reprocess?limit=500').status_code==200
+    # Earlier tests can leave more than one page of facts in this isolated DB.
+    # Normalize every page before requesting a human-reviewed product.
+    offset=0
+    while True:
+        page=client.post(f'/api/v1/catalogue-intelligent/reprocess?limit=500&offset={offset}')
+        assert page.status_code==200,page.text
+        following=page.json()['next_offset']
+        if following is None:break
+        assert following>offset
+        offset=following
     reviewed=client.post('/api/v1/catalogue-intelligent/products',json={
         'name':'Papel A4 caixa de 10 resmas','category':'Materiais',
         'justification':'Unidade e embalagem conferidas no teste de histórico.',

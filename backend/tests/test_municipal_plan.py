@@ -79,10 +79,12 @@ def test_common_modalities_are_prioritized_without_omitting_others(app, login):
                            modalities=[1, 6], items=False, results=False)
     with app.state.database.transaction(ctx['org_id'], ctx['actor_id']) as db:
         worker = sources.job_context(db, ctx['org_id'], ctx['actor_id'])
-        plan = create_publication_plan(worker, body)
+        # Priority needs a fresh queue. The separate test above proves that a
+        # campaign key correctly reopens a completed plan without new requests.
+        plan = history.create(worker, body)
     calls = []
     transport = httpx.MockTransport(lambda request: (calls.append(request.url.params['codigoModalidadeContratacao']) or httpx.Response(204)))
     for _ in range(2):
         assert history.advance(app.state.database, ctx['org_id'], ctx['actor_id'], plan['id'], 1, transport)['pages'] == 1
     assert calls == ['6', '1']
-    assert c.get('/api/v1/history-collections/' + plan['id']).json()['state'] == 'completed'
+    assert c.get('/api/v1/history-collections/' + str(plan['id'])).json()['state'] == 'completed'

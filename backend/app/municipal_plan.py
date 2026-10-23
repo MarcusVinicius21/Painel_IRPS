@@ -8,11 +8,11 @@ from .db import encoded, identifier
 from .modality import COLLECTABLE_CODES
 
 
-def evidenced_windows(rows):
+def evidenced_windows(rows, provider='PNCP'):
     groups = defaultdict(list)
     for row in rows:
         args = row['arguments']
-        if row['provider'] != 'PNCP':
+        if row['provider'] != provider:
             continue
         key = (str(row['collection_id']), args.get('municipality_ibge'), args.get('modality'),
                args.get('start_date'), args.get('end_date'), args.get('size'))
@@ -59,10 +59,13 @@ def missing_windows(start, end, verified):
     return result
 
 
-def create_publication_plan(ctx, body):
+def _create_index_plan(ctx, body, provider):
     ctx.require('sources.sync')
-    if not body.publications or any((body.updates, body.items, body.results, body.contracts, body.contract_updates, body.atas, body.pca)):
-        raise ValueError('Este plano é exclusivo para publicações, sem inferir cobertura das demais fases.')
+    if provider not in ('PNCP','PNCP_ATUALIZACAO'):
+        raise ValueError('Índice PNCP não configurado.')
+    selected, other = (body.publications, body.updates) if provider == 'PNCP' else (body.updates, body.publications)
+    if not selected or any((other, body.items, body.results, body.contracts, body.contract_updates, body.atas, body.pca)):
+        raise ValueError('Separe o índice de publicações do índice de atualizações e das outras fases.')
     if set(body.modalities) - COLLECTABLE_CODES:
         raise ValueError('Confira o domínio oficial de modalidades.')
     known = {r['ibge'] for r in ctx.db.all('SELECT ibge FROM municipality')}
@@ -81,15 +84,16 @@ def create_publication_plan(ctx, body):
         FROM history_task t JOIN history_collection c ON c.id=t.collection_id AND c.org_id=t.org_id
         LEFT JOIN history_page p ON p.task_id=t.id AND p.org_id=t.org_id
         LEFT JOIN source_observation s ON s.id=p.source_id
-        WHERE t.org_id=:o AND c.dataset='official' AND t.provider='PNCP'
+        WHERE t.org_id=:o AND c.dataset='official' AND t.provider=:provider
           AND t.arguments->>'municipality_ibge'=ANY(:cities)
           AND t.arguments->>'start_date'<=:end AND t.arguments->>'end_date'>=:start
         ORDER BY t.collection_id,t.task_key LIMIT 50001""",
-        {'o': ctx.org_id, 'cities': body.municipalities, 'start': body.start.isoformat(), 'end': body.end.isoformat()})
+        {'o': ctx.org_id, 'cities': body.municipalities, 'start': body.start.isoformat(), 'end': body.end.isoformat(), 'provider':provider})
     if len(rows) > 50000:
         raise ValueError('Divida o período antes de conciliar as tarefas existentes.')
-    reused = evidenced_windows(rows)
-    scope['_campaign'] = {'key': key, 'reused_publication_windows': reused,
+    reused = evidenced_windows(rows,provider)
+    scope['_campaign'] = {'key': key, 'provider':provider,
+                          'reused_publication_windows' if provider=='PNCP' else 'reused_update_windows': reused,
                           'note': 'Reaproveitamento da resposta na data documentada; não comprova todas as compras.'}
     cid = identifier()
     ctx.db.execute('INSERT INTO history_collection(org_id,id,actor_id,scope) VALUES (:o,:i,:a,CAST(:s AS jsonb))',
@@ -100,8 +104,16 @@ def create_publication_plan(ctx, body):
             ranges = [(date.fromisoformat(p['start']), date.fromisoformat(p['end'])) for p in reused
                       if p['municipality_ibge'] == city and p['modality'] == modality]
             for first, last in missing_windows(body.start, body.end, ranges):
-                history.queue(ctx, cid, 'PNCP', {'provider': 'PNCP', 'municipality_ibge': city, 'modality': modality,
+                history.queue(ctx, cid, provider, {'provider': provider, 'municipality_ibge': city, 'modality': modality,
                     'start_date': first.isoformat(), 'end_date': last.isoformat(), 'page': 1, 'size': body.size})
                 count += 1
     ctx.audit('history.campaign_planned', cid, {'initial_tasks': count, 'reused_windows': len(reused), 'network_requests': 0})
     return {'id': cid, 'reused_plan': False, 'initial_tasks': count, 'reused_windows': len(reused)}
+
+
+def create_publication_plan(ctx, body):
+    return _create_index_plan(ctx,body,'PNCP')
+
+
+def create_update_plan(ctx, body):
+    return _create_index_plan(ctx,body,'PNCP_ATUALIZACAO')

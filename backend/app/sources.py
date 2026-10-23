@@ -5,6 +5,7 @@ from datetime import date,datetime,timezone
 import httpx
 from .db import identifier,encoded
 from . import modality
+from .source_retry import host_key
 from .security import Context,fail
 
 class SourceFault(Exception):
@@ -17,6 +18,22 @@ def documented_number(value):
   if not d.is_finite() or d<0 or d>Decimal('9999999999999999.99999999'):return None
   return str(d)
  except Exception:return None
+
+def publication_timestamp(record):
+ value=record.get('dataAtualizacaoGlobal') or record.get('dataAtualizacao')
+ if not isinstance(value,str):return None
+ try:return datetime.fromisoformat(value.replace('Z','+00:00'))
+ except ValueError:return None
+
+def older_publication(ctx,current,record,identity):
+ if not current:return None
+ source=ctx.db.one('SELECT body FROM source_observation WHERE id=:i',{'i':current['source_id']})
+ try:
+  payload=json.loads(source['body']) if source else {}
+  previous=next((r for r in payload.get('data',[]) if r.get('numeroControlePNCP')==identity),{})
+  before,after=publication_timestamp(previous),publication_timestamp(record)
+  return after<before if before and after else None
+ except (ValueError,TypeError,AttributeError):return None
 
 def public_get(url,params=None,transport=None):
  try:
@@ -136,29 +153,46 @@ def sync(ctx,args,transport=None):
   if args.get('municipality_ibge') and any(str((record.get('unidadeOrgao') or {}).get('codigoIbge',''))!=args['municipality_ibge'] for record in data['data']):
    raise SourceFault('INVALID_MUNICIPAL_SCOPE')
   sid=observe(ctx,provider,url,status,content,meta);count=0
-  for record in data['data'][:args['size']]:
+  for record in sorted(data['data'],key=lambda row:str(row.get('numeroControlePNCP') or '')):
    identity=record.get('numeroControlePNCP');entity=record.get('orgaoEntidade') or {};unit=record.get('unidadeOrgao') or {}
    if not identity or not entity.get('cnpj'):continue
+   ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:event,0))',{'event':'PNCP:'+identity+':publication'})
    unit_code=str(unit.get('codigoUnidade',''));external=str(entity['cnpj'])+':'+unit_code
    code=str(unit.get('codigoIbge',''));known=ctx.db.one('SELECT ibge FROM municipality WHERE ibge=:i',{'i':code}) if len(code)==7 else None
    buyer=identifier();ctx.db.execute("INSERT INTO buyer(id,org_id,cnpj,name,unit_code,municipality_ibge,government_level,classification,external_identity) VALUES (:i,:o,:c,:n,:u,:m,:g,'official',:e) ON CONFLICT(classification,external_identity) DO NOTHING",{'i':buyer,'o':ctx.org_id,'c':entity['cnpj'],'n':entity.get('razaoSocial') or 'Nome não informado','u':unit_code,'m':code if known else None,'g':entity.get('esferaId'),'e':external})
    buyer=ctx.db.one("SELECT id FROM buyer WHERE classification='official' AND external_identity=:e",{'e':external})['id']
    revision=hashlib.sha256(encoded(record).encode()).hexdigest();event=identity+':publication'
    if ctx.db.one("SELECT id FROM procurement_fact WHERE provider='PNCP' AND event_identity=:e AND revision_hash=:h AND classification='official'",{'e':event,'h':revision}):continue
-   current=ctx.db.one("SELECT id,revision_hash FROM procurement_fact WHERE provider='PNCP' AND event_identity=:e AND classification='official' AND is_current",{'e':event})
+   current=ctx.db.one("SELECT id,revision_hash,source_id FROM procurement_fact WHERE provider='PNCP' AND event_identity=:e AND classification='official' AND is_current",{'e':event})
    if current and current['revision_hash']==revision:continue
    # A public revision created by another tenant cannot be overwritten by this worker.
    if current and not ctx.db.one('SELECT id FROM procurement_fact WHERE id=:i AND org_id=:o',{'i':current['id'],'o':ctx.org_id}):continue
-   if current:ctx.db.execute("UPDATE procurement_fact SET is_current=false WHERE id=:i AND org_id=:o",{'i':current['id'],'o':ctx.org_id})
+   source_order=older_publication(ctx,current,record,identity);late=bool(source_order)
+   if current and not late:ctx.db.execute("UPDATE procurement_fact SET is_current=false WHERE id=:i AND org_id=:o",{'i':current['id'],'o':ctx.org_id})
    amount=documented_number(record.get('valorTotalEstimado'));published=record.get('dataPublicacaoPncp')
-   ctx.db.execute("INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,supersedes_id,source_id,buyer_id,municipality_ibge,description,amount,phase,event_date,obligation_id,metadata) VALUES (:i,:o,'official','PNCP',:e,:h,:previous,:s,:b,:m,:d,:a,'publicado_estimado',:date,:ob,CAST(:meta AS jsonb)) ON CONFLICT(provider,event_identity,revision_hash,classification) DO NOTHING",{'i':identifier(),'o':ctx.org_id,'e':event,'h':revision,'previous':current['id'] if current else None,'s':sid,'b':buyer,'m':code if known else None,'d':record.get('objetoCompra') or 'Objeto não informado','a':str(amount) if amount is not None else None,'date':published[:10] if published else None,'ob':identity,'meta':encoded({'record_level':'publication','unit':unit,'entity':entity,'source_phase':record.get('situacaoCompraNome'),'items_collected':False,'location_is_not_buyer_identity':True,'classification_pending':True,'origin_url':record.get('linkSistemaOrigem'),'modality':record.get('modalidadeId'),'modality_provenance':modality.publication(record,provider,sid,hashlib.sha256(content).hexdigest(),revision,args.get('modality')),'category':record.get('tipoInstrumentoConvocatorioNome'),'purchase':{'cnpj':entity['cnpj'],'year':record.get('anoCompra'),'sequence':record.get('sequencialCompra')}})});count+=1
+   ctx.db.execute("""INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,
+      is_current,supersedes_id,source_id,buyer_id,municipality_ibge,description,amount,phase,event_date,obligation_id,metadata)
+      VALUES (:i,:o,'official','PNCP',:e,:h,:active,:previous,:s,:b,:m,:d,:a,'publicado_estimado',:date,:ob,CAST(:meta AS jsonb))
+      ON CONFLICT(provider,event_identity,revision_hash,classification) DO NOTHING""",
+      {'i':identifier(),'o':ctx.org_id,'e':event,'h':revision,'active':not late,'previous':current['id'] if current and not late else None,
+       's':sid,'b':buyer,'m':code if known else None,'d':record.get('objetoCompra') or 'Objeto não informado',
+       'a':str(amount) if amount is not None else None,'date':published[:10] if published else None,'ob':identity,
+       'meta':encoded({'record_level':'publication','unit':unit,'entity':entity,'source_phase':record.get('situacaoCompraNome'),
+          'source_updated_at':record.get('dataAtualizacaoGlobal') or record.get('dataAtualizacao'),
+          'late_revision':late,'source_order_verified':source_order is not None,
+          'source_order_basis':'source_timestamp' if source_order is not None else 'observed_order',
+          'source_query_type':provider,'items_collected':False,'location_is_not_buyer_identity':True,
+          'classification_pending':True,'origin_url':record.get('linkSistemaOrigem'),'modality':record.get('modalidadeId'),
+          'modality_provenance':modality.publication(record,provider,sid,hashlib.sha256(content).hexdigest(),revision,args.get('modality')),
+          'category':record.get('tipoInstrumentoConvocatorioNome'),
+          'purchase':{'cnpj':entity['cnpj'],'year':record.get('anoCompra'),'sequence':record.get('sequencialCompra')}})});count+=1
   expected=data.get('totalPaginas');result={'provider':provider,'records':len(data['data']),'new_revisions':count,'pages_fetched':1,'expected_pages':expected,'state':'partial','source_id':str(sid),'scope':args,'items_collected':False,'payments_collected':False}
  cid=identifier();ctx.db.execute('INSERT INTO coverage(org_id,id,provider,scope,state,pages_fetched,expected_pages,record_count,latest_success_at) VALUES (:o,:i,:p,CAST(:s AS jsonb),:state,:pages,:expected,:n,now())',{'o':ctx.org_id,'i':cid,'p':provider,'s':encoded(result['scope']),'state':result['state'],'pages':result['pages_fetched'],'expected':result['expected_pages'],'n':result['records']})
  ctx.audit('source.consulted',sid,{'provider':provider,'records':result['records'],'state':result['state']});return result
 
 def enqueue(ctx,args,key):
  ctx.require('sources.sync')
- if ctx.db.one('SELECT provider FROM source_backoff WHERE org_id=:o AND provider=:p AND resume_after>now()',{'o':ctx.org_id,'p':args['provider']}):fail(429,'A fonte pediu uma pausa. Tente novamente mais tarde.','SOURCE_BACKOFF')
+ if ctx.db.one('SELECT provider FROM source_backoff WHERE org_id=:o AND provider IN (:p,:host) AND resume_after>now()',{'o':ctx.org_id,'p':args['provider'],'host':host_key(args['provider'])}):fail(429,'A fonte pediu uma pausa. Tente novamente mais tarde.','SOURCE_BACKOFF')
  if not key or not 8<=len(key)<=120:fail(422,'A consulta precisa de uma identificação para evitar repetição.','IDEMPOTENCY_REQUIRED')
  h=hashlib.sha256(encoded(args).encode()).hexdigest();scope=ctx.org_id+':'+ctx.actor_id+':'+key
  ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':scope})
