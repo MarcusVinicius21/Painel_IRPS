@@ -1,6 +1,6 @@
 from datetime import date
 import pytest
-from app.municipal_campaign import closed_months, freeze_scope, pending_matrix, verify_ibge
+from app.municipal_campaign import buyer_identity, closed_months, freeze_scope, pending_matrix, verify_ibge
 
 
 def test_manifest_is_order_independent_and_homonyms_remain_distinct():
@@ -33,3 +33,25 @@ def test_ibge_same_name_wrong_state_is_not_verified():
 def test_ibge_new_geographic_layout():
     verify_ibge({'ibge': '3131307', 'name': 'Ipatinga', 'uf': 'MG'},
                 {'id': 3131307, 'nome': 'Ipatinga', 'regiao-imediata': {'regiao-intermediaria': {'UF': {'sigla': 'MG'}}}})
+
+
+@pytest.mark.parametrize('sphere,power,municipal,branch', [('E', 'E', False, 'executivo'), ('F', 'E', False, 'executivo'), ('M', 'L', True, 'legislativo'), ('M', 'N', True, None)])
+def test_location_does_not_establish_ownership(sphere, power, municipal, branch):
+    buyer = {'cnpj': '19876424000142', 'unit_code': '1', 'municipality_ibge': '3131307'}
+    record = {'orgaoEntidade': {'cnpj': buyer['cnpj'], 'esferaId': sphere, 'poderId': power},
+              'unidadeOrgao': {'codigoUnidade': '1', 'codigoIbge': '3131307'}}
+    result = buyer_identity(buyer, record)
+    assert result['state'] == 'verified' and result['municipal_buyer'] is municipal
+    assert result['power'] == branch and result['institutional_subtype'] is None
+    assert result['cnpj_root'] == '19876424'
+
+
+@pytest.mark.parametrize('field,value', [('cnpj', '19875020000134'), ('unit_code', '2'), ('municipality_ibge', '3168705')])
+def test_same_name_or_cnpj_root_cannot_merge_conflicting_buyers(field, value):
+    buyer = {'cnpj': '19876424000142', 'unit_code': '1', 'municipality_ibge': '3131307'}
+    record = {'orgaoEntidade': {'cnpj': buyer['cnpj'], 'esferaId': 'M'},
+              'unidadeOrgao': {'codigoUnidade': '1', 'codigoIbge': '3131307'}}
+    buyer[field] = value
+    result = buyer_identity(buyer, record)
+    assert result['state'] == 'ORGAO_NAO_VERIFICADO'
+    assert result['municipal_buyer'] is None and result['cnpj'] is None
