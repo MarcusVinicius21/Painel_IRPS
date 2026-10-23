@@ -131,6 +131,10 @@ def sync(ctx,args,transport=None):
   url,status,content,data=cached_get(ctx,provider,'https://pncp.gov.br/api/consulta/v1/contratacoes/'+endpoint,params,transport)
   if data is None:data={'data':[],'totalPaginas':0}
   if not isinstance(data,dict) or not isinstance(data.get('data'),list):raise SourceFault('INVALID_SOURCE_FORMAT')
+  if len(data['data'])>args['size']:raise SourceFault('INVALID_PAGE_SIZE')
+  if any(not isinstance(record,dict) for record in data['data']):raise SourceFault('INVALID_SOURCE_FORMAT')
+  if args.get('municipality_ibge') and any(str((record.get('unidadeOrgao') or {}).get('codigoIbge',''))!=args['municipality_ibge'] for record in data['data']):
+   raise SourceFault('INVALID_MUNICIPAL_SCOPE')
   sid=observe(ctx,provider,url,status,content,meta);count=0
   for record in data['data'][:args['size']]:
    identity=record.get('numeroControlePNCP');entity=record.get('orgaoEntidade') or {};unit=record.get('unidadeOrgao') or {}

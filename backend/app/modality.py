@@ -13,6 +13,10 @@ LINEAGE={'PNCP_ITENS':'PNCP','PNCP_RESULTADOS':'PNCP_ITENS'}
 def unknown(reason):
     return {'version':VERSION,'state':'unknown','namespace':None,'code':None,'reason':reason}
 
+# GET /api/pncp/v1/modalidades verified 2026-10-23: IDs 1..19.
+# This operational allowlist does not restrict reading older provenance records.
+COLLECTABLE_CODES=frozenset(range(1,20))
+
 def valid_code(value):
     # Official consultation OpenAPI: modalidadeId is integer/int64. No label guessed.
     return type(value) is int and 0<value<=9223372036854775807

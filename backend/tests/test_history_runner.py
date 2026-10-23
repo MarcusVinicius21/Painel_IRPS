@@ -61,3 +61,15 @@ def test_expired_worker_lease_is_recovered_without_recreating_collection(app, lo
     assert len(calls) == len(set(calls))
     with app.state.database.transaction(ctx['org_id'], ctx['actor_id']) as db:
         assert db.one("SELECT max(attempts) AS n FROM history_task WHERE org_id=:o AND collection_id=:c", {'o': ctx['org_id'], 'c': cid})['n'] == 2
+
+
+def test_explicit_slower_interval_is_preserved(app, login):
+    c = login()
+    ctx = c.get('/api/v1/auth/context').json()
+    cid = collection(c)
+    transport, calls = fixture_transport()
+    delays = []
+    result = run_tick(app.state.database, ctx['org_id'], ctx['actor_id'], [cid], execute=True,
+                      max_attempts=2, interval_seconds=5, transport=transport, sleep=delays.append)
+    assert result['pages'] == 2 and len(calls) == 2
+    assert delays == [5, 5]

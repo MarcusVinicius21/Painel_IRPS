@@ -130,7 +130,8 @@ def advance(database,org,actor,cid,budget=1,transport=None):
             task=db.one("""SELECT * FROM history_task WHERE org_id=:o AND collection_id=:c
                 AND attempts<:max AND (state IN ('ready','failed','failed_retryable') OR (state='running' AND lease_until<now()))
                 ORDER BY attempts,CASE provider WHEN 'PNCP' THEN 0 WHEN 'PNCP_ATUALIZACAO' THEN 0
-                  WHEN 'PNCP_RESULTADOS' THEN 1 WHEN 'PNCP_ITENS' THEN 2 ELSE 3 END,task_key
+                  WHEN 'PNCP_RESULTADOS' THEN 1 WHEN 'PNCP_ITENS' THEN 2 ELSE 3 END,
+                  CASE arguments->>'modality' WHEN '6' THEN 0 WHEN '8' THEN 1 WHEN '9' THEN 2 WHEN '4' THEN 3 ELSE 4 END,task_key
                 LIMIT 1 FOR UPDATE SKIP LOCKED""",{'o':org,'c':cid,'max':source_retry.MAX_ATTEMPTS})
             if not task:
                 unfinished=db.one("SELECT count(*) AS n FROM history_task WHERE org_id=:o AND collection_id=:c AND state<>'done'",{'o':org,'c':cid})['n']

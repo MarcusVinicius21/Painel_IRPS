@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--execute', action='store_true')
     parser.add_argument('--max-attempts', type=int, default=20)
     parser.add_argument('--max-seconds', type=int, default=60)
+    parser.add_argument('--min-interval', type=float, default=1)
     args = parser.parse_args()
     settings = load_settings()
     url = make_url(settings.database_url.get_secret_value())
@@ -28,7 +29,7 @@ def main():
     try:
         result = run_tick(database, settings.operator_org_id, settings.operator_actor_id,
                           [str(cid) for cid in args.collection], execute=args.execute,
-                          max_attempts=args.max_attempts, max_seconds=args.max_seconds)
+                          max_attempts=args.max_attempts, max_seconds=args.max_seconds, interval_seconds=args.min_interval)
         print(json.dumps(normalize(result), ensure_ascii=False, indent=2))
     finally:
         database.engine.dispose()

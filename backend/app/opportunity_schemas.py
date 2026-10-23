@@ -11,7 +11,7 @@ class HistoricalScope(Strict):
     municipalities: list[Code] = Field(min_length=1,max_length=6000)
     start: date
     end: date
-    modalities: list[int] = Field(default_factory=lambda:[6],min_length=1,max_length=14)
+    modalities: list[int] = Field(default_factory=lambda:[6],min_length=1,max_length=19)
     publications: bool = True
     updates: bool = False
     contracts: bool = False
@@ -27,7 +27,7 @@ class HistoricalScope(Strict):
     def bounds(self):
         if self.end<self.start or (self.end-self.start).days>1826 or self.end>date.today():raise ValueError('Escolha até cinco anos encerrados na data atual.')
         if len(set(self.municipalities))!=len(self.municipalities):raise ValueError('Município repetido.')
-        if len(set(self.modalities))!=len(self.modalities) or any(m<1 or m>14 for m in self.modalities):raise ValueError('Modalidade inválida.')
+        if len(set(self.modalities))!=len(self.modalities) or any(m<1 or m>19 for m in self.modalities):raise ValueError('Modalidade inválida.')
         if not any((self.publications,self.updates,self.contracts,self.contract_updates,self.atas,self.pca)):
             raise ValueError('Escolha ao menos uma consulta.')
         if self.results and not self.items:raise ValueError('Resultados precisam dos itens.')
@@ -60,7 +60,7 @@ class OpportunityFilter(Strict):
     buyers: list[str] = Field(default_factory=list,max_length=100)
     categories: list[str] = Field(default_factory=list,max_length=100)
     item_ids: list[str] = Field(default_factory=list,max_length=100)
-    modalities: list[int] = Field(default_factory=list,max_length=14)
+    modalities: list[int] = Field(default_factory=list,max_length=19)
     suppliers: list[str] = Field(default_factory=list,max_length=100)
     months: list[int] = Field(default_factory=list,max_length=12)
     years: list[int] = Field(default_factory=list,max_length=20)
@@ -80,7 +80,7 @@ class OpportunityFilter(Strict):
         if self.end<self.start or (self.end-self.start).days>3653 or self.end>date.today():raise ValueError('Escolha um período histórico encerrado na data atual.')
         for a,b in [('min_quantity','max_quantity'),('min_amount','max_amount'),('min_price','max_price')]:
             if getattr(self,a) is not None and getattr(self,b) is not None and getattr(self,a)>getattr(self,b):raise ValueError('Limites invertidos.')
-        if any(x<1 or x>12 for x in self.months) or any(x<1 or x>14 for x in self.modalities) or any(x>date.today().year for x in self.years):raise ValueError('Mês, ano ou modalidade inválidos.')
+        if any(x<1 or x>12 for x in self.months) or any(x<1 or x>19 for x in self.modalities) or any(x>date.today().year for x in self.years):raise ValueError('Mês, ano ou modalidade inválidos.')
         if set(self.weights)!={'recurrence','spread','price','ease'} or any(v<0 or v>100 for v in self.weights.values()) or sum(self.weights.values())!=100:raise ValueError('Os pesos precisam somar 100.')
         from uuid import UUID
         for value in self.groups+self.buyers:UUID(value)

@@ -18,11 +18,13 @@ def snapshot(database, org, actor, collection_ids):
 
 
 def run_tick(database, org, actor, collection_ids, *, execute=False, max_attempts=20,
-             max_seconds=60, transport=None, sleep=time.sleep):
+             max_seconds=60, interval_seconds=1, transport=None, sleep=time.sleep):
     if not collection_ids or len(collection_ids) > 20 or len(set(collection_ids)) != len(collection_ids):
         raise ValueError('Escolha entre 1 e 20 coletas diferentes já cadastradas.')
     if not 1 <= max_attempts <= 300 or not 1 <= max_seconds <= 900:
         raise ValueError('Limite de até 300 tentativas e 900 segundos por execução.')
+    if not 1 <= interval_seconds <= 60:
+        raise ValueError('O intervalo entre avanços deve ficar entre 1 e 60 segundos.')
     initial = snapshot(database, org, actor, collection_ids)
     if not execute:
         return {'executed': False, 'attempts': 0, 'pages': 0, 'collections': initial}
@@ -54,7 +56,7 @@ def run_tick(database, org, actor, collection_ids, *, execute=False, max_attempt
                     if not result.get('pages') or result.get('paused'):
                         stopped.add(cid)
                     # Source failures stop only this collection in this tick.
-                    sleep(1)
+                    sleep(interval_seconds)
                 if not progress:
                     break
             return {'executed': True, 'attempts': attempts, 'pages': pages,
