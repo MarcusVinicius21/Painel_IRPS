@@ -8,7 +8,7 @@ from . import modality
 from .security import Context,fail
 
 class SourceFault(Exception):
- def __init__(self,code,status=None,retry_after=60):self.code=code;self.status=status;self.retry_after=retry_after
+ def __init__(self,code,status=None,retry_after=60,evidence=None):self.code=code;self.status=status;self.retry_after=retry_after;self.evidence=evidence or {}
 
 def documented_number(value):
  if value is None:return None
@@ -28,6 +28,7 @@ def public_get(url,params=None,transport=None):
      if size>4*1024*1024:raise SourceFault('RESPONSE_LIMIT',response.status_code)
      chunks.append(chunk)
     content=b''.join(chunks)
+    proof={'url':resolved,'http_status':response.status_code,'sha256':hashlib.sha256(content).hexdigest()}
     if response.status_code in (429,503):
      from email.utils import parsedate_to_datetime
      retry=response.headers.get('retry-after','60')
@@ -35,22 +36,26 @@ def public_get(url,params=None,transport=None):
      except ValueError:
       try:delay=int((parsedate_to_datetime(retry)-datetime.now(timezone.utc)).total_seconds())
       except Exception:delay=60
-     raise SourceFault('RATE_LIMIT' if response.status_code==429 else 'SOURCE_UNAVAILABLE',response.status_code,max(60,min(delay,3600)))
-    if response.status_code not in (200,204):raise SourceFault('HTTP_'+str(response.status_code),response.status_code)
+     if delay>2147483647:raise SourceFault('INVALID_RETRY_AFTER',response.status_code,evidence=proof)
+     raise SourceFault('RATE_LIMIT' if response.status_code==429 else 'SOURCE_UNAVAILABLE',response.status_code,max(60,delay),evidence=proof)
+    if response.status_code not in (200,204):raise SourceFault('HTTP_'+str(response.status_code),response.status_code,evidence=proof)
     if response.status_code==204:return resolved,response.status_code,content,None
     try:data=json.loads(content,parse_float=Decimal)
-    except (ValueError,UnicodeError):raise SourceFault('INVALID_SOURCE_FORMAT',response.status_code)
+    except (ValueError,UnicodeError):raise SourceFault('INVALID_SOURCE_FORMAT',response.status_code,evidence=proof)
     return resolved,response.status_code,content,data
  except httpx.HTTPError:raise SourceFault('SOURCE_CONNECTION') from None
 
 def cached_get(ctx,provider,url,params=None,transport=None):
  resolved=str(httpx.Request('GET',url,params=params).url)
+ def traced(result):
+  ctx.last_source_response={'url':result[0],'http_status':result[1],'sha256':hashlib.sha256(result[2]).hexdigest()}
+  return result
  if transport is None:
   cached=ctx.db.one("SELECT body,http_status FROM source_observation WHERE provider=:p AND url=:u AND classification='official' AND http_status IN (200,204) AND consulted_at>now()-interval '5 minutes' ORDER BY consulted_at DESC LIMIT 1",{'p':provider,'u':resolved})
   if cached:
    raw=cached['body'].encode()
-   return resolved,cached['http_status'],raw,None if cached['http_status']==204 else json.loads(raw,parse_float=Decimal)
- return public_get(url,params,transport)
+   return traced((resolved,cached['http_status'],raw,None if cached['http_status']==204 else json.loads(raw,parse_float=Decimal)))
+ return traced(public_get(url,params,transport))
 
 def observe(ctx,provider,url,status,content,metadata):
  sha=hashlib.sha256(content).hexdigest();sid=identifier()

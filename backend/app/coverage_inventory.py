@@ -105,8 +105,9 @@ def inventory(ctx,start,end,cities):
                     and r['consulted_at'] and r['http_status'] is not None and 200<=r['http_status']<300]
                 successful_ids={r['id'] for r in successful}
                 complete=len(successful_ids)
-                failed=len({r['id'] for r in rows if r['state']=='failed'})
-                pending=len({r['id'] for r in rows if r['state']!='failed' and r['id'] not in successful_ids})
+                failed_states={'failed','failed_retryable','blocked','quarantined'}
+                failed=len({r['id'] for r in rows if r['state'] in failed_states})
+                pending=len({r['id'] for r in rows if r['state'] not in failed_states and r['id'] not in successful_ids})
                 observed=sum(r['record_count'] or 0 for r in successful)
                 proof=[{'url':r['url'],'sha256':r['sha256'],'consulted_at':r['consulted_at'],
                     'record_count':r['record_count'],'task_id':str(r['id'])} for r in successful][:25]

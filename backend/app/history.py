@@ -4,7 +4,7 @@ from decimal import Decimal
 import hashlib,json,re,time
 from .db import identifier,encoded
 from .security import fail
-from . import sources,history_sources
+from . import sources,history_sources,source_retry
 
 def queue(ctx,cid,provider,args):
     key=provider+':'+hashlib.sha256(encoded(args).encode()).hexdigest()
@@ -26,6 +26,7 @@ def get(ctx,cid):
         'denominator':'Tarefas materializadas neste plano. Pode aumentar com novas páginas e itens.',
         'municipal_purchase_completeness':None}
     row['recent_pages']=ctx.db.all('SELECT p.task_id,p.source_id,p.record_count,p.created_at,s.url,s.sha256 FROM history_page p JOIN source_observation s ON s.id=p.source_id WHERE p.org_id=:o AND p.collection_id=:c ORDER BY p.created_at DESC LIMIT 12',{'o':ctx.org_id,'c':cid})
+    row['recent_errors']=ctx.db.all("SELECT created_at,metadata FROM audit_event WHERE org_id=:o AND resource_id=:c AND action='history.failed' ORDER BY created_at DESC LIMIT 20",{'o':ctx.org_id,'c':cid})
     row['coverage_message']='Conclusão significa somente o recorte e as rotas escolhidas, nunca todo o histórico municipal.'
     return row
 
@@ -122,14 +123,21 @@ def advance(database,org,actor,cid,budget=1,transport=None):
             if collection['pages']>=collection['scope']['max_pages']:
                 db.execute("UPDATE history_collection SET state='limited',updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid});return {'pages':done}
             if db.one("SELECT id FROM history_task WHERE org_id=:o AND collection_id=:c AND state='running' AND lease_until>now()",{'o':org,'c':cid}):return {'pages':done}
+            db.execute("""UPDATE history_task SET state='blocked',lease_until=NULL,error_code='RETRY_EXHAUSTED'
+                WHERE org_id=:o AND collection_id=:c AND attempts>=:max AND
+                (state IN ('ready','failed','failed_retryable') OR (state='running' AND lease_until<now()))""",
+                {'o':org,'c':cid,'max':source_retry.MAX_ATTEMPTS})
             task=db.one("""SELECT * FROM history_task WHERE org_id=:o AND collection_id=:c
-                AND (state IN ('ready','failed') OR (state='running' AND lease_until<now()))
+                AND attempts<:max AND (state IN ('ready','failed','failed_retryable') OR (state='running' AND lease_until<now()))
                 ORDER BY attempts,CASE provider WHEN 'PNCP' THEN 0 WHEN 'PNCP_ATUALIZACAO' THEN 0
                   WHEN 'PNCP_RESULTADOS' THEN 1 WHEN 'PNCP_ITENS' THEN 2 ELSE 3 END,task_key
-                LIMIT 1 FOR UPDATE SKIP LOCKED""",{'o':org,'c':cid})
+                LIMIT 1 FOR UPDATE SKIP LOCKED""",{'o':org,'c':cid,'max':source_retry.MAX_ATTEMPTS})
             if not task:
-                db.execute("UPDATE history_collection SET state='completed',updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid});return {'pages':done}
-            pause=db.one('SELECT resume_after FROM source_backoff WHERE org_id=:o AND provider=:p AND resume_after>now()',{'o':org,'p':task['provider']})
+                unfinished=db.one("SELECT count(*) AS n FROM history_task WHERE org_id=:o AND collection_id=:c AND state<>'done'",{'o':org,'c':cid})['n']
+                db.execute("UPDATE history_collection SET state=:state,error_code=:error,updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'state':'paused' if unfinished else 'completed','error':'TASKS_REQUIRE_REVIEW' if unfinished else None})
+                return {'pages':done,'blocked':bool(unfinished)}
+            pause=db.one('SELECT max(resume_after) AS resume_after FROM source_backoff WHERE org_id=:o AND provider IN (:p,:host) AND resume_after>now()',{'o':org,'p':task['provider'],'host':source_retry.host_key(task['provider'])})
+            pause=pause if pause and pause['resume_after'] else None
             if pause:
                 db.execute("UPDATE history_collection SET state='paused',error_code='SOURCE_BACKOFF',resume_after=:r WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'r':pause['resume_after']});return {'pages':done}
             db.execute("UPDATE history_task SET state='running',lease_until=now()+interval '3 minutes',attempts=attempts+1 WHERE org_id=:o AND id=:i",{'o':org,'i':task['id']})
@@ -157,10 +165,17 @@ def advance(database,org,actor,cid,budget=1,transport=None):
             if transport is None and budget>1:time.sleep(1)
         except Exception as exc:
             code=exc.code if isinstance(exc,sources.SourceFault) else 'HISTORY_PAGE_FAILED'
-            wait=exc.retry_after if isinstance(exc,sources.SourceFault) else 60
+            decision=source_retry.policy(code,exc.status if isinstance(exc,sources.SourceFault) else None,task['attempts']+1,exc.retry_after if isinstance(exc,sources.SourceFault) else 60)
+            wait=decision['retry_after']
+            response_evidence=(exc.evidence if isinstance(exc,sources.SourceFault) else {}) or getattr(ctx,'last_source_response',{})
             with database.transaction(org,actor) as db:
-                db.execute("UPDATE history_task SET state='failed',lease_until=NULL,error_code=:e WHERE org_id=:o AND id=:i",{'o':org,'i':task['id'],'e':code})
-                db.execute("UPDATE history_collection SET state='paused',error_code=:e,resume_after=now()+make_interval(secs=>:w),updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'e':code,'w':wait})
-                db.execute("INSERT INTO source_backoff(org_id,provider,resume_after) VALUES (:o,:p,now()+make_interval(secs=>:w)) ON CONFLICT(org_id,provider) DO UPDATE SET resume_after=EXCLUDED.resume_after",{'o':org,'p':task['provider'],'w':wait})
+                db.execute("UPDATE history_task SET state=:state,lease_until=NULL,error_code=:e WHERE org_id=:o AND id=:i",{'o':org,'i':task['id'],'e':code,'state':decision['state']})
+                db.execute("UPDATE history_collection SET state='paused',error_code=CASE WHEN error_code='USER_PAUSED' THEN error_code ELSE :e END,resume_after=now()+make_interval(secs=>:w),updated_at=now() WHERE org_id=:o AND id=:i",{'o':org,'i':cid,'e':code,'w':wait})
+                if wait is not None:
+                    db.execute("INSERT INTO source_backoff(org_id,provider,resume_after) VALUES (:o,:p,now()+make_interval(secs=>:w)) ON CONFLICT(org_id,provider) DO UPDATE SET resume_after=greatest(source_backoff.resume_after,EXCLUDED.resume_after)",{'o':org,'p':source_retry.host_key(task['provider']),'w':wait})
+                ctx=sources.job_context(db,org,actor)
+                ctx.audit('history.failed',cid,{'task_id':str(task['id']),'provider':task['provider'],'code':code,
+                    'http_status':(exc.status if isinstance(exc,sources.SourceFault) else None) or response_evidence.get('http_status'),'attempt':task['attempts']+1,
+                    **decision,'response_evidence':response_evidence})
             return {'pages':done,'paused':True,'error_code':code}
     return {'pages':done}
