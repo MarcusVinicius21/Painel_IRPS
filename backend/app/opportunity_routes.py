@@ -1,6 +1,7 @@
 from typing import Annotated
 from datetime import date,timedelta
 from uuid import UUID
+from fastapi.responses import JSONResponse
 from fastapi import APIRouter,Depends,Request,BackgroundTasks,Header,Query
 from .security import authenticate,fail,PERMISSIONS
 from .db import normalize
@@ -59,7 +60,24 @@ def catalogue_product_history(product_id:UUID,request:Request,ctx:Auth,phase:PHA
 def catalogue_reference_prices(ctx:Auth,kind:str,code:str,code_type:str='codigoItemCatalogo',
                                start:date=date(2025,1,1),end:date=Query(default_factory=date.today),
                                page:int=Query(1,ge=1,le=100)):
-    return catalogue.reference_prices(ctx,kind,code,code_type,start,end,page)
+    result=catalogue.reference_prices(ctx,kind,code,code_type,start,end,page)
+    if result.get('state')=='source_unavailable':
+        if code_type=='codigoItemCatalogo' and ctx.db.one("SELECT to_regclass('price_monthly_snapshot') AS table_name")['table_name']:
+            from .monthly_prices import query as monthly_query
+            preserved=monthly_query(ctx,kind,code,start,end,page)
+            if preserved['records']:
+                return {**preserved,'state':'partial','source_error':result['source_error'],'fallback_from':'live_api',
+                    'message':'Arquivo mensal preservado. A consulta online falhou; somente os meses importados aparecem.'}
+        error=result['source_error'];status=429 if error['code'] in ('RATE_LIMIT','SOURCE_COOLDOWN') else 502
+        headers={'Retry-After':str(error['retry_after'])} if error.get('retry_after') else {}
+        return JSONResponse(result,status_code=status,headers=headers)
+    return result
+
+
+@router.get('/catalogue-intelligent/monthly-prices')
+def monthly_reference_prices(ctx:Auth,kind:str,code:str,start:date,end:date,page:int=Query(1,ge=1,le=100)):
+    from .monthly_prices import query as monthly_query
+    return monthly_query(ctx,kind,code,start,end,page)
 
 @router.get('/coverage/inventory')
 def coverage_inventory_get(ctx:Auth,start:date=date(2024,1,1),end:date=Query(default_factory=date.today),

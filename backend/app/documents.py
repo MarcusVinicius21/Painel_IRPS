@@ -109,6 +109,7 @@ def parse(data,extension):
  return {'segments':segments,'fields':fields,'notices':notices,'instruction_detected':unsafe,'state':'needs_review','external_ai_used':False,'parser_version':VERSION,'antivirus_scan':'not_available','applied_to_scenario':False}
 
 def ingest(ctx,runtime,filename,data,classification):
+ if ctx.operational and classification=='synthetic':fail(422,'O ambiente operacional não aceita documentos fictícios.','SYNTHETIC_DISABLED')
  ctx.require('document.write')
  if classification=='business_private':ctx.require('quote.write')
  parsed=parse(data,Path(filename).suffix.lower());sha=hashlib.sha256(data).hexdigest()

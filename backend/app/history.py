@@ -1,5 +1,6 @@
 """Durable, bounded PNCP pagination. Each successful page commits with its checkpoint."""
 from datetime import date,datetime,timedelta,timezone
+from decimal import Decimal
 import hashlib,json,re,time
 from .db import identifier,encoded
 from .security import fail
@@ -15,6 +16,15 @@ def get(ctx,cid):
     row=ctx.db.one('SELECT * FROM history_collection WHERE org_id=:o AND id=:i',{'o':ctx.org_id,'i':cid})
     if not row:fail(404,'Esta coleta não está disponível neste espaço.')
     row['tasks']=ctx.db.all('SELECT state,count(*) AS count FROM history_task WHERE org_id=:o AND collection_id=:c GROUP BY state',{'o':ctx.org_id,'c':cid})
+    total=sum(r['count'] for r in row['tasks'])
+    evidenced=ctx.db.one('''SELECT count(*) AS n FROM history_task t WHERE t.org_id=:o AND t.collection_id=:c
+        AND t.state='done' AND EXISTS(SELECT 1 FROM history_page p JOIN source_observation s ON s.id=p.source_id
+          WHERE p.org_id=t.org_id AND p.task_id=t.id AND s.http_status IN (200,204) AND s.classification='official')''',{'o':ctx.org_id,'c':cid})['n']
+    row['execution']={'materialized_tasks':total,'evidenced_completed_tasks':evidenced,
+        'request_plan_percent':str(Decimal(evidenced)*100/total) if total else None,
+        'complete_known_plan':bool(total and evidenced==total and row['state']=='completed'),
+        'denominator':'Tarefas materializadas neste plano. Pode aumentar com novas páginas e itens.',
+        'municipal_purchase_completeness':None}
     row['recent_pages']=ctx.db.all('SELECT p.task_id,p.source_id,p.record_count,p.created_at,s.url,s.sha256 FROM history_page p JOIN source_observation s ON s.id=p.source_id WHERE p.org_id=:o AND p.collection_id=:c ORDER BY p.created_at DESC LIMIT 12',{'o':ctx.org_id,'c':cid})
     row['coverage_message']='Conclusão significa somente o recorte e as rotas escolhidas, nunca todo o histórico municipal.'
     return row

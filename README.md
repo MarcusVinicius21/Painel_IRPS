@@ -4,7 +4,9 @@ Aplicação local para pesquisar compras, comparar municípios e **montar licita
 
 O frontend Observatório usa React e TypeScript. O backend FastAPI grava no PostgreSQL e executa o núcleo matemático V4 original. As fórmulas do V4 permanecem intactas; a interface apresenta os resultados do servidor.
 
-**Estado: implementação local de testes.** As contas e os cenários iniciais são fictícios e aparecem identificados. O acesso com contas de teste valida assinatura e permissões, mas não substitui uma identidade de produção. Não use documentos ou informações comerciais reais neste ambiente.
+**Estado: implementação local, com ambientes separados de testes e de operação.** O ambiente operacional usa um único operador CONSORMULTI e consultas públicas reais. O bootstrap de QA continua separado, com contas e exemplos explicitamente fictícios. O banco operacional, a senha e as evidências locais não são distribuídos pelo Git. Esta entrega não é uma implantação de produção.
+
+O checkpoint de catálogo e preços reais está na branch `checkpoint/irps-catalogo-precos-reais-2026-10-23`. Veja [instalação operacional, validações e limites desta entrega](docs/checkpoints/2026-10-23-catalogo-precos-reais.md).
 
 ## O que funciona
 
@@ -19,7 +21,7 @@ O frontend Observatório usa React e TypeScript. O backend FastAPI grava no Post
 - Área **Oportunidades**: coleta PNCP paginada e retomável, filtros históricos, cobertura explícita, equivalências revisadas, prioridade condicionada a dados e revisão humana, rascunho de licitação e acompanhamentos locais.
 - **Catálogo inteligente e cobertura**: normalização auditável, produtos equivalentes revisados, inventário por município/órgão/fonte/fase, publicações e atualizações PNCP, consulta pontual de preços Compras.gov.br e execução limitada por agendador local.
 
-Os conectores não representam cobertura histórica completa. Quantidade contratada não comprova consumo; valor contratado não significa valor pago. A instalação limpa inclui dados sintéticos, não uma cópia do banco utilizado anteriormente.
+Os conectores não representam cobertura histórica completa. Quantidade contratada não comprova consumo; valor contratado não significa valor pago. O bootstrap de QA inclui dados sintéticos; a preparação operacional cria outro banco vazio, sem esses exemplos. Nenhum deles inclui uma cópia do banco utilizado anteriormente.
 
 ## Instalação local — Windows
 
@@ -29,7 +31,7 @@ Requisitos: **Python 3.12**, **Node.js 24 com npm**, PowerShell e Google Chrome 
 git clone git@github.com:MarcusVinicius21/Painel_IRPS.git
 Set-Location Painel_IRPS
 # Estado integrado I01–I17 desta entrega:
-git switch checkpoint/irps-integrado-i17-04-2026-10-22
+git switch checkpoint/irps-catalogo-precos-reais-2026-10-23
 & .\scripts\preparar_ambiente.ps1 -PythonExe 'python'
 ```
 

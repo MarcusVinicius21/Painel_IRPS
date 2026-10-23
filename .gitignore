@@ -111,3 +111,12 @@ docs/IRPS_7_TELAS_APROVADAS/telas/
 docs/IRPS_7_TELAS_APROVADAS/galeria.html
 # Existing tracked documents remain tracked; only new generated output is ignored.
 docs/IRPS_REFINAMENTO_PIXEL_PERFECT/
+
+# Public checkpoints keep reviewed technical reports, not operational evidence dumps.
+docs/IRPS_PILOTO_REAL_LOGIN_UNICO/*
+!docs/IRPS_PILOTO_REAL_LOGIN_UNICO/RELATORIO.md
+!docs/IRPS_PILOTO_REAL_LOGIN_UNICO/COMANDOS.md
+docs/IRPS_CATALOGO_HISTORICO_REAL/*
+!docs/IRPS_CATALOGO_HISTORICO_REAL/RELATORIO_CATALOGO_HISTORICO_REAL.md
+docs/IRPS_URGENTE_HISTORICO_PRECOS/*
+!docs/IRPS_URGENTE_HISTORICO_PRECOS/RELATORIO_URGENTE.md

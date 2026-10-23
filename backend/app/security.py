@@ -28,13 +28,15 @@ TEST_USERS=[
 ]
 def stable_id(name):return str(uuid.uuid5(uuid.NAMESPACE_URL,'irps-local-test:'+name))
 def digest(value):return hashlib.sha256(value.encode()).hexdigest()
+def cookie_names(settings):
+ return ('irps_operator_session','irps_operator_csrf') if settings.auth_mode=='operational_local' else ('irps_session','irps_csrf')
 def fail(status,message,code='ACCESS_DENIED'):raise HTTPException(status,{'message':message,'code':code})
 
 class Verifier:
  def __init__(self,settings):
   self.settings=settings;self.private=None;self.public_jwk=None;self.remote=None
-  if settings.auth_mode=='local_test':
-   path=Path(settings.runtime)/'test-issuer-private.pem';path.parent.mkdir(parents=True,exist_ok=True)
+  if settings.auth_mode in ('local_test','operational_local'):
+   path=Path(settings.runtime)/('operator-signing-private.pem' if settings.auth_mode=='operational_local' else 'test-issuer-private.pem');path.parent.mkdir(parents=True,exist_ok=True)
    if not path.exists():
     key=rsa.generate_private_key(public_exponent=65537,key_size=2048)
     path.write_bytes(key.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption()))
@@ -48,7 +50,7 @@ class Verifier:
   try:
    header=jwt.get_unverified_header(token)
    if header.get('alg')!='RS256' or not header.get('kid'):raise ValueError('algorithm')
-   if self.settings.auth_mode=='local_test':
+   if self.settings.auth_mode in ('local_test','operational_local'):
     if header['kid']!=self.public_jwk['kid']:raise ValueError('kid')
     key=PyJWK.from_dict(self.public_jwk).key
    elif self.remote:key=self.remote.get_signing_key_from_jwt(token).key
@@ -72,19 +74,27 @@ class Context:
  name:str
  organization:str
  jti:str
+ operational:bool=False
+ @property
+ def permissions(self):
+  return set().union(*PERMISSIONS.values()) if self.operational else PERMISSIONS.get(self.role,set())
  def require(self,permission):
-  if permission not in PERMISSIONS.get(self.role,set()):fail(403,'Seu acesso não permite esta ação.')
-  if permission.startswith('quote.') and self.kind!='business':fail(403,'Os custos ficam no espaço da empresa.')
+  if permission not in self.permissions:fail(403,'Seu acesso não permite esta ação.')
+  if permission.startswith('quote.') and self.kind!='business' and not self.operational:fail(403,'Os custos ficam no espaço da empresa.')
  def audit(self,action,resource,metadata=None):
   self.db.execute('INSERT INTO audit_event(org_id,id,actor_id,action,resource_id,metadata) VALUES (:o,:i,:a,:action,:r,CAST(:m AS jsonb))',{'o':self.org_id,'i':identifier(),'a':self.actor_id,'action':action,'r':str(resource),'m':encoded(metadata or {})})
 
 def authenticate(request:Request):
  state=request.app.state;authorization=request.headers.get('authorization','');bearer=authorization.startswith('Bearer ')
- token=authorization[7:] if bearer else request.cookies.get('irps_session','')
+ token=authorization[7:] if bearer else request.cookies.get(cookie_names(state.settings)[0],'')
  claims=state.verifier.decode(token)
+ operational=state.settings.auth_mode=='operational_local'
+ if operational and (claims['org_id']!=state.settings.operator_org_id or claims['sub']!='consormulti-operador'):
+  fail(401,'Este acesso não está disponível.','INVALID_OPERATOR')
  with state.database.transaction(claims['org_id']) as db:
   actor=db.one('SELECT id,name,active FROM actor WHERE issuer=:iss AND subject=:sub',{'iss':claims['iss'],'sub':claims['sub']})
   if not actor or not actor['active']:fail(401,'Este acesso foi desativado.','REVOKED')
+  if operational and str(actor['id'])!=state.settings.operator_actor_id:fail(401,'Este acesso não está disponível.','INVALID_OPERATOR')
   membership=db.one('SELECT m.role,m.active,o.kind,o.name FROM membership m JOIN organization o ON o.id=m.org_id WHERE m.org_id=:o AND m.actor_id=:a',{'o':claims['org_id'],'a':actor['id']})
   session=db.one('SELECT csrf_digest,revoked,expires_at>now() AS valid FROM auth_session WHERE org_id=:o AND id=:j AND actor_id=:a',{'o':claims['org_id'],'j':claims['jti'],'a':actor['id']})
   if not membership or not membership['active'] or not session or session['revoked'] or not session['valid']:fail(401,'Seu acesso foi encerrado. Entre novamente.','REVOKED')
@@ -92,7 +102,7 @@ def authenticate(request:Request):
    nonce=request.headers.get('x-csrf-token','')
    if not nonce or not secrets.compare_digest(digest(nonce),session['csrf_digest']):fail(403,'Atualize a página antes de continuar.','CSRF')
   db.execute("SELECT set_config('irps.actor_id',:a,true)",{'a':str(actor['id'])})
-  ctx=Context(db,claims['org_id'],str(actor['id']),membership['role'],membership['kind'],actor['name'],membership['name'],claims['jti'])
+  ctx=Context(db,claims['org_id'],str(actor['id']),membership['role'],membership['kind'],actor['name'],membership['name'],claims['jti'],operational)
   ctx.require('read')
   key=(ctx.org_id,ctx.actor_id,int(time.time()//60));count=state.limiter.get(key,0)+1;state.limiter[key]=count
   if count>state.settings.rate_limit:fail(429,'O limite de consultas foi alcançado. Tente novamente em instantes.','RATE_LIMIT')
@@ -101,7 +111,8 @@ def authenticate(request:Request):
 
 def establish_session(app,db,claims,actor,token,response):
  nonce=secrets.token_urlsafe(24)
+ session_cookie,csrf_cookie=cookie_names(app.state.settings)
  db.execute('INSERT INTO auth_session(org_id,id,actor_id,csrf_digest,expires_at) VALUES (:o,:j,:a,:c,to_timestamp(:e)) ON CONFLICT(org_id,id) DO UPDATE SET csrf_digest=EXCLUDED.csrf_digest,revoked=false',{'o':claims['org_id'],'j':claims['jti'],'a':actor['id'],'c':digest(nonce),'e':claims['exp']})
- response.set_cookie('irps_session',token,httponly=True,secure=app.state.settings.cookie_secure,samesite='strict',max_age=app.state.settings.token_seconds,path='/')
- response.set_cookie('irps_csrf',nonce,httponly=False,secure=app.state.settings.cookie_secure,samesite='strict',max_age=app.state.settings.token_seconds,path='/')
+ response.set_cookie(session_cookie,token,httponly=True,secure=app.state.settings.cookie_secure,samesite='strict',max_age=app.state.settings.token_seconds,path='/')
+ response.set_cookie(csrf_cookie,nonce,httponly=False,secure=app.state.settings.cookie_secure,samesite='strict',max_age=app.state.settings.token_seconds,path='/')
  return {'authenticated':True,'identity_mode':app.state.settings.auth_mode,'production_identity':app.state.settings.auth_mode=='oidc'}

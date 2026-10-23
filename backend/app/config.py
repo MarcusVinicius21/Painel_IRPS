@@ -18,6 +18,9 @@ class Settings(BaseModel):
  token_seconds:int=3600
  rate_limit:int=240
  testing:bool=False
+ operator_org_id:str=''
+ operator_actor_id:str=''
+ operator_password_hash:SecretStr=SecretStr('')
 
 def load_settings():
  # Only an explicitly selected project-local test configuration is opened.

@@ -11,10 +11,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from irps_core.domain import ValidationError
 from .config import load_settings
 from .db import Database,encoded,identifier,normalize
-from .security import authenticate,Verifier,TEST_USERS,stable_id,establish_session,fail,PERMISSIONS
+from .security import authenticate,Verifier,TEST_USERS,stable_id,establish_session,fail,PERMISSIONS,cookie_names
 from .schemas import Login,ScenarioCreate,Snapshot,SyntheticCreate,QuoteBody,DocumentReview,AssistantBody,ToolCall,SourceSync,WatchBody
 from . import scenarios,documents,exports,assistant,sources
 from .opportunity_routes import router as opportunity_router
+from . import operational
 from .director_routes import router as director_router
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
@@ -24,6 +25,7 @@ def reject_query(request,allowed):
 
 def create_app(settings=None):
  settings=settings or load_settings()
+ operational.validate_local(settings)
  if settings.ai_enabled:raise RuntimeError('Provedores pagos não são habilitados nesta rodada.')
  @asynccontextmanager
  async def lifespan(app):
@@ -34,11 +36,20 @@ def create_app(settings=None):
  app.add_middleware(CORSMiddleware,allow_origins=settings.allowed_origins,allow_credentials=True,allow_methods=['GET','POST','PUT','DELETE','OPTIONS'],allow_headers=['Content-Type','X-CSRF-Token','If-Match','Idempotency-Key','Authorization'],expose_headers=['ETag'])
  @app.middleware('http')
  async def safeguards(request,call_next):
+  if settings.auth_mode=='operational_local' and not operational.loopback(request):return JSONResponse({'detail':{'message':'Este acesso exige conexão local.','code':'LOOPBACK_REQUIRED'}},403)
   request_id=secrets.token_hex(8);origin=request.headers.get('origin')
   if origin and origin not in settings.allowed_origins:return JSONResponse({'detail':{'message':'Esta origem não está autorizada.','code':'ORIGIN_DENIED'}},403)
   try:length=int(request.headers.get('content-length','0'))
   except ValueError:length=10_000_001
   if length>10_000_000:return JSONResponse({'detail':{'message':'Divida o envio em partes menores.','code':'REQUEST_LIMIT'}},413)
+  if settings.auth_mode=='operational_local':
+   synthetic=request.query_params.get('dataset')=='synthetic'
+   if request.method in ('POST','PUT') and request.headers.get('content-type','').startswith('application/json'):
+    try:
+     body=await request.json()
+     if isinstance(body,dict):synthetic=synthetic or body.get('classification')=='synthetic' or body.get('dataset')=='synthetic'
+    except ValueError:pass
+   if synthetic:return JSONResponse({'detail':{'message':'O ambiente operacional usa somente fontes oficiais e estudos internos.','code':'SYNTHETIC_DISABLED'}},422)
   response=await call_next(request)
   response.headers.update({'X-Request-ID':request_id,'X-Content-Type-Options':'nosniff','Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'})
   return response
@@ -69,6 +80,13 @@ def create_app(settings=None):
  def test_only(request):
   if settings.auth_mode!='local_test' or (request.client.host not in ('127.0.0.1','::1') and not settings.testing):fail(404,'Esta opção não está disponível.')
 
+ @app.get('/api/v1/auth/mode')
+ def auth_mode():return {'identity_mode':settings.auth_mode,'single_operator':settings.auth_mode=='operational_local'}
+
+ @app.post('/api/v1/auth/operator-login')
+ def operator_login(body:operational.OperatorLogin,request:Request,response:Response):
+  return operational.login(app,request,response,body)
+
  @app.get('/api/v1/auth/test-users')
  def test_users(request:Request):
   test_only(request);return {'users':[{'key':u['key'],'name':u['name'],'organization':u['org']} for u in TEST_USERS],'real_people':False}
@@ -95,12 +113,13 @@ def create_app(settings=None):
    return establish_session(app,db,claims,actor,auth[7:],response)
 
  @app.get('/api/v1/auth/context')
- def context(ctx:Auth):return {'actor_id':ctx.actor_id,'name':ctx.name,'org_id':ctx.org_id,'organization':ctx.organization,'kind':ctx.kind,'role':ctx.role,'permissions':sorted(PERMISSIONS.get(ctx.role,set())),'identity_mode':settings.auth_mode,'production_identity':settings.auth_mode=='oidc'}
+ def context(ctx:Auth):return {'actor_id':ctx.actor_id,'name':ctx.name,'org_id':ctx.org_id,'organization':ctx.organization,'kind':ctx.kind,'role':ctx.role,'permissions':sorted(ctx.permissions),'identity_mode':settings.auth_mode,'production_identity':settings.auth_mode=='oidc'}
 
  @app.post('/api/v1/auth/logout')
  def logout(ctx:Auth,response:Response):
   ctx.db.execute('UPDATE auth_session SET revoked=true WHERE org_id=:o AND id=:j',{'o':ctx.org_id,'j':ctx.jti});ctx.db.execute('DELETE FROM ai_cache WHERE org_id=:o AND actor_id=:a',{'o':ctx.org_id,'a':ctx.actor_id});ctx.audit('auth.logout',ctx.actor_id)
-  response.delete_cookie('irps_session',path='/');response.delete_cookie('irps_csrf',path='/');return {'signed_out':True}
+  session_cookie,csrf_cookie=cookie_names(settings)
+  response.delete_cookie(session_cookie,path='/');response.delete_cookie(csrf_cookie,path='/');return {'signed_out':True}
 
  @app.get('/api/v1/municipalities')
  def municipalities(ctx:Auth,request:Request,q:str='',limit:int=Query(6000,ge=1,le=6000)):
@@ -183,7 +202,7 @@ def create_app(settings=None):
 
  @app.get('/api/v1/documents')
  def document_list(ctx:Auth):
-  ctx.require('document.read');private='quote.read' in PERMISSIONS.get(ctx.role,set())
+  ctx.require('document.read');private='quote.read' in ctx.permissions
   return {'records':ctx.db.all("SELECT d.id,d.filename,d.classification,d.created_at,d.sha256,(SELECT max(revision) FROM extracted_document e WHERE e.org_id=d.org_id AND e.document_id=d.id) AS revision FROM document d WHERE org_id=:o AND (:private OR classification<>'business_private') ORDER BY created_at DESC",{'o':ctx.org_id,'private':private})}
  @app.post('/api/v1/documents',status_code=201)
  async def document_upload(ctx:Auth,file:UploadFile=File(...),classification:Literal['synthetic','internal','business_private']=Form('internal')):

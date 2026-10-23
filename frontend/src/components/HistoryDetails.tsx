@@ -7,7 +7,7 @@ export function HistoryDetails({rows,view,unit}:{rows:Row[];view:string;unit:str
  const records=rows.flatMap(r=>r.evidence.filter((e:Row)=>view!=='precos'||!r.excluded_from_totals?.some((x:Row)=>x.fact_id===e.fact_id)).map((e:Row)=>({...e,municipality_name:r.municipality.name})));
  if(!records.length)return <Notice>{view==='precos'?'Ainda não há preços comparáveis associados ao item neste recorte.':'Ainda não há documentos vinculados ao item neste recorte.'} Confira o vínculo técnico e as fontes.</Notice>;
  return <DataTable<Row> rows={records} id={r=>r.fact_id} caption={view==='precos'?'Preços documentados dos registros comparáveis':'Fontes e documentos por registro'} columns={[
-  {label:'Município e item',render:r=><>{r.municipality_name}<small>{r.description}</small></>},
+  {label:'Município e item',render:r=><>{r.municipality_name}<small>{r.description}</small><small>{r.buyer_name||'Órgão a conferir'}{r.buyer_cnpj?' · CNPJ '+r.buyer_cnpj:''}</small></>},
   {label:'Data e situação',render:r=><>{r.event_date}<small>Mesma fase do recorte selecionado</small></>},
   {label:'Quantidade e unidade',render:r=><>{quantity(r.quantity)} {r.unit}</>},
   {label:'Preço unitário documentado',render:r=>money(r.unit_price)},

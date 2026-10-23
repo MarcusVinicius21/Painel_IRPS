@@ -2,14 +2,17 @@ import {createContext,useContext,useState,useEffect,useCallback} from 'react';
 import type {ReactNode} from 'react';
 export type Row=Record<string,any>;
 export type Identity={actor_id:string;org_id:string;name:string;organization:string;kind:string;role:string;permissions:string[];identity_mode:string};
-const csrf=()=>decodeURIComponent(document.cookie.split('; ').find(x=>x.startsWith('irps_csrf='))?.slice(10)||'');
+let identityMode='';
+const csrf=()=>{const name=identityMode==='operational_local'?'irps_operator_csrf':'irps_csrf';return decodeURIComponent(document.cookie.split('; ').find(x=>x.startsWith(name+'='))?.slice(name.length+1)||'');};
+export class ApiError extends Error {constructor(message:string,public status:number,public code:string|undefined,public payload:Row){super(message);this.name='ApiError';}}
 export async function api(path:string,options:RequestInit={}){
  const headers=new Headers(options.headers);if(options.body&&!(options.body instanceof FormData))headers.set('Content-Type','application/json');
  if(options.method&&options.method!=='GET')headers.set('X-CSRF-Token',csrf());
  let response:Response;
  try{response=await fetch('/api/v1'+path,{...options,headers,credentials:'include'});}catch{throw new Error('Não conseguimos acessar o IRPS agora. Tente novamente em instantes.');}
  const data=await response.json().catch(()=>({}));
- if(!response.ok){if(response.status===401)window.dispatchEvent(new Event('irps-session-ended'));throw new Error(data.detail?.message||'Não foi possível concluir. Confira os dados e tente novamente.');}
+ if(data.identity_mode)identityMode=data.identity_mode;
+ if(!response.ok){if(response.status===401)window.dispatchEvent(new Event('irps-session-ended'));throw new ApiError(data.detail?.message||data.source_error?.message||'Não foi possível concluir. Confira os dados e tente novamente.',response.status,data.detail?.code||data.source_error?.code,data);}
  return data;
 }
 export const post=(path:string,data?:unknown,headers?:HeadersInit)=>api(path,{method:'POST',body:data===undefined?undefined:JSON.stringify(data),headers});

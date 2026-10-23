@@ -22,6 +22,8 @@ class CatalogueLink(Strict):
     justification: str = Field(min_length=20,max_length=2000)
     evidence: str = Field(min_length=10,max_length=2000)
     confirmed: Literal[True]
+    validation_mode: Literal['human','official_source'] = 'human'
+    source_fact_id: UUID | None = None
 
 
 class StudyCreate(Strict):
@@ -82,22 +84,50 @@ def link(ctx, body):
     item=national_catalogue.entry(ctx,body.snapshot_id,body.code)
     product=get_product(ctx,body.product_id)
     if product['classification']!='official':fail(422,'Vincule o catálogo somente a fatos oficiais revisados.','DATASET_MISMATCH')
+    from . import catalogue_evidence
+    evidence=body.evidence
+    if body.validation_mode=='official_source':
+        if not body.source_fact_id:fail(422,'Informe o registro oficial que declara o código.','CATALOGUE_SOURCE_REQUIRED')
+        evidence=encoded(catalogue_evidence.verify_auto(ctx,body.snapshot_id,body.code,product,str(body.source_fact_id)))
+    else:
+        members=encoded([{'item_id':m['id'],'item_version':m['version']} for m in product['members']])
+        rows=ctx.db.all('''SELECT f.*,s.body AS source_body,s.sha256 AS source_sha256 FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id
+            WHERE f.is_current AND f.classification='official' AND f.provider='PNCP_ITENS'
+            AND EXISTS(SELECT 1 FROM jsonb_to_recordset(CAST(:m AS jsonb)) AS ref(item_id text,item_version integer)
+                WHERE ref.item_id=f.item_id AND ref.item_version=f.item_version)''',{'m':members})
+        for fact in rows:
+            declared=catalogue_evidence.declaration(catalogue_evidence.original_record(fact) or {})
+            if declared['namespace_verified'] and (declared['namespace']!=item['kind'] or declared['code']!=item['code']):
+                fail(422,'O código ou tipo de catálogo contradiz a fonte original. Confira o vínculo.','CATALOGUE_NAMESPACE_CONFLICT')
+        expected_pack=catalogue.pack(item['name'])
+        if expected_pack and product['package_signature'] and expected_pack!=product['package_signature']:
+            fail(422,'As embalagens declaradas são incompatíveis. Confira os itens.','PACKAGE_CONFLICT')
     lid=identifier()
     ctx.db.execute('''INSERT INTO national_product_link(org_id,id,snapshot_id,code,product_id,justification,evidence,created_by)
         VALUES (:o,:i,:s,:c,:p,:j,:e,:a) ON CONFLICT(org_id,snapshot_id,code,product_id) DO NOTHING''',
-        {'o':ctx.org_id,'i':lid,'s':body.snapshot_id,'c':item['code'],'p':body.product_id,'j':body.justification,'e':body.evidence,'a':ctx.actor_id})
-    ctx.audit('catalogue.national_link_reviewed',item['code'],{'snapshot':str(body.snapshot_id),'product':str(body.product_id)})
-    return {'reviewed':True,'purchase_implied':False}
+        {'o':ctx.org_id,'i':lid,'s':body.snapshot_id,'c':item['code'],'p':body.product_id,'j':body.justification,'e':evidence,'a':ctx.actor_id})
+    ctx.audit('catalogue.national_link_reviewed',item['code'],{'snapshot':str(body.snapshot_id),'product':str(body.product_id),'validation_mode':body.validation_mode})
+    return {'reviewed':True,'purchase_implied':False,'validation_mode':body.validation_mode,'human_approval':body.validation_mode=='human'}
 
 
 def links(ctx, snapshot, code):
     national_catalogue.entry(ctx,snapshot,code)
-    return normalize({'records':ctx.db.all('''SELECT l.product_id,l.evidence,l.justification,l.created_at,c.name,c.unit_key,c.package_signature
+    records=ctx.db.all('''SELECT l.product_id,l.evidence,l.justification,l.created_at,c.name,c.unit_key,c.package_signature,c.members
         FROM national_product_link l JOIN canonical_product c ON c.org_id=l.org_id AND c.id=l.product_id
         WHERE l.org_id=:o AND l.snapshot_id=:s AND l.code=:c
         AND NOT EXISTS(SELECT 1 FROM canonical_product next WHERE next.org_id=c.org_id AND next.supersedes_id=c.id)
-        ORDER BY l.created_at DESC''',{'o':ctx.org_id,'s':snapshot,'c':code}),
-        'notice':'Um vínculo revisado identifica os itens comparáveis. O catálogo sozinho não comprova compras.'})
+        ORDER BY l.created_at DESC''',{'o':ctx.org_id,'s':snapshot,'c':code})
+    import json
+    for record in records:
+        try:proof=json.loads(record['evidence'])
+        except (ValueError,TypeError):proof={}
+        record['validation_mode']=proof.get('mode','human') if isinstance(proof,dict) else 'human'
+        record['unit_basis']=proof.get('checks',{}).get('unit_basis') if isinstance(proof,dict) else None
+        if len(record['members'])==1:
+            ref=record['members'][0]
+            unit=ctx.db.one('SELECT unit FROM item_version WHERE id=:i AND version=:v',{'i':ref['id'],'v':ref['version']})
+            record['source_unit']=unit['unit'] if unit else None
+    return normalize({'records':records,'notice':'Vínculo de origem não equivale à aprovação de necessidade ou equivalência entre compras.'})
 
 
 def create_study(ctx, body):

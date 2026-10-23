@@ -4,13 +4,29 @@ from uuid import UUID
 from fastapi import APIRouter,Depends,Query,Request,Response
 from .security import authenticate,fail
 from .db import normalize
-from . import national_catalogue,director,irp_documents,catalogue,irp_register,executive,director_progress,multi_studies,pdf_preview,draft_review
+from . import national_catalogue,director,irp_documents,catalogue,irp_register,executive,director_progress,multi_studies,pdf_preview,draft_review,catalogue_evidence
 from .opportunity_schemas import PHASES
 from .history_filters import HistoryFilters
 from .modality import reject_filter
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 router=APIRouter(prefix='/api/v1')
+
+@router.get('/director/observed-items')
+def observed_items(ctx:Auth,q:str=Query('',max_length=200),limit:int=Query(20,ge=1,le=50)):
+    ctx.require('read')
+    return normalize({'records':ctx.db.all('''SELECT f.id,f.item_id,f.item_version,f.description,f.unit,f.phase,
+        f.event_date,f.municipality_ibge,m.name AS municipality_name,s.url AS source_url
+        FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id
+        LEFT JOIN municipality m ON m.ibge=f.municipality_ibge
+        WHERE f.is_current AND f.classification='official' AND s.classification='official'
+        AND f.item_id IS NOT NULL AND f.unit IS NOT NULL AND f.description ILIKE :q
+        ORDER BY f.event_date DESC,f.id LIMIT :n''',{'q':'%'+q+'%','n':limit}),
+        'notice':'Itens documentados. Não equivale a catálogo nacional completo ou necessidade futura.'})
+
+@router.post('/director/observed-items/{fact_id}/identity')
+def observed_identity(fact_id:UUID,ctx:Auth):
+    return catalogue.observed_identity(ctx,str(fact_id))
 
 @router.post('/director/multi-studies',status_code=201)
 def create_multi_study(body:multi_studies.MultiStudyWrite,ctx:Auth):return multi_studies.write(ctx,body)
@@ -54,6 +70,10 @@ def search(ctx:Auth,q:str=Query('',max_length=200),kind:Literal['CATMAT','CATSER
 
 @router.get('/national-catalogue/{snapshot}/{code}/links')
 def links(snapshot:UUID,code:str,ctx:Auth):return director.links(ctx,snapshot,code)
+
+@router.get('/national-catalogue/{snapshot}/{code}/candidates')
+def national_candidates(snapshot:UUID,code:str,ctx:Auth,q:str=Query('',max_length=150)):
+    return catalogue_evidence.candidates(ctx,snapshot,code,q)
 
 @router.get('/national-catalogue/{snapshot}/{code}')
 def catalogue_entry(snapshot:UUID,code:str,ctx:Auth):return national_catalogue.entry(ctx,snapshot,code)

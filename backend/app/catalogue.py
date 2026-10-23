@@ -45,8 +45,36 @@ def pack(value):
 
 
 def unit_key(value):
-    word=fold(value).split(' ',1)[0] if fold(value) else ''
+    # PNCP may label a single unit as '1,00 UNIDADE'. No package conversion.
+    label=re.sub(r'^1(?:[,.]0+)?\s+(?=[A-Z])','',fold(value))
+    word=label.split(' ',1)[0] if label else ''
     return ALIASES.get(word,word)
+
+
+def observed_identity(ctx,fact_id):
+    """Singleton identity from an exact source/version, not cross-item equivalence."""
+    ctx.require('opportunity.manage')
+    fact=ctx.db.one('''SELECT f.*,s.url FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id
+        WHERE f.id=:i AND f.is_current AND f.classification='official' AND s.classification='official'
+        AND f.item_id IS NOT NULL AND f.item_version IS NOT NULL''',{'i':fact_id})
+    if not fact:fail(404,'Este item oficial não está disponível.')
+    norm=normalized_fact(fact)
+    if norm['confidence']=='incomplete':fail(422,'A unidade ou embalagem precisa de conferência antes da análise.','SPECIFICATION_REVIEW_REQUIRED')
+    ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':ctx.org_id+':canonical-products'})
+    ref={'id':fact['item_id'],'version':fact['item_version']}
+    for p in active_products(ctx):
+        if ref in p['members']:
+            return {'id':str(p['id']),'identity_only':len(p['members'])==1,'created':False}
+    pid=identifier()
+    ctx.db.execute('''INSERT INTO canonical_product(org_id,id,name,category,classification,unit_key,package_signature,
+        members,justification,evidence,reviewed_by) VALUES (:o,:i,:n,'Item identificado na fonte','official',:u,:p,
+        CAST(:m AS jsonb),:j,:e,:a)''',{'o':ctx.org_id,'i':pid,'n':fact['description'][:160],
+        'u':norm['unit_key'],'p':norm['package_signature'],'m':encoded([ref]),
+        'j':'Identidade determinística de um único item e versão. Não aprova equivalência com outros itens, necessidade ou quantidade.',
+        'e':fact['url']+' · fato '+str(fact['id'])+' · versão '+str(fact['item_version']),'a':ctx.actor_id})
+    ctx.audit('catalogue.source_identity_created',pid,{'fact_id':fact_id,'source_id':str(fact['source_id']),
+        'item_id':fact['item_id'],'item_version':fact['item_version'],'cross_item_equivalence':False})
+    return {'id':pid,'identity_only':True,'created':True,'cross_item_equivalence_reviewed':False}
 
 
 def normalized_fact(row):
@@ -274,11 +302,11 @@ def _history_facts(ctx,product,phase,start,end,cities,provider=None,providers_on
     members=encoded([{'item_id':m['id'],'item_version':m['version']} for m in product['members']])
     columns='DISTINCT f.provider' if providers_only else """f.id,f.provider,f.classification,f.event_identity,f.revision_hash,f.obligation_id,
         f.municipality_ibge,f.item_id,f.item_version,f.event_date,f.quantity,f.unit_price,f.amount,
-        f.description,f.unit,f.metadata,f.source_id,s.url,s.consulted_at,s.sha256,s.provider AS observation_provider"""
+        f.description,f.unit,f.metadata,f.source_id,s.url,s.consulted_at,s.sha256,s.provider AS observation_provider,b.name AS buyer_name,b.cnpj AS buyer_cnpj,b.government_level"""
     ordering='f.provider' if providers_only else 'f.event_date,f.id'
     limit=201 if providers_only else 20001
     return ctx.db.all(f"""SELECT {columns}
-        FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id
+        FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id LEFT JOIN buyer b ON b.id=f.buyer_id
         WHERE f.classification=:dataset AND (f.classification='official' OR f.org_id=:org)
           AND f.is_current AND f.phase=:phase
           AND (f.item_id,f.item_version) IN (
@@ -351,6 +379,7 @@ def product_history(ctx,product_id,phase,start,end,municipalities,filters=None):
         evidence=[{'fact_id':str(r['id']),'provider':r['provider'],'event_identity':r['event_identity'],
             'source_id':str(r['source_id']),'observation_provider':r.get('observation_provider'),'process_id':r['obligation_id'],'item_id':r['item_id'],'item_version':r['item_version'],
             'description':r['description'],'unit':r['unit'],'quantity':r['quantity'],
+            'buyer_name':r.get('buyer_name'),'buyer_cnpj':r.get('buyer_cnpj'),'government_level':r.get('government_level'),
             'unit_price':r['unit_price'],'amount':r['amount'],'event_date':r['event_date'],
             'url':r['url'],'consulted_at':r['consulted_at'],'sha256':r['sha256'],
             'modality':modality.normalize(r['provider'],r['metadata'])}
@@ -491,45 +520,6 @@ def historical_summary(facts, compatible, product, phase, start, end, cities):
 
 
 def reference_prices(ctx,kind,code,code_type,start,end,page=1,transport=None):
-    """One documented Compras.gov.br page; never a municipal coverage assertion."""
-    ctx.require('sources.sync')
-    if end<start or (end-start).days>366:fail(422,'Escolha até um ano para comparar preços.')
-    if not re.fullmatch(r'\d{1,12}',code):fail(422,'Confira o código oficial do catálogo.')
-    if kind=='material':
-        if code_type not in ('codigoItemCatalogo','codigoPdm'):fail(422,'Escolha o tipo de código do material.')
-        endpoint='https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/1_consultarMaterial'
-        params={'tipo':code_type,'codigo':code}
-    elif kind=='servico':
-        if code_type!='codigoItemCatalogo':fail(422,'Serviços usam o código do item de catálogo.')
-        endpoint='https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/3_consultarServico'
-        params={'codigoItemCatalogo':code}
-    else:fail(422,'Escolha material ou serviço.')
-    params.update({'dataCompraInicio':start.isoformat(),'dataCompraFim':end.isoformat(),
-        'pagina':page,'tamanhoPagina':10})
-    provider='COMPRAS_PRECOS_MATERIAL' if kind=='material' else 'COMPRAS_PRECOS_SERVICO'
-    url,status,raw,data=sources.cached_get(ctx,provider,endpoint,params,transport)
-    if data is None:data={'resultado':[],'totalPaginas':0,'totalRegistros':0}
-    if not isinstance(data,dict) or not isinstance(data.get('resultado'),list):raise sources.SourceFault('INVALID_PRICE_FORMAT')
-    records=[]
-    for row in data['resultado'][:10]:
-        value=str(row.get('niFornecedor') or '')
-        records.append({'purchase_id':row.get('idCompra'),'item_number':row.get('numeroItemCompra'),
-            'catalogue_code':row.get('codigoItemCatalogo'),'description':row.get('descricaoItem'),
-            'quantity':sources.documented_number(row.get('quantidade')),
-            'unit_price':sources.documented_number(row.get('precoUnitario')),
-            'unit':row.get('nomeUnidadeFornecimento') or row.get('siglaUnidadeFornecimento'),
-            'purchase_date':row.get('dataCompra'),'result_date':row.get('dataResultado'),
-            'uasg':row.get('codigoUasg'),'agency':row.get('nomeOrgao'),
-            'municipality_code':row.get('codigoMunicipio'),'state':row.get('estado'),
-            'supplier_cnpj':value if re.fullmatch(r'\d{14}',value) else None})
-    safe={'resultado':records,'totalPaginas':data.get('totalPaginas'),'totalRegistros':data.get('totalRegistros')}
-    sid=sources.observe(ctx,provider,url,status,encoded(safe).encode(),
-        {'scope':{'kind':kind,'code':code,'code_type':code_type,'start':start,'end':end,'page':page},
-         'original_response_sha256':hashlib.sha256(raw).hexdigest(),'person_names_excluded':True,
-         'municipal_coverage_claimed':False})
-    observation=ctx.db.one('SELECT consulted_at,sha256 FROM source_observation WHERE id=:id',{'id':sid})
-    return normalize({'records':records,'url':url,'consulted_at':observation['consulted_at'],
-        'stored_sha256':observation['sha256'],'original_response_sha256':hashlib.sha256(raw).hexdigest(),
-        'page':page,'total_pages_reported':data.get('totalPaginas'),'total_records_reported':data.get('totalRegistros'),
-        'municipal_coverage_claimed':False,'price_comparability_review_required':True,
-        'message':'Preços observados em compras públicas. Compare especificação, unidade, local e data antes de usar como referência.'})
+    """Existing public contract; one bounded official page with versioned sanitized cache."""
+    from .price_queries import query
+    return query(ctx,kind,code,code_type,start,end,page,transport)

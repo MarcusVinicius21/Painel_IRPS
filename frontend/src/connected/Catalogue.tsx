@@ -10,7 +10,8 @@ const coverageLabel=(state:string)=>({demonstration:'Dados de demonstração',no
  partial:'Parte das consultas concluída',scope_complete:'Consultas deste recorte concluídas'} as Record<string,string>)[state]||'Cobertura não verificada';
 
 export function Catalogue(){
- const context=useApi();const [cities,setCities]=useState<string[]>(['3131307','3101607','3169703']);
+ const context=useApi();const [cities,setCities]=useState<string[]>(context.identity?.identity_mode==='operational_local'?[]:['3131307','3101607','3169703']);
+ useEffect(()=>{if(context.identity?.identity_mode==='operational_local'&&!cities.length&&context.cities.length)setCities(context.cities.slice(0,2).map(c=>c.ibge));},[context.cities,context.identity?.identity_mode]);
  const [start,setStart]=useState(defaultStart);const [end,setEnd]=useState(today);
  const [phase,setPhase]=useState('publicado_estimado');const [products,setProducts]=useState<Row[]>([]);
  const [coverage,setCoverage]=useState<Row|null>(null);const [candidates,setCandidates]=useState<Row[]>([]);
@@ -24,7 +25,7 @@ export function Catalogue(){
  const [historyError,setHistoryError]=useState('');
  const [error,setError]=useState('');const [coverageError,setCoverageError]=useState('');
  const coveragePeriodTooLong=(new Date(end).getTime()-new Date(start).getTime())/86400000>1826;
- const refresh=async()=>{setLoading(true);setError('');setCoverageError('');setHistory(null);
+ const refresh=async()=>{if(!cities.length)return;setLoading(true);setError('');setCoverageError('');setHistory(null);
   const params=new URLSearchParams({phase,start,end});
   for(const city of cities)params.append('municipalities',city);
   const coverageParams=new URLSearchParams({start,end});for(const city of cities)coverageParams.append('municipalities',city);
@@ -42,7 +43,7 @@ export function Catalogue(){
   const params=new URLSearchParams({phase,start,end});for(const city of cities)params.append('municipalities',city);
   setHistory(await api('/catalogue-intelligent/products/'+product.id+'/history?'+params));
  }catch(reason){setHistoryError((reason as Error).message);}finally{setHistoryLoading(false);}};
- useEffect(()=>{void refresh();},[]);
+ useEffect(()=>{if(cities.length)void refresh();},[cities.join('|')]);
  const reprocess=()=>void context.run(async()=>{let offset=0;let scanned=0;do{
   const page=await post('/catalogue-intelligent/reprocess?limit=500&offset='+offset);scanned+=page.scanned;
   offset=page.next_offset??-1;
