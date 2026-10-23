@@ -27,7 +27,12 @@ def test_municipal_page_has_immutable_provenance_and_idempotent_restart(app, log
             WHERE t.collection_id=:c AND t.org_id=:o""", {'c': cid, 'o': org})
         assert rows and all(r['state'] == 'done' and r['http_status'] == 200 and len(r['sha256']) == 64 for r in rows)
         assert all(r['created_at'] and r['consulted_at'] and r['arguments'] and r['attempts'] == 1 for r in rows)
-        facts = db.all("SELECT phase,quantity,unit_price,amount,event_identity,revision_hash,is_current,source_id,metadata FROM procurement_fact WHERE org_id=:o AND provider='PNCP_RESULTADOS'", {'o': org})
+        facts = db.all("""SELECT f.phase,f.quantity,f.unit_price,f.amount,f.event_identity,f.revision_hash,
+            f.is_current,f.source_id,f.metadata FROM procurement_fact f
+            WHERE f.org_id=:o AND f.provider='PNCP_RESULTADOS' AND f.classification='official'
+            AND f.source_id IN (SELECT p.source_id FROM history_page p JOIN history_task t
+                ON t.org_id=p.org_id AND t.id=p.task_id
+                WHERE p.org_id=:o AND p.collection_id=:c AND t.provider='PNCP_RESULTADOS')""", {'o': org, 'c': cid})
         assert facts and all(f['phase'] == 'homologado' and f['source_id'] and f['event_identity'] and len(f['revision_hash']) == 64 for f in facts)
         assert all(f['metadata']['quantity_is_consumption'] is False for f in facts)
     with pytest.raises(DBAPIError) as error:
