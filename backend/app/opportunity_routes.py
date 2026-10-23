@@ -79,6 +79,17 @@ def monthly_reference_prices(ctx:Auth,kind:str,code:str,start:date,end:date,page
     from .monthly_prices import query as monthly_query
     return monthly_query(ctx,kind,code,start,end,page,cursor)
 
+@router.get('/catalogue-intelligent/consolidated-prices')
+def consolidated_reference_prices(ctx:Auth,kind:str,code:str,start:date,end:date,page:int=Query(1,ge=1,le=100000),cursor:str|None=Query(None,max_length=2048),
+                                  unit:str|None=Query(None,max_length=120),uasg:str|None=Query(None,max_length=12),municipality:str|None=Query(None,max_length=12),supplier:str|None=Query(None,max_length=14)):
+    from .monthly_consolidated import query
+    return query(ctx,kind,code,start,end,page,cursor,unit,uasg,municipality,supplier)
+
+@router.get('/catalogue-intelligent/consolidated-prices-summary')
+def consolidated_price_summary(ctx:Auth,start:date,end:date):
+    from .monthly_consolidated import summary
+    return summary(ctx,start,end)
+
 @router.get('/coverage/inventory')
 def coverage_inventory_get(ctx:Auth,start:date=date(2024,1,1),end:date=Query(default_factory=date.today),
                            municipalities:list[str]=Query(default_factory=list)):

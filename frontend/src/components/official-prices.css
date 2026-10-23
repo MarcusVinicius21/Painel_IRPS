@@ -1,2 +1,3 @@
 /* Real source labels can exceed the old fixed mockup height. Keep both panels in normal flow. */
 .stage-historico .workflow-context-row > .panel { height:auto; min-height:198px; }
+.official-prices details p { overflow-wrap:anywhere; }

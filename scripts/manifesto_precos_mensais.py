@@ -51,9 +51,9 @@ def sync_database(data):
             item['versions']=list(previous.values())
             if item.get('snapshot_id')!=str(sid) or item['state']!=state:event(data,item,state,snapshot_id=str(sid),sha256=sha,source_rows=source,accepted_rows=accepted,rejected_rows=rejected,duplicate_rows=duplicates,imported_at=at.isoformat())
 
-def download(data,item,folder,path):
-    if item['state']=='reconciled':return
-    if item['state']=='validated' and item.get('uncompressed_bytes') and item.get('path') and private_path(item['path']).exists() and digest(private_path(item['path']))==item.get('sha256'):
+def download(data,item,folder,path,refresh=False):
+    if item['state']=='reconciled' and not refresh:return
+    if not refresh and item['state']=='validated' and item.get('uncompressed_bytes') and item.get('path') and private_path(item['path']).exists() and digest(private_path(item['path']))==item.get('sha256'):
         return
     part=folder/(item['kind']+'-'+item['month']+'-'+uuid.uuid4().hex+'.part')
     with httpx.stream('GET',item['url'],timeout=httpx.Timeout(120,connect=20),follow_redirects=False) as response:
@@ -69,6 +69,7 @@ def download(data,item,folder,path):
         if response.headers.get('content-length') and size!=int(response.headers['content-length']):raise ValueError('Incomplete HTTP body')
     sha=digest(part);final=folder/(item['kind']+'-'+item['month']+'-'+sha+'.zip')
     if not final.exists():part.rename(final)
+    else:part.unlink()  # Only this invocation's newly created nonce temporary file.
     event(data,item,'downloaded',path=str(final.relative_to(ROOT)),sha256=sha,bytes=size,http_status=200,content_type=content_type);save(path,data)
     with zipfile.ZipFile(final) as archive:
         entries=archive.infolist()
@@ -77,17 +78,19 @@ def download(data,item,folder,path):
             reader=csv.DictReader(io.TextIOWrapper(source,encoding='utf-8-sig'),delimiter=';')
             if not {'id_compra','id_item_compra','codigo_item_catalogo','data_compra','preco_unitario','quantidade'}.issubset(reader.fieldnames or []):raise ValueError('Invalid official CSV schema')
         event(data,item,'validated',uncompressed_bytes=entries[0].file_size,crc=entries[0].CRC,validated_at=datetime.now(timezone.utc).isoformat())
-    item['versions'].append({k:item[k] for k in ['sha256','path','bytes','uncompressed_bytes','crc','state','url']});save(path,data)
+    if not any(v['sha256']==sha for v in item['versions']):item['versions'].append({k:item[k] for k in ['sha256','path','bytes','uncompressed_bytes','crc','state','url']})
+    save(path,data)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--folder',default='.runtime/irps-12-meses/sources');p.add_argument('--download-month');p.add_argument('--pair-output');a=p.parse_args();folder=private_path(a.folder);path=folder/'manifest.json'
+    p=argparse.ArgumentParser();p.add_argument('--folder',default='.runtime/irps-12-meses/sources');p.add_argument('--download-month');p.add_argument('--pair-output');p.add_argument('--refresh',action='store_true',help='Recheck approved official files; preserves every prior hash. Does not import.');a=p.parse_args();folder=private_path(a.folder);path=folder/'manifest.json'
+    if a.refresh and not a.download_month:raise ValueError('Refresh requires one approved month')
     with single_writer(folder):
         data=json.loads(path.read_text(encoding='utf-8')) if path.exists() else fresh();sync_database(data);save(path,data)
         if a.download_month:
             pair=[i for i in data['files'] if i['month']==a.download_month]
             if len(pair)!=2:raise ValueError('Month outside campaign')
             for item in pair:
-                try:download(data,item,folder,path)
+                try:download(data,item,folder,path,a.refresh)
                 except Exception as exc:
                     event(data,item,'failed',error_type=type(exc).__name__);save(path,data);raise
             if a.pair_output:private_path(a.pair_output).write_text(json.dumps(pair,indent=2),encoding='utf-8')

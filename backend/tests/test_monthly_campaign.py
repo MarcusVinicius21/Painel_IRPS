@@ -57,3 +57,27 @@ def test_archive_size_bound_rolls_back(app,login,settings,tmp_path):
     other,other_sha=archive(tmp_path,[{**row(code),'data_compra':'2026-08-12','preco_unitario':'99'}],name='other.zip')
     with pytest.raises(ValueError,match='row safety limit'):
         monthly_prices.import_archive(args[0],identity['org_id'],other,'material','2026-08',other_sha,args[-1],max_rows=0)
+
+def test_explicit_refresh_preserves_hash_versions_without_duplicate_entries(tmp_path,monkeypatch):
+    from test_monthly_prices import archive,row
+    import manifesto_precos_mensais as manifest
+    from contextlib import contextmanager
+    monkeypatch.setattr(manifest,'ROOT',tmp_path)
+    data=manifest.fresh();item=data['files'][0];folder=tmp_path/'sources';folder.mkdir();path=folder/'manifest.json'
+    source,_=archive(tmp_path,[row('1')]);payload=[source.read_bytes()]
+    @contextmanager
+    def stream(*args,**kwargs):
+        class Response:
+            headers={'content-type':'application/zip'}
+            def raise_for_status(self):pass
+            def iter_bytes(self,*args):return iter([payload[0]])
+        yield Response()
+    monkeypatch.setattr(manifest.httpx,'stream',stream)
+    manifest.download(data,item,folder,path,refresh=True)
+    first=item['sha256'];item['state']='reconciled'
+    manifest.download(data,item,folder,path,refresh=True)
+    assert len(item['versions'])==1 and item['sha256']==first
+    source,_=archive(tmp_path,[{**row('1'),'preco_unitario':'42'}],name='revision.zip');payload[0]=source.read_bytes()
+    manifest.download(data,item,folder,path,refresh=True)
+    assert len(item['versions'])==2 and first!=item['sha256']
+    assert all((tmp_path/v['path']).exists() for v in item['versions'])

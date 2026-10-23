@@ -2,7 +2,7 @@
 import base64,csv,hashlib,io,json,re,zipfile
 from datetime import date
 from pathlib import Path
-from uuid import uuid4
+from uuid import uuid4,UUID
 import psycopg
 from psycopg.types.json import Jsonb
 from .db import encoded,normalize
@@ -125,12 +125,16 @@ def query(ctx,kind,code,start,end,page=1,cursor=None):
             if len(cursor)>2048:raise ValueError()
             token=json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
             if token['scope']!=fingerprint or len(token['after'])!=4:raise ValueError()
+            if not all(isinstance(v,str) for v in token['after']):raise ValueError()
             params.update(dict(zip(['after_date','after_key','after_sha','after_snapshot'],token['after'])))
             date.fromisoformat(params['after_date'])
+            UUID(params['after_snapshot'])
+            if not isinstance(params['after_key'],str) or not 1<=len(params['after_key'])<=1024 or not re.fullmatch('[0-9a-f]{64}',params['after_sha']):raise ValueError()
         except (ValueError,KeyError,TypeError,UnicodeError):fail(422,'A consulta mudou. Volte à primeira página.','PRICE_CURSOR_INVALID')
         condition=' AND (purchase_date,source_key,record_sha256,snapshot_id)>(CAST(:after_date AS date),:after_key,:after_sha,CAST(:after_snapshot AS uuid))'
-    rows=ctx.db.all('SELECT * FROM (SELECT *,count(*) OVER(PARTITION BY source_key) revision_count FROM price_monthly_record WHERE '+where+') q WHERE true'+condition+' ORDER BY purchase_date,source_key,record_sha256,snapshot_id LIMIT 10'+offset,params)
-    next_cursor=base64.urlsafe_b64encode(encoded({'scope':fingerprint,'after':[rows[-1]['purchase_date'],rows[-1]['source_key'],rows[-1]['record_sha256'],str(rows[-1]['snapshot_id'])]}).encode()).decode() if rows and page*10<total else None
+    rows=ctx.db.all('SELECT * FROM (SELECT *,count(*) OVER(PARTITION BY source_key) revision_count FROM price_monthly_record WHERE '+where+') q WHERE true'+condition+' ORDER BY purchase_date,source_key,record_sha256,snapshot_id LIMIT 11'+offset,params)
+    has_next=len(rows)>10;rows=rows[:10]
+    next_cursor=base64.urlsafe_b64encode(encoded({'scope':fingerprint,'after':[rows[-1]['purchase_date'],rows[-1]['source_key'],rows[-1]['record_sha256'],str(rows[-1]['snapshot_id'])]}).encode()).decode() if has_next else None
     known=ctx.db.one('''SELECT EXISTS(SELECT 1 FROM national_catalogue_entry e JOIN national_catalogue_snapshot s ON s.id=e.snapshot_id
         WHERE s.kind=:kind AND e.code=:code) AS known''',{'kind':'CATMAT' if kind=='material' else 'CATSER','code':code})['known']
     mapped={str(s['id']):s for s in snapshots};records=[]
@@ -144,7 +148,7 @@ def query(ctx,kind,code,start,end,page=1,cursor=None):
             'source_record_sha256':row['record_sha256'],'revision_count':row['revision_count'],'needs_review':bool(reasons),'review_reasons':reasons,'catalogue_code_verified':known,'source_key':row['source_key']})
     return normalize({'records':records,'state':'needs_review' if any(r['needs_review'] for r in records) else 'available' if records else 'empty_valid_response' if snapshots else 'not_collected',
         'coverage':coverage(ctx,start,end),'next_cursor':next_cursor,'source_kind':'monthly_file','url':snapshots[0]['source_url'] if snapshots else None,'page':page,
-        'total_pages_reported':(total+9)//10 if snapshots else None,'total_records_reported':total if snapshots else None,'has_next_page':page*10<total,
+        'total_pages_reported':(total+9)//10 if snapshots else None,'total_records_reported':total if snapshots else None,'has_next_page':has_next,
         'consulted_at':max((s['imported_at'] for s in snapshots),default=None),'scope':{'kind':kind,'code':code,'start':start,'end':end,'imported_months':[s['month'] for s in snapshots]},
         'source_error':None,'rejected_source_rows':sum(s['rejected_rows'] for s in snapshots),'municipal_coverage_claimed':False,'price_comparability_review_required':True,
         'message':'Somente os meses importados foram consultados. São linhas e versões do Compras.gov.br, não novas compras PNCP.'})
