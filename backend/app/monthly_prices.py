@@ -16,6 +16,8 @@ def normalize_row(row,kind,month):
     try:day=date.fromisoformat(row['data_compra'][:10])
     except (KeyError,ValueError):raise ValueError('invalid_purchase_date')
     if day.strftime('%Y-%m')!=month:raise ValueError('date_outside_source_month')
+    for field in ('quantidade','preco_unitario'):
+        if (row.get(field) or '').strip() and documented_number(row[field]) is None:raise ValueError('invalid_numeric_'+field)
     supplier=row.get('ni_fornecedor','')
     body={'purchase_id':purchase,'item_number':row.get('numero_item_compra'),'catalogue_code':code,'catalogue_kind':kind,
       'description':row.get('descricao_item'),'specification':row.get('descricao_detalhada_item'),
@@ -29,7 +31,7 @@ def normalize_row(row,kind,month):
     return purchase+':'+item,code,day,body
 
 
-def import_archive(url,org,path,kind,month,expected_sha,source_url,metadata=None):
+def import_archive(url,org,path,kind,month,expected_sha,source_url,metadata=None,*,max_uncompressed_bytes=300*1024*1024,max_rows=500000):
     if kind not in ('material','servico') or not re.fullmatch(r'\d{4}-\d{2}',month):raise ValueError('Invalid monthly scope')
     day=date.fromisoformat(month+'-01');path=Path(path)
     with path.open('rb') as f:sha=hashlib.file_digest(f,'sha256').hexdigest()
@@ -37,7 +39,7 @@ def import_archive(url,org,path,kind,month,expected_sha,source_url,metadata=None
     sid=str(uuid4());rejected=[];rows=0
     with zipfile.ZipFile(path) as archive:
         entries=archive.infolist()
-        if len(entries)!=1 or not entries[0].filename.endswith('.csv') or entries[0].file_size>300*1024*1024:raise ValueError('Archive scope or size rejected')
+        if len(entries)!=1 or not entries[0].filename.endswith('.csv') or entries[0].file_size>max_uncompressed_bytes:raise ValueError('Archive scope or size rejected')
         if archive.testzip() is not None:raise ValueError('Archive CRC mismatch')
         with psycopg.connect(url.replace('+psycopg','')) as conn:
             conn.execute("SELECT set_config('irps.org_id',%s,true)",(str(org),))
@@ -52,7 +54,7 @@ def import_archive(url,org,path,kind,month,expected_sha,source_url,metadata=None
                 with conn.cursor().copy('COPY price_stage FROM STDIN') as copy:
                     for line,row in enumerate(reader,2):
                         rows+=1
-                        if rows>500000:raise ValueError('Pilot exceeds 500000 rows')
+                        if rows>max_rows:raise ValueError('Monthly row safety limit exceeded')
                         try:
                             if None in row or any(v is None for v in row.values()):raise ValueError('invalid_column_count')
                             key,code,purchased,body=normalize_row(row,kind,month)
