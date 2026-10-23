@@ -25,6 +25,26 @@ def test_invalid_zip_is_rejected_before_writing(app,login,settings,tmp_path):
     with pytest.raises(zipfile.BadZipFile):
         import_archive(settings.owner_database_url.get_secret_value(),identity['org_id'],p,'material','2026-08',hashlib.sha256(p.read_bytes()).hexdigest(),'https://example.invalid/qa.zip')
 
+def test_manifest_has_24_origins_atomic_resume_and_one_writer(tmp_path):
+    from manifesto_precos_mensais import fresh,save,single_writer,event
+    data=fresh();assert len(data['files'])==24 and len({(i['kind'],i['month']) for i in data['files']})==24
+    path=tmp_path/'manifest.json';event(data,data['files'][0],'downloaded',sha256='a'*64);save(path,data)
+    loaded=json.loads(path.read_text(encoding='utf-8'));assert loaded==data and loaded['files'][0]['state']!='reconciled'
+    with single_writer(tmp_path):
+        with pytest.raises(OSError):
+            with single_writer(tmp_path):pass
+
+def test_new_hash_preserves_previous_monthly_snapshot(app,login,settings,tmp_path):
+    from test_monthly_prices import archive,row,isolated_monthly_identity
+    from app import monthly_prices
+    identity=isolated_monthly_identity(login,settings);code='123456';url=settings.owner_database_url.get_secret_value()
+    old,sha=archive(tmp_path,[row(code)],'old.zip');first=monthly_prices.import_archive(url,identity['org_id'],old,'material','2026-09',sha,'https://example.invalid/qa.zip')
+    new,newsha=archive(tmp_path,[{**row(code),'preco_unitario':'30'}],'new.zip');second=monthly_prices.import_archive(url,identity['org_id'],new,'material','2026-09',newsha,'https://example.invalid/qa.zip')
+    assert first['snapshot_id']!=second['snapshot_id']
+    with app.state.database.transaction(identity['org_id'],identity['actor_id']) as db:
+        assert db.one('SELECT count(*) n FROM price_monthly_snapshot')['n']==2
+        assert db.one('SELECT count(*) n FROM price_monthly_record')['n']==2
+
 def test_archive_size_bound_rolls_back(app,login,settings,tmp_path):
     from test_monthly_prices import archive,row
     from app import monthly_prices
