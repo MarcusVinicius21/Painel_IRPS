@@ -10,6 +10,11 @@ from .security import fail
 from .sources import documented_number
 
 
+def unit_status(body):
+    """Read-only quality annotation; never fills a unit or changes source evidence."""
+    return 'documented' if str(body.get('unit') or '').strip() else 'unknown'
+
+
 def normalize_row(row,kind,month):
     code=row.get('codigo_item_catalogo','').strip();purchase=row.get('id_compra','').strip();item=row.get('id_item_compra','').strip()
     if not re.fullmatch(r'\d{1,12}',code) or not purchase or not item:raise ValueError('missing_source_identity_or_code')
@@ -133,9 +138,9 @@ def query(ctx,kind,code,start,end,page=1,cursor=None):
         snap=mapped[str(row['snapshot_id'])]
         reasons=[]
         if row['revision_count']>1:reasons.append('Há versões deste registro. Confira antes de comparar.')
-        if not row['body'].get('unit'):reasons.append('A fonte não informa a unidade deste registro.')
+        if unit_status(row['body'])=='unknown':reasons.append('A fonte não informa a unidade deste registro.')
         if not known:reasons.append('Este código ainda não foi localizado no catálogo deste tipo.')
-        records.append({**row['body'],'source_url':snap['source_url'],'source_archive_sha256':snap['archive_sha256'],'source_line':row['line_number'],
+        records.append({**row['body'],'unit_status':unit_status(row['body']),'source_url':snap['source_url'],'source_archive_sha256':snap['archive_sha256'],'source_line':row['line_number'],
             'source_record_sha256':row['record_sha256'],'revision_count':row['revision_count'],'needs_review':bool(reasons),'review_reasons':reasons,'catalogue_code_verified':known,'source_key':row['source_key']})
     return normalize({'records':records,'state':'needs_review' if any(r['needs_review'] for r in records) else 'available' if records else 'empty_valid_response' if snapshots else 'not_collected',
         'coverage':coverage(ctx,start,end),'next_cursor':next_cursor,'source_kind':'monthly_file','url':snapshots[0]['source_url'] if snapshots else None,'page':page,
