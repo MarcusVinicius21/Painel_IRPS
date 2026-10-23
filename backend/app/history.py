@@ -76,7 +76,7 @@ def action(ctx,cid,action,max_pages=None):
     return get(ctx,cid)
 
 def children(ctx,cid,scope,provider,args,result):
-    observation=ctx.db.one('SELECT body FROM source_observation WHERE id=:s',{'s':result['source_id']})
+    observation=ctx.db.one('SELECT body,http_status FROM source_observation WHERE id=:s',{'s':result['source_id']})
     data=json.loads(observation['body']) if observation and observation['body'] else None
     if provider in ('PNCP','PNCP_ATUALIZACAO','PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO',
                     'PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
@@ -101,6 +101,7 @@ def children(ctx,cid,scope,provider,args,result):
                     queue(ctx,cid,'PNCP_PCA_ATUALIZACAO',{'cnpj':str(cnpj),'start_date':args['start_date'],
                         'end_date':args['end_date'],'page':1,'size':scope['size']})
     elif provider=='PNCP_ITENS':
+        if data is None and observation and observation['http_status']==204:data=[]
         if not isinstance(data,list):raise sources.SourceFault('INVALID_ITEM_FORMAT')
         # An exact full page schedules one more request; no count is inferred from a full page.
         if len(data)==args['size']:queue(ctx,cid,provider,{**args,'page':args['page']+1})

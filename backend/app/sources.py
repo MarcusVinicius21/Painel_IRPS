@@ -114,28 +114,34 @@ def sync(ctx,args,transport=None):
   cnpj=(header.get('orgaoEntidade') or {}).get('cnpj');year=header.get('anoCompra');sequence=header.get('sequencialCompra')
   if not cnpj or not re.fullmatch(r'\d{14}',str(cnpj)) or not isinstance(year,int) or not isinstance(sequence,int):raise SourceFault('INVALID_PURCHASE_IDENTITY')
   url,status,content,data=cached_get(ctx,provider,f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{year}/{sequence}/itens',{'pagina':args.get('page',1),'tamanhoPagina':args.get('size',10)},transport)
-  if not isinstance(data,list):raise SourceFault('INVALID_ITEM_FORMAT')
+  if status==204 and data is None:data=[]
+  if not isinstance(data,list) or len(data)>args.get('size',10) or any(not isinstance(r,dict) for r in data):raise SourceFault('INVALID_ITEM_FORMAT')
+  numbers=[r.get('numeroItem') for r in data]
+  if any(type(n) is not int or n<1 for n in numbers) or len(set(numbers))!=len(numbers):raise SourceFault('INVALID_ITEM_IDENTITY')
   sid=observe(ctx,provider,url,status,content,{**meta,'parent_id':str(parent['id'])});count=0
-  for record in data[:args.get('size',10)]:
-   number=record.get('numeroItem');description=record.get('descricao');unit=record.get('unidadeMedida')
-   if not isinstance(number,int) or not description or not unit:continue
+  for record in sorted(data,key=lambda r:r['numeroItem']):
+   number=record['numeroItem'];description=record.get('descricao');unit=record.get('unidadeMedida')
+   description=description.strip() if isinstance(description,str) and description.strip() else None
+   unit=unit.strip() if isinstance(unit,str) and unit.strip() else None
    event=parent['obligation_id']+':item:'+str(number)
+   item_id=f'pncp:{cnpj}:{year}:{sequence}:{number}'
+   ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':item_id})
    item_modality=modality.inherit(parent,'PNCP_ITENS',modality.publication(header,parent['publication_provider'],parent['source_id'],parent['publication_sha256'],parent['revision_hash']))
    revision=hashlib.sha256(encoded({'record':record,'modality_provenance':item_modality}).encode()).hexdigest()
    if ctx.db.one("SELECT id FROM procurement_fact WHERE provider='PNCP_ITENS' AND event_identity=:e AND revision_hash=:h AND classification='official'",{'e':event,'h':revision}):continue
    current=ctx.db.one("SELECT id,org_id,revision_hash FROM procurement_fact WHERE provider='PNCP_ITENS' AND event_identity=:e AND classification='official' AND is_current",{'e':event})
    if current and (current['revision_hash']==revision or str(current['org_id'])!=ctx.org_id):continue
-   item_id=f'pncp:{cnpj}:{year}:{sequence}:{number}'
-   ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':item_id})
-   previous_item=ctx.db.one('SELECT * FROM item_version WHERE id=:i ORDER BY version DESC LIMIT 1',{'i':item_id})
-   version=previous_item['version']+1 if previous_item else 1
+   version=None
    # No assumed package equivalence or demand rate; quantity step is deliberately conservative.
    step=Decimal('0.00000001')
-   ctx.db.execute("INSERT INTO item_version(id,version,name,family,unit,step,classification) VALUES (:i,:v,:n,:f,:u,:s,'official')",{'i':item_id,'v':version,'n':description,'f':record.get('materialOuServicoNome') or 'Categoria não informada','u':unit,'s':step})
+   if unit and description:
+    previous_item=ctx.db.one('SELECT * FROM item_version WHERE id=:i ORDER BY version DESC LIMIT 1',{'i':item_id})
+    version=previous_item['version']+1 if previous_item else 1
+    ctx.db.execute("INSERT INTO item_version(id,version,name,family,unit,step,classification) VALUES (:i,:v,:n,:f,:u,:s,'official')",{'i':item_id,'v':version,'n':description,'f':record.get('materialOuServicoNome') or 'Categoria não informada','u':unit,'s':step})
    if current:ctx.db.execute('UPDATE procurement_fact SET is_current=false WHERE id=:i AND org_id=:o',{'i':current['id'],'o':ctx.org_id})
    secret=record.get('orcamentoSigiloso') is True
    qty=documented_number(record.get('quantidade'));price=documented_number(record.get('valorUnitarioEstimado')) if not secret else None;amount=documented_number(record.get('valorTotal')) if not secret else None
-   ctx.db.execute("INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,supersedes_id,source_id,buyer_id,municipality_ibge,item_id,item_version,description,unit,quantity,unit_price,amount,phase,event_date,obligation_id,metadata) VALUES (:i,:o,'official','PNCP_ITENS',:e,:h,:previous,:s,:b,:m,:item,:v,:d,:u,:q,:p,:amount,'publicado_estimado',:date,:ob,CAST(:meta AS jsonb))",{'i':identifier(),'o':ctx.org_id,'e':event,'h':revision,'previous':current['id'] if current else None,'s':sid,'b':parent['buyer_id'],'m':parent['municipality_ibge'],'item':item_id,'v':version,'d':description,'u':unit,'q':str(qty) if qty is not None else None,'p':str(price) if price is not None else None,'amount':str(amount) if amount is not None else None,'date':parent['event_date'],'ob':parent['obligation_id'],'meta':encoded({'record_level':'item','parent_id':str(parent['id']),'budget_secret':secret,'source_phase':record.get('situacaoCompraItemNome'),'quantity_is_consumption':False,'quantity_step_needs_review':True,'catalogue_code':record.get('catalogoCodigoItem'),'category':record.get('itemCategoriaNome') or record.get('materialOuServicoNome'),'modality':header.get('modalidadeId'),'modality_provenance':item_modality,'purchase':{'cnpj':cnpj,'year':year,'sequence':sequence,'number':number},'has_result':record.get('temResultado')})});count+=1
+   ctx.db.execute("INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,supersedes_id,source_id,buyer_id,municipality_ibge,item_id,item_version,description,unit,quantity,unit_price,amount,phase,event_date,obligation_id,metadata) VALUES (:i,:o,'official','PNCP_ITENS',:e,:h,:previous,:s,:b,:m,:item,:v,:d,:u,:q,:p,:amount,'publicado_estimado',:date,:ob,CAST(:meta AS jsonb))",{'i':identifier(),'o':ctx.org_id,'e':event,'h':revision,'previous':current['id'] if current else None,'s':sid,'b':parent['buyer_id'],'m':parent['municipality_ibge'],'item':item_id if version else None,'v':version,'d':description or 'Descrição não informada pela fonte','u':unit,'q':str(qty) if qty is not None else None,'p':str(price) if price is not None else None,'amount':str(amount) if amount is not None else None,'date':parent['event_date'],'ob':parent['obligation_id'],'meta':encoded({'record_level':'item','parent_id':str(parent['id']),'candidate_item_identity':item_id,'technical_identity_pending':not bool(version),'missing_unit':unit is None,'missing_description':description is None,'budget_secret':secret,'source_phase':record.get('situacaoCompraItemNome'),'quantity_is_consumption':False,'quantity_step_needs_review':True,'catalogue_code':record.get('catalogoCodigoItem'),'category':record.get('itemCategoriaNome') or record.get('materialOuServicoNome'),'modality':header.get('modalidadeId'),'modality_provenance':item_modality,'purchase':{'cnpj':cnpj,'year':year,'sequence':sequence,'number':number},'has_result':record.get('temResultado')})});count+=1
   result={'provider':provider,'records':len(data),'new_revisions':count,'pages_fetched':1,'expected_pages':None,'state':'partial','source_id':str(sid),'scope':args,'items_collected':True,'phase':'publicado_estimado','payments_collected':False}
  else:
   try:start=date.fromisoformat(args.get('start_date') or '');end=date.fromisoformat(args.get('end_date') or '')
