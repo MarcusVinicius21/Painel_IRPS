@@ -83,8 +83,17 @@ def test_keyset_crosses_page_100_without_duplicates_or_gaps(app,login,settings,t
         empty=monthly_prices.query(ctx,'material',str(int(code)+1),date(2025,10,1),date(2026,9,30))
         assert empty['records']==[]
 
+def isolated_monthly_identity(login,settings):
+    identity=login().get('/api/v1/auth/context').json();identity['org_id']=str(uuid4())
+    with monthly_prices.psycopg.connect(settings.owner_database_url.get_secret_value().replace('+psycopg','')) as conn:
+        conn.execute("SELECT set_config('irps.org_id',%s,true)",(identity['org_id'],))
+        conn.execute("INSERT INTO organization(id,name,kind) VALUES(%s,'QA monthly isolated','consortium')",(identity['org_id'],))
+        conn.execute("INSERT INTO membership(org_id,actor_id,role) VALUES(%s,%s,'planner')",(identity['org_id'],identity['actor_id']))
+    return identity
+
+
 def test_monthly_coverage_distinguishes_missing_partial_complete_and_empty(app,login,settings,tmp_path):
-    identity=login().get('/api/v1/auth/context').json();code=str(int(uuid4().hex[:8],16))
+    identity=isolated_monthly_identity(login,settings);code=str(int(uuid4().hex[:8],16))
     p,sha=archive(tmp_path,[row(code)]);url=settings.owner_database_url.get_secret_value()
     monthly_prices.import_archive(url,identity['org_id'],p,'material','2026-09',sha,'https://example.invalid/qa.zip')
     with app.state.database.transaction(identity['org_id'],identity['actor_id']) as db:
@@ -103,7 +112,7 @@ def test_monthly_coverage_distinguishes_missing_partial_complete_and_empty(app,l
 
 @pytest.mark.parametrize('scope,expected',[('review','review_required'),('future','partially_imported')])
 def test_coverage_rejected_and_provisional_files_are_not_complete(app,login,settings,tmp_path,scope,expected):
-    identity=login().get('/api/v1/auth/context').json();code=str(int(uuid4().hex[:8],16))
+    identity=isolated_monthly_identity(login,settings);code=str(int(uuid4().hex[:8],16))
     month='2026-08' if scope=='review' else '2099-01'
     rows=[{**row(code),'data_compra':month+'-12'}]
     if scope=='review':rows.append({**row(code),'data_compra':'2020-01-01'})
@@ -112,3 +121,10 @@ def test_coverage_rejected_and_provisional_files_are_not_complete(app,login,sett
     with app.state.database.transaction(identity['org_id'],identity['actor_id']) as db:
         result=monthly_prices.coverage(sources.job_context(db,identity['org_id'],identity['actor_id']),date.fromisoformat(month+'-01'),date.fromisoformat(month+'-28'))
         assert result['state']==expected and result['months_reconciled']==[]
+
+def test_invalid_monthly_schema_never_creates_a_snapshot(app,login,settings,tmp_path):
+    identity=login().get('/api/v1/auth/context').json();code=str(int(uuid4().hex[:8],16));bad=row(code);del bad['codigo_item_catalogo'];p,sha=archive(tmp_path,[bad])
+    with pytest.raises(ValueError,match='Missing source columns'):
+        monthly_prices.import_archive(settings.owner_database_url.get_secret_value(),identity['org_id'],p,'material','2026-09',sha,'https://example.invalid/qa.zip')
+    with app.state.database.transaction(identity['org_id'],identity['actor_id']) as db:
+        assert db.one('SELECT count(*) n FROM price_monthly_snapshot WHERE archive_sha256=:s',{'s':sha})['n']==0
