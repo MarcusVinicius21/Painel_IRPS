@@ -50,17 +50,19 @@ def write_fact(ctx,provider,event,record,sid,values):
 def results(ctx,args,transport=None):
     parent=ctx.db.one("SELECT * FROM procurement_fact WHERE id=:i AND provider='PNCP_ITENS' AND classification='official'",{'i':args['procurement_id']})
     if not parent:fail(404,'O item oficial não está disponível.')
+    if not parent['is_current']:raise sources.SourceFault('INVALID_PARENT_REVISION')
     match=re.fullmatch(r'pncp:(\d{14}):(\d{4}):(\d+):(\d+)',parent['item_id'] or '')
     if not match:fail(422,'Confira a identificação original deste item.')
     cnpj,year,sequence,number=match.groups()
     url=f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{year}/{sequence}/itens/{number}/resultados'
     url,status,content,data=sources.cached_get(ctx,'PNCP_RESULTADOS',url,transport=transport)
-    if data is None:data=[]
-    if not isinstance(data,list) or len(data)>2000:raise sources.SourceFault('INVALID_RESULT_FORMAT')
+    if data is None and status==204:data=[]
+    if not isinstance(data,list) or len(data)>2000 or any(not isinstance(r,dict) for r in data):raise sources.SourceFault('INVALID_RESULT_FORMAT')
+    identities=[r.get('sequencialResultado') for r in data]
+    if any(type(n) is not int or n<1 for n in identities) or len(set(identities))!=len(identities):raise sources.SourceFault('INVALID_RESULT_IDENTITY')
     sid=observe(ctx,'PNCP_RESULTADOS',url,status,content,data,args);new=0
-    for record in data:
-        sequence_result=record.get('sequencialResultado')
-        if not isinstance(sequence_result,int):continue
+    for record in sorted(data,key=lambda r:r['sequencialResultado']):
+        sequence_result=record['sequencialResultado']
         cancelled=bool(record.get('dataCancelamento')) or str(record.get('situacaoCompraItemResultadoId'))=='2'
         active=str(record.get('situacaoCompraItemResultadoId'))=='1' and not cancelled
         new+=write_fact(ctx,'PNCP_RESULTADOS',parent['event_identity']+':result:'+str(sequence_result),record,sid,{
