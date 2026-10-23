@@ -1,0 +1,612 @@
+{
+  "period": [
+    "2025-10-01",
+    "2026-09-30"
+  ],
+  "checked_at": "2026-10-23T19:29:25.703218+00:00",
+  "months_reconciled": 12,
+  "files_reconciled": 24,
+  "files": [
+    {
+      "kind": "material",
+      "month": "2025-10",
+      "archive_sha256": "101745872d53ade1c3c439c34ec589b80c98490c430626c7d113e4401f9c5750",
+      "source_rows": 202321,
+      "accepted_rows": 202321,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 202321,
+      "codes": 58397,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2025/10/material_2025_10.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 26,
+      "suppliers_with_unknown_unit": 15,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2025-10",
+      "archive_sha256": "0f374779e017b51beee69ff94e7eda3818a8966eee74cf8f82c93f6198fb181c",
+      "source_rows": 40674,
+      "accepted_rows": 40674,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 40674,
+      "codes": 1413,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2025/10/servico_2025_10.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 584,
+      "suppliers_with_unknown_unit": 134,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2025-11",
+      "archive_sha256": "ee47730c75a68126d19d5bca10f6ab77fe70073555aaf2832f61fdd41a03c1fd",
+      "source_rows": 176130,
+      "accepted_rows": 176130,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 176130,
+      "codes": 54929,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2025/11/material_2025_11.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 28,
+      "suppliers_with_unknown_unit": 14,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2025-11",
+      "archive_sha256": "2d3d2888d4d3864a07cb11eee2b64ced84259d7fb5407189f257b678a5c98a70",
+      "source_rows": 35767,
+      "accepted_rows": 35767,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 35767,
+      "codes": 1394,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2025/11/servico_2025_11.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 1297,
+      "suppliers_with_unknown_unit": 101,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2025-12",
+      "archive_sha256": "61376a33cebbbf6936a6ee098e654859ee3c0d010c555d324406d8e2b88dce02",
+      "source_rows": 155877,
+      "accepted_rows": 155877,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 155877,
+      "codes": 50285,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2025/12/material_2025_12.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 158,
+      "suppliers_with_unknown_unit": 35,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2025-12",
+      "archive_sha256": "ac9c9ed62e2464d9f5dfb4a095fd6ab129846295cad17838296c2100fb00557c",
+      "source_rows": 34327,
+      "accepted_rows": 34327,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 34327,
+      "codes": 1380,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2025/12/servico_2025_12.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 375,
+      "suppliers_with_unknown_unit": 96,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-01",
+      "archive_sha256": "0f72e747e380f3d12560ab219b0d1747f52e53e1a60c46f73b92e84311007435",
+      "source_rows": 117768,
+      "accepted_rows": 117768,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 117768,
+      "codes": 40580,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/01/material_2026_01.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 486,
+      "suppliers_with_unknown_unit": 25,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-01",
+      "archive_sha256": "094680eda43283044143c03b41d673e5b19391e144c1b28f9db51087cc75c414",
+      "source_rows": 23860,
+      "accepted_rows": 23860,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 23860,
+      "codes": 1204,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/01/servico_2026_01.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 290,
+      "suppliers_with_unknown_unit": 88,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-02",
+      "archive_sha256": "37c5b4b3d12949f15519bd97ca621c6de0ee13455af32702216db1014348f319",
+      "source_rows": 99045,
+      "accepted_rows": 99045,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 99045,
+      "codes": 36849,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/02/material_2026_02.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 76,
+      "suppliers_with_unknown_unit": 22,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-02",
+      "archive_sha256": "6217f9a3f24b36ece70bcc048cfef80dda7a82b41db4558a53b0f9f788d57172",
+      "source_rows": 25687,
+      "accepted_rows": 25687,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 25687,
+      "codes": 1275,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/02/servico_2026_02.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 461,
+      "suppliers_with_unknown_unit": 88,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-03",
+      "archive_sha256": "e5d3d776018909dc061d91fa636830ece0db133f7705d432910b76442bb75a0b",
+      "source_rows": 136303,
+      "accepted_rows": 136303,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 136303,
+      "codes": 46327,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/03/material_2026_03.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 46,
+      "suppliers_with_unknown_unit": 28,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-03",
+      "archive_sha256": "5fb0b0db8c91b8cc598e6e3901b73c1f4e5f2cc355166cb543a07c2dd6c9cd05",
+      "source_rows": 33324,
+      "accepted_rows": 33324,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 33324,
+      "codes": 1390,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/03/servico_2026_03.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 466,
+      "suppliers_with_unknown_unit": 96,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-04",
+      "archive_sha256": "303c7dcf3f4ea06cd858c2e60e3eeca5105fdf643802a5dfe5a15067c41e1ade",
+      "source_rows": 126809,
+      "accepted_rows": 126809,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 126809,
+      "codes": 42903,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/04/material_2026_04.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 55,
+      "suppliers_with_unknown_unit": 27,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-04",
+      "archive_sha256": "486ce98873988e673f546cbe1bcd5159f38e32f85f7e9a8677b3bf2c138306de",
+      "source_rows": 31724,
+      "accepted_rows": 31724,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 31724,
+      "codes": 1290,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/04/servico_2026_04.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 2626,
+      "suppliers_with_unknown_unit": 79,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-05",
+      "archive_sha256": "3d0439eea95dbaaccaaae8d9257bdd22df6819db56a2f222efbe0c6d4a04ef74",
+      "source_rows": 150002,
+      "accepted_rows": 150002,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 150002,
+      "codes": 46718,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/05/material_2026_05.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 482,
+      "suppliers_with_unknown_unit": 92,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-05",
+      "archive_sha256": "9e1f5cb3481419ecc717dc6013c6b09366b2df4e01a64ea3b90d74b31509b9f3",
+      "source_rows": 33716,
+      "accepted_rows": 33716,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 33716,
+      "codes": 1317,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/05/servico_2026_05.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 421,
+      "suppliers_with_unknown_unit": 104,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-06",
+      "archive_sha256": "793470623605e0bb3a4bacb7d7f2de7b51b33615c0337d5963ae85f4f268bbe4",
+      "source_rows": 57852,
+      "accepted_rows": 57852,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 57852,
+      "codes": 26207,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/06/material_2026_06.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 129,
+      "suppliers_with_unknown_unit": 76,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-06",
+      "archive_sha256": "94c9ba1e1b0648c66ef5c4273048a13fcb7d2a695bb2268b19014d5e90c515cb",
+      "source_rows": 7684,
+      "accepted_rows": 7684,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 7684,
+      "codes": 718,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/06/servico_2026_06.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 268,
+      "suppliers_with_unknown_unit": 78,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-07",
+      "archive_sha256": "4159dc8673db5ed16e3ae076a4e54e1950f717a4619d05497c7fbbe0e8e5e43d",
+      "source_rows": 183745,
+      "accepted_rows": 183745,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 183745,
+      "codes": 55170,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/07/material_2026_07.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 495,
+      "suppliers_with_unknown_unit": 158,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-07",
+      "archive_sha256": "88694071623a084cb067676829082a0fb13a8d25aa47d79f006e1d732d5c67a9",
+      "source_rows": 33122,
+      "accepted_rows": 33122,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 33122,
+      "codes": 1318,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/07/servico_2026_07.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 371,
+      "suppliers_with_unknown_unit": 116,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-08",
+      "archive_sha256": "c4d9b6a8032376396754092e66e944291ad4632f33b2c14ae7abdbd32a028e8a",
+      "source_rows": 194418,
+      "accepted_rows": 194418,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 194418,
+      "codes": 56856,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/08/material_2026_08.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 2901,
+      "suppliers_with_unknown_unit": 639,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-08",
+      "archive_sha256": "29220140df4dacf261b7b2eadaa2d65404bf1ed8f2ffa9fdeea4c5dcbfc3b652",
+      "source_rows": 38591,
+      "accepted_rows": 38591,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 38591,
+      "codes": 1350,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/08/servico_2026_08.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 553,
+      "suppliers_with_unknown_unit": 172,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "material",
+      "month": "2026-09",
+      "archive_sha256": "2db1fa67fbd15afb3a4ad18faa1e9ba9c1f382beb81b3a19bb7c9c0ad7c50b13",
+      "source_rows": 114029,
+      "accepted_rows": 114029,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 114029,
+      "codes": 42313,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/09/material_2026_09.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 23050,
+      "suppliers_with_unknown_unit": 3253,
+      "archive_sha256_local_not_official_signature": true
+    },
+    {
+      "kind": "servico",
+      "month": "2026-09",
+      "archive_sha256": "51ab278c0baddd6812fcc849b7563bfdfdd832b7c19914a234f979ca6a9ec417",
+      "source_rows": 25292,
+      "accepted_rows": 25292,
+      "rejected_rows": 0,
+      "duplicate_rows": 0,
+      "physical_rows": 25292,
+      "codes": 1251,
+      "wrong_month": 0,
+      "source_url": "https://repositorio.dados.gov.br/seges/comprasgov/pesquisa_precos/2026/09/servico_2026_09.csv.zip",
+      "state": "reconciled",
+      "unknown_unit": 2969,
+      "suppliers_with_unknown_unit": 786,
+      "archive_sha256_local_not_official_signature": true
+    }
+  ],
+  "annual_summary": {
+    "algorithm": "monthly-logical-v1",
+    "start": "2025-10-01",
+    "end": "2026-09-30",
+    "source_kind": "monthly_consolidated",
+    "physical_rows_in_selected_files": 2078067,
+    "totals": {
+      "conflicts": 0,
+      "unknown_unit": 38613,
+      "unknown_price": 0,
+      "logical_records": 2078067,
+      "source_municipalities": 1261,
+      "source_codes_with_price": 127788
+    },
+    "catalogue_codes_with_price": [
+      {
+        "kind": "material",
+        "codes_with_price": 125493
+      },
+      {
+        "kind": "servico",
+        "codes_with_price": 2286
+      }
+    ],
+    "monthly_series": [
+      {
+        "kind": "material",
+        "month": "2025-10",
+        "conflicts": 0,
+        "logical_records": 202321
+      },
+      {
+        "kind": "servico",
+        "month": "2025-10",
+        "conflicts": 0,
+        "logical_records": 40674
+      },
+      {
+        "kind": "material",
+        "month": "2025-11",
+        "conflicts": 0,
+        "logical_records": 176130
+      },
+      {
+        "kind": "servico",
+        "month": "2025-11",
+        "conflicts": 0,
+        "logical_records": 35767
+      },
+      {
+        "kind": "material",
+        "month": "2025-12",
+        "conflicts": 0,
+        "logical_records": 155877
+      },
+      {
+        "kind": "servico",
+        "month": "2025-12",
+        "conflicts": 0,
+        "logical_records": 34327
+      },
+      {
+        "kind": "material",
+        "month": "2026-01",
+        "conflicts": 0,
+        "logical_records": 117768
+      },
+      {
+        "kind": "servico",
+        "month": "2026-01",
+        "conflicts": 0,
+        "logical_records": 23860
+      },
+      {
+        "kind": "material",
+        "month": "2026-02",
+        "conflicts": 0,
+        "logical_records": 99045
+      },
+      {
+        "kind": "servico",
+        "month": "2026-02",
+        "conflicts": 0,
+        "logical_records": 25687
+      },
+      {
+        "kind": "material",
+        "month": "2026-03",
+        "conflicts": 0,
+        "logical_records": 136303
+      },
+      {
+        "kind": "servico",
+        "month": "2026-03",
+        "conflicts": 0,
+        "logical_records": 33324
+      },
+      {
+        "kind": "material",
+        "month": "2026-04",
+        "conflicts": 0,
+        "logical_records": 126809
+      },
+      {
+        "kind": "servico",
+        "month": "2026-04",
+        "conflicts": 0,
+        "logical_records": 31724
+      },
+      {
+        "kind": "material",
+        "month": "2026-05",
+        "conflicts": 0,
+        "logical_records": 150002
+      },
+      {
+        "kind": "servico",
+        "month": "2026-05",
+        "conflicts": 0,
+        "logical_records": 33716
+      },
+      {
+        "kind": "material",
+        "month": "2026-06",
+        "conflicts": 0,
+        "logical_records": 57852
+      },
+      {
+        "kind": "servico",
+        "month": "2026-06",
+        "conflicts": 0,
+        "logical_records": 7684
+      },
+      {
+        "kind": "material",
+        "month": "2026-07",
+        "conflicts": 0,
+        "logical_records": 183745
+      },
+      {
+        "kind": "servico",
+        "month": "2026-07",
+        "conflicts": 0,
+        "logical_records": 33122
+      },
+      {
+        "kind": "material",
+        "month": "2026-08",
+        "conflicts": 0,
+        "logical_records": 194418
+      },
+      {
+        "kind": "servico",
+        "month": "2026-08",
+        "conflicts": 0,
+        "logical_records": 38591
+      },
+      {
+        "kind": "material",
+        "month": "2026-09",
+        "conflicts": 0,
+        "logical_records": 114029
+      },
+      {
+        "kind": "servico",
+        "month": "2026-09",
+        "conflicts": 0,
+        "logical_records": 25292
+      }
+    ],
+    "municipal_coverage_claimed": false,
+    "quantities_aggregated": false,
+    "price_statistics_available": false
+  },
+  "catalogue": {
+    "CATMAT": 345575,
+    "CATSER": 3104,
+    "total": 348679
+  },
+  "codes_with_price_known_catalogue": {
+    "CATMAT": 125493,
+    "CATSER": 2286,
+    "total": 127779
+  },
+  "price_presence_percentage": {
+    "CATMAT": 36.31425884395573,
+    "CATSER": 73.64690721649485,
+    "total": 36.64660045485963
+  },
+  "coverage_meaning": "Presença de ao menos um preço nos arquivos do período; não cobertura de todas as compras nem validação de comparabilidade.",
+  "synthetic_operational_records": 0,
+  "v4_intact": 8,
+  "public_data_only": true
+}
