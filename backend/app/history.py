@@ -79,11 +79,11 @@ def children(ctx,cid,scope,provider,args,result):
     observation=ctx.db.one('SELECT body,http_status FROM source_observation WHERE id=:s',{'s':result['source_id']})
     data=json.loads(observation['body']) if observation and observation['body'] else None
     if provider in ('PNCP','PNCP_ATUALIZACAO','PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO','PNCP_CONTRATOS_COMPRA',
-                    'PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
+                    'PNCP_ATAS','PNCP_ATAS_PUBLICACAO','PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
         total=result.get('expected_pages')
         if not isinstance(total,int) or total<0:raise sources.SourceFault('PAGINATION_UNVERIFIED')
         if total>10000:raise sources.SourceFault('SOURCE_PAGE_RANGE')
-        if args['page']<total:queue(ctx,cid,provider,{**args,'page':args['page']+1})
+        if args.get('page',1)<total:queue(ctx,cid,provider,{**args,'page':args.get('page',1)+1})
         if provider in ('PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO','PNCP_CONTRATOS_COMPRA') and scope.get('_campaign',{}).get('include_contract_terms'):
             for record in (data or {}).get('data',[]):
                 year,sequence=record.get('anoContrato'),record.get('sequencialContrato')
@@ -99,7 +99,7 @@ def children(ctx,cid,scope,provider,args,result):
                 if scope['items']:queue(ctx,cid,'PNCP_ITENS',{'provider':'PNCP_ITENS','procurement_id':str(parent['id']),'page':1,'size':scope['size']})
                 entity=record.get('orgaoEntidade') or {};cnpj=entity.get('cnpj')
                 valid_cnpj=bool(re.fullmatch(r'\d{14}',str(cnpj or '')))
-                if valid_cnpj and scope.get('atas'):queue(ctx,cid,'PNCP_ATAS',{'procurement_id':str(parent['id'])})
+                if valid_cnpj and scope.get('atas'):queue(ctx,cid,'PNCP_ATAS',{'procurement_id':str(parent['id']),'page':1,'size':scope['size']})
                 if valid_cnpj and scope.get('pca') and isinstance(record.get('anoCompra'),int):
                     queue(ctx,cid,'PNCP_PCA',{'cnpj':str(cnpj),'year':record['anoCompra']})
                 if valid_cnpj and scope.get('atas'):
@@ -166,7 +166,7 @@ def advance(database,org,actor,cid,budget=1,transport=None):
                 elif provider=='PNCP_RESULTADOS':result=history_sources.results(ctx,args,transport)
                 elif provider=='PNCP_ATAS':result=history_sources.atas(ctx,args,transport)
                 elif provider=='PNCP_PCA':result=history_sources.pca(ctx,args,transport)
-                elif provider in ('PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
+                elif provider in ('PNCP_ATAS_PUBLICACAO','PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
                     result=history_sources.updated_index(ctx,provider,args,transport)
                 else:result=sources.sync(ctx,args,transport)
                 children(ctx,cid,collection['scope'],provider,args,result)

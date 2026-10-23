@@ -25,10 +25,10 @@ def redacted_source(value):
         for k in ('niFornecedorSubContratado','nomeFornecedorSubContratado'):out[k]=None
     return out
 
-def observe(ctx,provider,url,status,content,data,args):
+def observe(ctx,provider,url,status,content,data,args,extra=None):
     safe=encoded(redacted_source(data)).encode()
     return sources.observe(ctx,provider,url,status,safe,{'scope':args,'original_response_sha256':hashlib.sha256(content).hexdigest(),
-        'natural_person_identifiers_redacted':True,'partial':True})
+        'natural_person_identifiers_redacted':True,'partial':True,**(extra or {})})
 
 def write_fact(ctx,provider,event,record,sid,values):
     ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':provider+':'+event})
@@ -176,19 +176,29 @@ def optional_not_found(ctx,provider,url,args,phase):
 def atas(ctx,args,transport=None):
     parent,cnpj,year,sequence=purchase_identity(ctx,args['procurement_id'])
     url=f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{year}/{sequence}/atas'
-    try:url,status,content,data=sources.cached_get(ctx,'PNCP_ATAS',url,transport=transport)
-    except sources.SourceFault as exc:
-        if exc.status==404:return optional_not_found(ctx,'PNCP_ATAS',url,args,'ata_registro')
-        raise
-    if data is None:data=[]
+    url,status,content,data=sources.cached_get(ctx,'PNCP_ATAS',url,{'pagina':args.get('page',1),'tamanhoPagina':args.get('size',20)},transport)
+    if data is None and status==204:data={'data':[],'totalPaginas':0}
     records=data if isinstance(data,list) else (data.get('data') if 'data' in data else data.get('atas')) if isinstance(data,dict) else None
-    if not isinstance(records,list) or len(records)>2000:raise sources.SourceFault('INVALID_ATA_FORMAT')
-    sid=observe(ctx,'PNCP_ATAS',url,status,content,data,args)
+    if not isinstance(records,list) or len(records)>args.get('size',20) or any(not isinstance(r,dict) for r in records):raise sources.SourceFault('INVALID_ATA_FORMAT')
+    if any((r.get('numeroControlePncpCompra') or r.get('numeroControlePNCPCompra')) not in (None,parent['obligation_id']) for r in records):raise sources.SourceFault('INVALID_ATA_PURCHASE_LINK')
+    sid=observe(ctx,'PNCP_ATAS',url,status,content,data,args,{'ata_summaries':[ata_summary(r,parent['obligation_id']) for r in records]})
     return {'provider':'PNCP_ATAS','records':len(records),'source_id':str(sid),'state':'observed_only',
-        'pages_fetched':1,'expected_pages':data.get('totalPaginas') if isinstance(data,dict) else 1,
-        'pagination_unverified':isinstance(data,dict) and (data.get('totalPaginas') or 1)>1,
+        'pages_fetched':1,'expected_pages':data.get('totalPaginas') if isinstance(data,dict) else None,
+        'pagination_unverified':not isinstance(data,dict) or type(data.get('totalPaginas')) is not int,
         'scope':args,'phase':'ata_registro',
         'parent_publication':str(parent['id']),'quantities_collected':False,'purchase_inferred':False}
+
+
+def ata_summary(record,parent=None):
+    identity=record.get('numeroControlePNCPAta') or record.get('numeroControlePNCP')
+    cancelled=True if record.get('cancelado') is True or parse_date(record.get('dataCancelamento')) else False if record.get('cancelado') is False else None
+    return {'identity':identity,'identity_pending':not bool(identity),'number':record.get('numeroAtaRegistroPreco'),
+        'purchase_identity':record.get('numeroControlePNCPCompra') or record.get('numeroControlePncpCompra') or parent,
+        'validity_start':record.get('dataVigenciaInicio') or record.get('vigenciaInicio'),
+        'validity_end':record.get('dataVigenciaFim') or record.get('vigenciaFim'),
+        'cancelled':cancelled,'cancellation_date':record.get('dataCancelamento'),
+        'registered_quantity':None,'quantity_state':'not_exposed_by_documented_response',
+        'financial_execution_proven':False,'revision_hash':hashlib.sha256(encoded(redacted_source(record)).encode()).hexdigest()}
 
 
 def pca(ctx,args,transport=None):
@@ -208,22 +218,26 @@ def pca(ctx,args,transport=None):
 
 
 def updated_index(ctx,provider,args,transport=None):
-    if provider not in ('PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
+    if provider not in ('PNCP_ATAS_PUBLICACAO','PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
         fail(422,'Esta consulta não está configurada.')
     start=date.fromisoformat(args['start_date']).strftime('%Y%m%d')
     end=date.fromisoformat(args['end_date']).strftime('%Y%m%d')
-    if provider=='PNCP_ATAS_ATUALIZACAO':
-        endpoint='https://pncp.gov.br/api/consulta/v1/atas/atualizacao'
+    if provider.startswith('PNCP_ATAS_'):
+        endpoint='https://pncp.gov.br/api/consulta/v1/atas'+('/atualizacao' if provider.endswith('ATUALIZACAO') else '')
         params={'dataInicial':start,'dataFinal':end,'cnpj':args['cnpj']}
     else:
         endpoint='https://pncp.gov.br/api/consulta/v1/pca/atualizacao'
         params={'dataInicio':start,'dataFim':end,'cnpj':args['cnpj']}
     params.update(pagina=args.get('page',1),tamanhoPagina=args.get('size',10))
     url,status,content,data=sources.cached_get(ctx,provider,endpoint,params,transport)
-    if data is None:data={'data':[],'totalPaginas':0}
-    if not isinstance(data,dict) or not isinstance(data.get('data'),list):raise sources.SourceFault('INVALID_SOURCE_FORMAT')
-    sid=observe(ctx,provider,url,status,content,data,args)
+    if data is None and status==204:data={'data':[],'totalPaginas':0}
+    if not isinstance(data,dict) or not isinstance(data.get('data'),list) or len(data['data'])>args.get('size',10) or any(not isinstance(r,dict) for r in data['data']):raise sources.SourceFault('INVALID_SOURCE_FORMAT')
+    if provider.startswith('PNCP_ATAS_') and any(str(r.get('cnpjOrgao') or '')!=args['cnpj'] for r in data['data']):raise sources.SourceFault('INVALID_ATA_SCOPE')
+    basis='validity_overlap' if provider=='PNCP_ATAS_PUBLICACAO' else 'source_global_update_date'
+    sid=observe(ctx,provider,url,status,content,data,args,{'ata_summaries':[ata_summary(r) for r in data['data']],
+        'period_basis':basis,'provider_id_note':'PNCP_ATAS_PUBLICACAO é um identificador técnico legado da rota por vigência.'} if provider.startswith('PNCP_ATAS_') else None)
     return {'provider':provider,'records':len(data['data']),'source_id':str(sid),'state':'observed_only',
         'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'scope':args,
-        'phase':'ata_registro' if provider=='PNCP_ATAS_ATUALIZACAO' else 'planejado',
+        'phase':'ata_registro' if provider.startswith('PNCP_ATAS_') else 'planejado',
+        'period_basis':basis if provider.startswith('PNCP_ATAS_') else 'source_global_update_date',
         'quantities_collected':False,'purchase_inferred':False}

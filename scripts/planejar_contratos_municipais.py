@@ -8,13 +8,13 @@ from app.config import load_settings
 from app.db import Database
 from app.sources import job_context
 from app.opportunity_schemas import HistoricalScope
-from app.municipal_contracts import create_contract_plan,create_linked_contract_plan
+from app.municipal_contracts import create_contract_plan,create_linked_contract_plan,create_ata_plan,create_linked_ata_plan
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute',action='store_true')
-    parser.add_argument('--kind',choices=('contracts','contract-updates','contracts-linked'),default='contracts')
+    parser.add_argument('--kind',choices=('contracts','contract-updates','contracts-linked','atas','atas-updates','atas-linked'),default='contracts')
     parser.add_argument('--months',nargs='+')
     args=parser.parse_args();folder=ROOT/'.runtime/irps-municipal'
     scope=json.loads((folder/'census.json').read_text(encoding='utf-8'))['scope']
@@ -34,11 +34,11 @@ def main():
         for month in months:
             first=date.fromisoformat(month+'-01');following=date(first.year+(first.month==12),first.month%12+1,1)
             body=HistoricalScope(municipalities=cities,start=first,end=following-timedelta(days=1),
-                publications=False,items=False,results=False,contracts=args.kind!='contract-updates',
-                contract_updates=args.kind=='contract-updates',organization_cnpjs=cnpjs,size=20,max_pages=2000)
+                publications=False,items=False,results=False,contracts=args.kind in ('contracts','contracts-linked'),
+                contract_updates=args.kind=='contract-updates',atas=args.kind.startswith('atas'),organization_cnpjs=cnpjs,size=20,max_pages=2000)
             with database.transaction(settings.operator_org_id,settings.operator_actor_id) as db:
                 ctx=job_context(db,settings.operator_org_id,settings.operator_actor_id)
-                if args.kind=='contracts-linked':
+                if args.kind in ('contracts-linked','atas-linked'):
                     parents=db.all("""SELECT f.id FROM procurement_fact f JOIN buyer b ON b.id=f.buyer_id
                         WHERE f.org_id=:o AND f.classification='official' AND f.provider='PNCP' AND f.is_current
                         AND f.event_date BETWEEN :start AND :end AND f.municipality_ibge=ANY(:cities)
@@ -46,7 +46,8 @@ def main():
                         ORDER BY f.id LIMIT 2001""",{'o':settings.operator_org_id,'start':first,'end':following-timedelta(days=1),'cities':cities,'cnpjs':cnpjs})
                     if not parents:
                         print(json.dumps({'month':month,'state':'no_saved_eligible_publications','municipal_completeness':None}));continue
-                    result=create_linked_contract_plan(ctx,[str(p['id']) for p in parents])
+                    result=(create_linked_contract_plan if args.kind=='contracts-linked' else create_linked_ata_plan)(ctx,[str(p['id']) for p in parents])
+                elif args.kind.startswith('atas'):result=create_ata_plan(ctx,body,updated=args.kind=='atas-updates')
                 else:result=create_contract_plan(ctx,body)
             plans.append({'month':month,**result})
             (folder/(args.kind+'-plans.json')).write_text(json.dumps(plans,ensure_ascii=False,indent=2),encoding='utf-8')
