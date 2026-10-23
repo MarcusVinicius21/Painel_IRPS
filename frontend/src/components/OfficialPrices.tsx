@@ -6,14 +6,14 @@ import {Panel,Field,Notice,DataTable} from './ui';
 
 /** Code-scoped Compras.gov query; never aggregates PNCP or fills V4 inputs. */
 export function OfficialPrices({entry}:{entry:Row}){
- const [source,setSource]=useState('online');
+ const [source,setSource]=useState('online');const [cursors,setCursors]=useState<Record<number,string>>({});
  const endToday=businessDate();const [draftStart,setDraftStart]=useState(endToday.slice(0,4)+'-01-01'),[draftEnd,setDraftEnd]=useState(endToday);
  const [period,setPeriod]=useState({start:draftStart,end:draftEnd}),[page,setPage]=useState(1),[retry,setRetry]=useState(0);
  const [result,setResult]=useState<Row|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState(''),[validation,setValidation]=useState(false),[retryAt,setRetryAt]=useState(0),[clock,setClock]=useState(Date.now());
  const kind=entry.kind==='CATSER'?'servico':'material';
- const url='/catalogue-intelligent/'+(source==='online'?'reference-prices':'monthly-prices')+'?'+new URLSearchParams({kind,code:entry.code,code_type:'codigoItemCatalogo',start:period.start,end:period.end,page:String(page)});
+ const url='/catalogue-intelligent/'+(source==='online'?'reference-prices':'monthly-prices')+'?'+new URLSearchParams({kind,code:entry.code,code_type:'codigoItemCatalogo',start:period.start,end:period.end,page:String(page),...(source==='monthly'&&cursors[page]?{cursor:cursors[page]}:{})});
  useEffect(()=>{let current=true;const abort=new AbortController();setLoading(true);setResult(null);setError('');setValidation(false);setRetryAt(0);
-  void api(url,{signal:abort.signal}).then(data=>{if(current){setResult(data);if(data.source_error?.retry_after)setRetryAt(Date.now()+data.source_error.retry_after*1000);}}).catch(e=>{if(current){setError(e.message);setValidation(e instanceof ApiError&&[400,422].includes(e.status));if(e instanceof ApiError&&e.payload?.source_error){setResult(e.payload);setRetryAt(Date.now()+(e.payload.source_error.retry_after||0)*1000);}}}).finally(()=>{if(current)setLoading(false);});
+  void api(url,{signal:abort.signal}).then(data=>{if(current){setResult(data);if(data.next_cursor)setCursors(old=>({...old,[page+1]:data.next_cursor}));if(data.source_error?.retry_after)setRetryAt(Date.now()+data.source_error.retry_after*1000);}}).catch(e=>{if(current){setError(e.message);setValidation(e instanceof ApiError&&[400,422].includes(e.status));if(e instanceof ApiError&&e.payload?.source_error){setResult(e.payload);setRetryAt(Date.now()+(e.payload.source_error.retry_after||0)*1000);}}}).finally(()=>{if(current)setLoading(false);});
   return()=>{current=false;abort.abort();};
  },[url,retry]);
  useEffect(()=>{if(retryAt<=Date.now())return;const t=window.setInterval(()=>{setClock(Date.now());if(Date.now()>=retryAt)clearInterval(t);},1000);return()=>clearInterval(t);},[retryAt]);
@@ -39,7 +39,7 @@ export function OfficialPrices({entry}:{entry:Row}){
     {label:'Comprador e local',render:r=><>{r.agency||'Órgão não informado'}<small>UASG {r.uasg||'não informada'} · {r.purchasing_unit||'Unidade compradora não informada'}</small><small>{r.municipality_name||'Município a conferir'} · {r.state||'UF não informada'} · Código {r.municipality_code??'não informado'}</small></>},
     {label:'Datas',render:r=><>Compra: {r.purchase_date||'não informada'}<small>Resultado: {r.result_date||'não informado'}</small></>}
    ]}/>:null}
-   <div className="actions"><button className="button secondary" disabled={loading||page===1||wait>0} onClick={()=>setPage(p=>p-1)}>Preços anteriores</button><button className="button secondary" disabled={loading||!result.has_next_page||page>=100||wait>0} onClick={()=>setPage(p=>p+1)}>Próximos preços</button></div>
+   <div className="actions"><button className="button secondary" disabled={loading||page===1||wait>0} onClick={()=>setPage(p=>p-1)}>Preços anteriores</button><button className="button secondary" disabled={loading||!result.has_next_page||(source==='online'&&page>=100)||wait>0} onClick={()=>setPage(p=>p+1)}>Próximos preços</button></div>
    <details><summary>Fonte, período e conferência</summary><p>{result.consulted_at?'Consultado em '+new Date(result.consulted_at).toLocaleString('pt-BR'):'Consulta ainda não comprovada.'} {result.cache_hit?'Consulta preservada reutilizada.':''}</p>{result.url?<a href={result.url} target="_blank" rel="noreferrer">Ver fonte pública do Compras.gov.br</a>:null}<p>Identificador da evidência: {result.original_response_sha256?.slice(0,16)||'não disponível'}.</p><p>O mesmo código pode ter apresentações diferentes. Não somamos quantidades ou calculamos uma média automática.</p><p>Esses resultados não comprovam cobertura municipal, pagamento, entrega ou consumo.</p></details>
   </>:null}
  </Panel>;

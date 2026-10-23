@@ -66,3 +66,19 @@ def test_online_failure_uses_monthly_evidence_with_visible_failure(app,login,set
     data=response.json();assert data['state']=='partial' and data['source_kind']=='monthly_file' and data['fallback_from']=='live_api'
     assert data['source_error']['code'] in ('SOURCE_UNAVAILABLE','SOURCE_COOLDOWN') and data['records'][0]['unit_price']=='10.50'
     assert data['scope']['imported_months']==['2026-09-01']
+
+def test_keyset_crosses_page_100_without_duplicates_or_gaps(app,login,settings,tmp_path):
+    identity=login().get('/api/v1/auth/context').json();code=str(int(uuid4().hex[:8],16))
+    p,sha=archive(tmp_path,[{**row(code),'id_item_compra':f'{i:05d}','numero_item_compra':str(i)} for i in range(1005)])
+    monthly_prices.import_archive(settings.owner_database_url.get_secret_value(),identity['org_id'],p,'material','2026-09',sha,'https://example.invalid/qa.zip')
+    with app.state.database.transaction(identity['org_id'],identity['actor_id']) as db:
+        ctx=sources.job_context(db,identity['org_id'],identity['actor_id']);cursor=None;seen=[]
+        for page in range(1,102):
+            result=monthly_prices.query(ctx,'material',code,date(2025,10,1),date(2026,9,30),page,cursor)
+            repeated=monthly_prices.query(ctx,'material',code,date(2025,10,1),date(2026,9,30),page,cursor)
+            assert result==repeated and len(result['records'])<=10
+            seen.extend(r['source_key'] for r in result['records']);cursor=result['next_cursor']
+        assert len(seen)==len(set(seen))==1005 and not result['has_next_page'] and cursor is None
+        assert result['total_records_reported']==1005 and len(result['records'])==5
+        empty=monthly_prices.query(ctx,'material',str(int(code)+1),date(2025,10,1),date(2026,9,30))
+        assert empty['records']==[]

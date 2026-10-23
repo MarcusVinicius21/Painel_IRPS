@@ -75,9 +75,9 @@ def catalogue_reference_prices(ctx:Auth,kind:str,code:str,code_type:str='codigoI
 
 
 @router.get('/catalogue-intelligent/monthly-prices')
-def monthly_reference_prices(ctx:Auth,kind:str,code:str,start:date,end:date,page:int=Query(1,ge=1,le=100)):
+def monthly_reference_prices(ctx:Auth,kind:str,code:str,start:date,end:date,page:int=Query(1,ge=1,le=100000),cursor:str|None=Query(None,max_length=2048)):
     from .monthly_prices import query as monthly_query
-    return monthly_query(ctx,kind,code,start,end,page)
+    return monthly_query(ctx,kind,code,start,end,page,cursor)
 
 @router.get('/coverage/inventory')
 def coverage_inventory_get(ctx:Auth,start:date=date(2024,1,1),end:date=Query(default_factory=date.today),

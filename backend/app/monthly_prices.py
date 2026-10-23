@@ -1,5 +1,5 @@
 """Append-only monthly source import and code lookup, separate from canonical/PNCP facts."""
-import csv,hashlib,io,json,re,zipfile
+import base64,csv,hashlib,io,json,re,zipfile
 from datetime import date
 from pathlib import Path
 from uuid import uuid4
@@ -72,16 +72,29 @@ def import_archive(url,org,path,kind,month,expected_sha,source_url,metadata=None
     return {'snapshot_id':sid,'kind':kind,'month':month,'sha256':sha,'source_rows':rows,'accepted_rows':accepted,'rejected_rows':len(rejected),'duplicate_rows':duplicates,'conflicting_source_keys':conflicts,'rejections':rejected,'idempotent':False,'source_url':source_url,'complete_file_import':len(rejected)==0}
 
 
-def query(ctx,kind,code,start,end,page=1):
+def query(ctx,kind,code,start,end,page=1,cursor=None):
     ctx.require('read')
     if kind not in ('material','servico') or not re.fullmatch(r'\d{1,12}',code):fail(422,'Confira o tipo e o código oficial.')
-    if end<start or (end-start).days>366 or page<1 or page>100:fail(422,'Escolha até um ano e uma página entre 1 e 100.')
+    if end<start or (end-start).days>366 or page<1 or page>100000:fail(422,'Confira o periodo e a pagina.')
+    if page>100 and not cursor:fail(422,'Continue pela proxima pagina.','PRICE_CURSOR_REQUIRED')
     snapshots=ctx.db.all('''SELECT DISTINCT ON(month) * FROM price_monthly_snapshot WHERE org_id=:o AND kind=:k
         AND month<=:end AND month>=date_trunc('month',CAST(:start AS date)) ORDER BY month,imported_at DESC,id DESC''',{'o':ctx.org_id,'k':kind,'start':start,'end':end})
     ids=[str(s['id']) for s in snapshots];params={'o':ctx.org_id,'c':code,'start':start,'end':end,'ids':encoded(ids),'offset':(page-1)*10}
     where="org_id=:o AND code=:c AND purchase_date BETWEEN :start AND :end AND snapshot_id IN (SELECT value::uuid FROM jsonb_array_elements_text(CAST(:ids AS jsonb)))"
     total=ctx.db.one('SELECT count(*) n FROM price_monthly_record WHERE '+where,params)['n']
-    rows=ctx.db.all('SELECT *,count(*) OVER(PARTITION BY source_key) revision_count FROM price_monthly_record WHERE '+where+' ORDER BY purchase_date DESC,source_key,record_sha256 LIMIT 10 OFFSET :offset',params)
+    fingerprint=hashlib.sha256(encoded([str(ctx.org_id),kind,code,start,end,ids]).encode()).hexdigest()
+    condition='';offset=' OFFSET :offset' if not cursor else ''
+    if cursor:
+        try:
+            if len(cursor)>2048:raise ValueError()
+            token=json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
+            if token['scope']!=fingerprint or len(token['after'])!=4:raise ValueError()
+            params.update(dict(zip(['after_date','after_key','after_sha','after_snapshot'],token['after'])))
+            date.fromisoformat(params['after_date'])
+        except (ValueError,KeyError,TypeError,UnicodeError):fail(422,'A consulta mudou. Volte à primeira página.','PRICE_CURSOR_INVALID')
+        condition=' AND (purchase_date,source_key,record_sha256,snapshot_id)>(CAST(:after_date AS date),:after_key,:after_sha,CAST(:after_snapshot AS uuid))'
+    rows=ctx.db.all('SELECT * FROM (SELECT *,count(*) OVER(PARTITION BY source_key) revision_count FROM price_monthly_record WHERE '+where+') q WHERE true'+condition+' ORDER BY purchase_date,source_key,record_sha256,snapshot_id LIMIT 10'+offset,params)
+    next_cursor=base64.urlsafe_b64encode(encoded({'scope':fingerprint,'after':[rows[-1]['purchase_date'],rows[-1]['source_key'],rows[-1]['record_sha256'],str(rows[-1]['snapshot_id'])]}).encode()).decode() if rows and page*10<total else None
     known=ctx.db.one('''SELECT EXISTS(SELECT 1 FROM national_catalogue_entry e JOIN national_catalogue_snapshot s ON s.id=e.snapshot_id
         WHERE s.kind=:kind AND e.code=:code) AS known''',{'kind':'CATMAT' if kind=='material' else 'CATSER','code':code})['known']
     mapped={str(s['id']):s for s in snapshots};records=[]
@@ -94,7 +107,7 @@ def query(ctx,kind,code,start,end,page=1):
         records.append({**row['body'],'source_url':snap['source_url'],'source_archive_sha256':snap['archive_sha256'],'source_line':row['line_number'],
             'source_record_sha256':row['record_sha256'],'revision_count':row['revision_count'],'needs_review':bool(reasons),'review_reasons':reasons,'catalogue_code_verified':known,'source_key':row['source_key']})
     return normalize({'records':records,'state':'needs_review' if any(r['needs_review'] for r in records) else 'available' if records else 'empty_valid_response' if snapshots else 'not_collected',
-        'source_kind':'monthly_file','url':snapshots[0]['source_url'] if snapshots else None,'page':page,
+        'next_cursor':next_cursor,'source_kind':'monthly_file','url':snapshots[0]['source_url'] if snapshots else None,'page':page,
         'total_pages_reported':(total+9)//10 if snapshots else None,'total_records_reported':total if snapshots else None,'has_next_page':page*10<total,
         'consulted_at':max((s['imported_at'] for s in snapshots),default=None),'scope':{'kind':kind,'code':code,'start':start,'end':end,'imported_months':[s['month'] for s in snapshots]},
         'source_error':None,'rejected_source_rows':sum(s['rejected_rows'] for s in snapshots),'municipal_coverage_claimed':False,'price_comparability_review_required':True,
