@@ -78,12 +78,20 @@ def action(ctx,cid,action,max_pages=None):
 def children(ctx,cid,scope,provider,args,result):
     observation=ctx.db.one('SELECT body,http_status FROM source_observation WHERE id=:s',{'s':result['source_id']})
     data=json.loads(observation['body']) if observation and observation['body'] else None
-    if provider in ('PNCP','PNCP_ATUALIZACAO','PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO',
+    if provider in ('PNCP','PNCP_ATUALIZACAO','PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO','PNCP_CONTRATOS_COMPRA',
                     'PNCP_ATAS_ATUALIZACAO','PNCP_PCA_ATUALIZACAO'):
         total=result.get('expected_pages')
         if not isinstance(total,int) or total<0:raise sources.SourceFault('PAGINATION_UNVERIFIED')
         if total>10000:raise sources.SourceFault('SOURCE_PAGE_RANGE')
         if args['page']<total:queue(ctx,cid,provider,{**args,'page':args['page']+1})
+        if provider in ('PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO','PNCP_CONTRATOS_COMPRA') and scope.get('_campaign',{}).get('include_contract_terms'):
+            for record in (data or {}).get('data',[]):
+                year,sequence=record.get('anoContrato'),record.get('sequencialContrato')
+                if type(year) is not int or type(sequence) is not int or sequence<1:continue
+                parent=ctx.db.one("SELECT id FROM procurement_fact WHERE org_id=:o AND provider='PNCP_CONTRATOS' AND event_identity=:e AND is_current",{'o':ctx.org_id,'e':record['numeroControlePNCP']+':contract'})
+                if parent:
+                    existing=ctx.db.one("SELECT id FROM history_task WHERE org_id=:o AND provider='PNCP_CONTRATO_TERMOS' AND arguments->>'contract_id'=:p",{'o':ctx.org_id,'p':str(parent['id'])})
+                    if not existing:queue(ctx,cid,'PNCP_CONTRATO_TERMOS',{'contract_id':str(parent['id']),'page':1,'size':20})
         if provider in ('PNCP','PNCP_ATUALIZACAO'):
             for record in (data or {}).get('data',[]):
                 parent=ctx.db.one("SELECT id FROM procurement_fact WHERE provider='PNCP' AND obligation_id=:i AND is_current AND classification='official'",{'i':record.get('numeroControlePNCP')})
@@ -100,6 +108,10 @@ def children(ctx,cid,scope,provider,args,result):
                 if valid_cnpj and scope.get('pca'):
                     queue(ctx,cid,'PNCP_PCA_ATUALIZACAO',{'cnpj':str(cnpj),'start_date':args['start_date'],
                         'end_date':args['end_date'],'page':1,'size':scope['size']})
+    elif provider=='PNCP_CONTRATO_TERMOS':
+        if data is None and observation and observation['http_status']==204:data=[]
+        if not isinstance(data,list):raise sources.SourceFault('INVALID_CONTRACT_TERM_FORMAT')
+        if len(data)==args['size']:queue(ctx,cid,provider,{**args,'page':args['page']+1})
     elif provider=='PNCP_ITENS':
         if data is None and observation and observation['http_status']==204:data=[]
         if not isinstance(data,list):raise sources.SourceFault('INVALID_ITEM_FORMAT')
@@ -148,8 +160,9 @@ def advance(database,org,actor,cid,budget=1,transport=None):
             with database.transaction(org,actor) as db:
                 ctx=sources.job_context(db,org,actor);ctx.require('sources.sync')
                 args=task['arguments'];provider=task['provider']
-                if provider in ('PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO'):
-                    result=history_sources.contracts(ctx,args,transport,updated=provider.endswith('ATUALIZACAO'))
+                if provider in ('PNCP_CONTRATOS','PNCP_CONTRATOS_ATUALIZACAO','PNCP_CONTRATOS_COMPRA'):
+                    result=history_sources.contracts(ctx,args,transport,updated=provider.endswith('ATUALIZACAO'),linked=provider=='PNCP_CONTRATOS_COMPRA')
+                elif provider=='PNCP_CONTRATO_TERMOS':result=history_sources.contract_terms(ctx,args,transport)
                 elif provider=='PNCP_RESULTADOS':result=history_sources.results(ctx,args,transport)
                 elif provider=='PNCP_ATAS':result=history_sources.atas(ctx,args,transport)
                 elif provider=='PNCP_PCA':result=history_sources.pca(ctx,args,transport)

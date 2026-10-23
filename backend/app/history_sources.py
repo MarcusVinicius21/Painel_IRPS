@@ -32,18 +32,23 @@ def observe(ctx,provider,url,status,content,data,args):
 
 def write_fact(ctx,provider,event,record,sid,values):
     ctx.db.execute('SELECT pg_advisory_xact_lock(hashtextextended(:k,0))',{'k':provider+':'+event})
-    revision=hashlib.sha256(encoded({'record':redacted_source(record),'item_version':values.get('item_version')}).encode()).hexdigest()
+    revision_data={'record':redacted_source(record),'item_version':values.get('item_version')}
+    if provider=='PNCP_CONTRATOS':revision_data['obligation_id']=values.get('obligation_id')
+    revision=hashlib.sha256(encoded(revision_data).encode()).hexdigest()
     old=ctx.db.one("SELECT * FROM procurement_fact WHERE provider=:p AND event_identity=:e AND classification='official' AND revision_hash=:h",{'p':provider,'e':event,'h':revision})
     if old:return False
     current=ctx.db.one("SELECT * FROM procurement_fact WHERE provider=:p AND event_identity=:e AND classification='official' AND is_current",{'p':provider,'e':event})
     if current and str(current['org_id'])!=ctx.org_id:return False
-    if current:ctx.db.execute('UPDATE procurement_fact SET is_current=false WHERE id=:i AND org_id=:o',{'i':current['id'],'o':ctx.org_id})
-    payload={'id':identifier(),'org':ctx.org_id,'provider':provider,'event':event,'revision':revision,'previous':current['id'] if current else None,
+    order=sources.older_publication(ctx,current,record,record.get('numeroControlePNCP')) if provider=='PNCP_CONTRATOS' else None
+    late=bool(order)
+    if current and not late:ctx.db.execute('UPDATE procurement_fact SET is_current=false WHERE id=:i AND org_id=:o',{'i':current['id'],'o':ctx.org_id})
+    payload={'id':identifier(),'org':ctx.org_id,'provider':provider,'event':event,'revision':revision,'active':not late,'previous':current['id'] if current and not late else None,
         'source':sid,'buyer_id':None,'municipality_ibge':None,'item_id':None,'item_version':None,'unit':None,'quantity':None,'unit_price':None,'amount':None,**values}
+    if provider=='PNCP_CONTRATOS':payload['metadata']={**payload['metadata'],'late_revision':late,'source_order_verified':order is not None}
     payload['metadata']=encoded(payload['metadata'])
-    ctx.db.execute("""INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,supersedes_id,source_id,
+    ctx.db.execute("""INSERT INTO procurement_fact(id,org_id,classification,provider,event_identity,revision_hash,is_current,supersedes_id,source_id,
        buyer_id,municipality_ibge,item_id,item_version,description,unit,quantity,unit_price,amount,phase,event_date,obligation_id,metadata)
-       VALUES (:id,:org,'official',:provider,:event,:revision,:previous,:source,:buyer_id,:municipality_ibge,:item_id,:item_version,:description,
+       VALUES (:id,:org,'official',:provider,:event,:revision,:active,:previous,:source,:buyer_id,:municipality_ibge,:item_id,:item_version,:description,
        :unit,:quantity,:unit_price,:amount,:phase,:event_date,:obligation_id,CAST(:metadata AS jsonb))""",payload)
     return True
 
@@ -81,18 +86,27 @@ def results(ctx,args,transport=None):
     return {'provider':'PNCP_RESULTADOS','records':len(data),'new_revisions':new,'source_id':str(sid),'state':'partial','pages_fetched':1,
         'expected_pages':1,'scope':args,'phase':'homologado','payments_collected':False,'pagination':'Endpoint não recebe paginação no contrato consultado.'}
 
-def contracts(ctx,args,transport=None,updated=False):
-    params={'dataInicial':date.fromisoformat(args['start_date']).strftime('%Y%m%d'),'dataFinal':date.fromisoformat(args['end_date']).strftime('%Y%m%d'),
-        'pagina':args.get('page',1),'tamanhoPagina':args.get('size',10),'cnpjOrgao':args['cnpj']}
-    source_provider='PNCP_CONTRATOS_ATUALIZACAO' if updated else 'PNCP_CONTRATOS'
-    endpoint='https://pncp.gov.br/api/consulta/v1/contratos'+('/atualizacao' if updated else '')
+def contracts(ctx,args,transport=None,updated=False,linked=False):
+    parent=None;cnpj=args.get('cnpj');params={'pagina':args.get('page',1),'tamanhoPagina':args.get('size',10)}
+    if linked:
+        parent,cnpj,year,sequence=purchase_identity(ctx,args['procurement_id'])
+        endpoint=f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/contratos/contratacao/{year}/{sequence}'
+        source_provider='PNCP_CONTRATOS_COMPRA'
+    else:
+        params.update({'dataInicial':date.fromisoformat(args['start_date']).strftime('%Y%m%d'),'dataFinal':date.fromisoformat(args['end_date']).strftime('%Y%m%d'),'cnpjOrgao':cnpj})
+        source_provider='PNCP_CONTRATOS_ATUALIZACAO' if updated else 'PNCP_CONTRATOS'
+        endpoint='https://pncp.gov.br/api/consulta/v1/contratos'+('/atualizacao' if updated else '')
+    if not re.fullmatch(r'\d{14}',str(cnpj or '')):raise sources.SourceFault('INVALID_CONTRACT_SCOPE')
     url,status,content,data=sources.cached_get(ctx,source_provider,endpoint,params,transport)
-    if data is None:data={'data':[],'totalPaginas':0}
-    if not isinstance(data,dict) or not isinstance(data.get('data'),list):raise sources.SourceFault('INVALID_CONTRACT_FORMAT')
+    if data is None and status==204:data={'data':[],'totalPaginas':0}
+    if not isinstance(data,dict) or not isinstance(data.get('data'),list) or len(data['data'])>args.get('size',10) or any(not isinstance(r,dict) for r in data['data']):raise sources.SourceFault('INVALID_CONTRACT_FORMAT')
+    identities=[r.get('numeroControlePNCP') for r in data['data']]
+    if any(not isinstance(n,str) or not n.strip() for n in identities) or len(set(identities))!=len(identities):raise sources.SourceFault('INVALID_CONTRACT_IDENTITY')
+    if any(str((r.get('orgaoEntidade') or {}).get('cnpj') or '')!=cnpj for r in data['data']):raise sources.SourceFault('INVALID_CONTRACT_SCOPE')
+    if parent and any((r.get('numeroControlePncpCompra') or r.get('numeroControlePNCPCompra')) not in (None,parent['obligation_id']) for r in data['data']):raise sources.SourceFault('INVALID_CONTRACT_PURCHASE_LINK')
     sid=observe(ctx,source_provider,url,status,content,data,args);new=0
-    for record in data['data'][:args.get('size',10)]:
+    for record in sorted(data['data'],key=lambda r:r['numeroControlePNCP']):
         entity=record.get('orgaoEntidade') or {};unit=record.get('unidadeOrgao') or {};cnpj=str(entity.get('cnpj') or '')
-        if cnpj!=args['cnpj'] or not record.get('numeroControlePNCP'):continue
         code=str(unit.get('codigoIbge') or '')
         known=ctx.db.one('SELECT ibge FROM municipality WHERE ibge=:c',{'c':code})
         external=cnpj+':'+str(unit.get('codigoUnidade',''))
@@ -103,15 +117,42 @@ def contracts(ctx,args,transport=None,updated=False):
             'buyer_id':buyer,'municipality_ibge':code if known else None,'description':record.get('objetoContrato') or 'Objeto não informado',
             'amount':sources.documented_number(record.get('valorInicial')),'phase':'empenhado' if is_commitment else 'contratado',
             'event_date':parse_date(record.get('dataAssinatura')),
-            'obligation_id':record.get('numeroControlePncpCompra') or record.get('numeroControlePNCPCompra') or record['numeroControlePNCP'],
+            'obligation_id':record.get('numeroControlePncpCompra') or record.get('numeroControlePNCPCompra') or (parent['obligation_id'] if parent else record['numeroControlePNCP']),
             'metadata':{'record_level':'contract','modality_provenance':modality.unknown('contract_field_not_supported'),'supplier':public_supplier(record),'instrument':instrument,'category':(record.get('categoriaProcesso') or {}).get('nome'),
                 'publication_date':record.get('dataPublicacaoPncp'),'contract_identity':record['numeroControlePNCP'],
                 'purchase_identity':record.get('numeroControlePncpCompra') or record.get('numeroControlePNCPCompra'),
+                'purchase_link_basis':'official_purchase_endpoint' if parent else 'source_field' if record.get('numeroControlePncpCompra') or record.get('numeroControlePNCPCompra') else 'not_available',
+                'parent_publication':str(parent['id']) if parent else None,
+                'source_updated_at':record.get('dataAtualizacaoGlobal') or record.get('dataAtualizacao'),
+                'rectification_number':record.get('numeroRetificacao'),'validity_start':record.get('dataVigenciaInicio'),'validity_end':record.get('dataVigenciaFim'),
+                'cancellation_state':'not_exposed_by_contract_response',
+                'contract':{'cnpj':cnpj,'year':record.get('anoContrato'),'sequence':record.get('sequencialContrato')},
+                'contract_terms_discovery_pending':type(record.get('anoContrato')) is not int or type(record.get('sequencialContrato')) is not int,
                 'amount_kind':'valorInicial','global_value':sources.documented_number(record.get('valorGlobal')),
                 'receipt':record.get('receita'),'items_unavailable':True,'quantity_is_consumption':False,
                 'commitment_instrument_only':is_commitment,'financial_execution_proven':False}})
     return {'provider':source_provider,'records':len(data['data']),'new_revisions':new,'source_id':str(sid),'state':'partial',
         'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'scope':args,'quantities_collected':False,'unit_prices_collected':False}
+
+
+def contract_terms(ctx,args,transport=None):
+    parent=ctx.db.one("SELECT * FROM procurement_fact WHERE id=:i AND provider='PNCP_CONTRATOS' AND classification='official'",{'i':args['contract_id']})
+    if not parent:fail(404,'O contrato de origem não está disponível.')
+    identity=parent['metadata'].get('contract') or {}
+    cnpj,year,sequence=identity.get('cnpj'),identity.get('year'),identity.get('sequence')
+    if not re.fullmatch(r'\d{14}',str(cnpj or '')) or type(year) is not int or type(sequence) is not int or sequence<1:
+        raise sources.SourceFault('INVALID_CONTRACT_IDENTITY')
+    size=args.get('size',20)
+    url=f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/contratos/{year}/{sequence}/termos'
+    url,status,content,data=sources.cached_get(ctx,'PNCP_CONTRATO_TERMOS',url,{'pagina':args.get('page',1),'tamanhoPagina':size},transport)
+    if status==204 and data is None:data=[]
+    if not isinstance(data,list) or len(data)>size or any(not isinstance(r,dict) for r in data):raise sources.SourceFault('INVALID_CONTRACT_TERM_FORMAT')
+    ids=[r.get('sequencialTermoContrato') for r in data]
+    if any(type(i) is not int or i<1 for i in ids) or len(set(ids))!=len(ids):raise sources.SourceFault('INVALID_CONTRACT_TERM_IDENTITY')
+    sid=observe(ctx,'PNCP_CONTRATO_TERMOS',url,status,content,data,args)
+    return {'provider':'PNCP_CONTRATO_TERMOS','source_id':str(sid),'records':len(data),'state':'observed_only',
+        'scope':args,'phase':'termo_contratual','pages_fetched':1,'expected_pages':None,
+        'parent_contract':str(parent['id']),'amounts_not_added_to_contract':True,'financial_execution_proven':False}
 
 
 def purchase_identity(ctx,procurement_id):

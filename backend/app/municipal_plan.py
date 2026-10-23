@@ -8,13 +8,13 @@ from .db import encoded, identifier
 from .modality import COLLECTABLE_CODES
 
 
-def evidenced_windows(rows, provider='PNCP'):
+def evidenced_windows(rows, provider='PNCP', identity_keys=('municipality_ibge','modality')):
     groups = defaultdict(list)
     for row in rows:
         args = row['arguments']
         if row['provider'] != provider:
             continue
-        key = (str(row['collection_id']), args.get('municipality_ibge'), args.get('modality'),
+        key = (str(row['collection_id']), *(args.get(k) for k in identity_keys),
                args.get('start_date'), args.get('end_date'), args.get('size'))
         groups[key].append(row)
     proven = []
@@ -32,7 +32,7 @@ def evidenced_windows(rows, provider='PNCP'):
             continue
         if total == 0 and any(p['record_count'] != 0 for p in valid):
             continue
-        proven.append({'municipality_ibge': key[1], 'modality': key[2], 'start': key[3], 'end': key[4],
+        proven.append({**dict(zip(identity_keys,key[1:-3])), 'start': key[-3], 'end': key[-2],
                        'evidence': [{'task_id': str(p['id']), 'source_id': str(p['source_id']),
                                      'sha256': p['sha256'], 'consulted_at': str(p['consulted_at'])} for p in valid]})
     return proven

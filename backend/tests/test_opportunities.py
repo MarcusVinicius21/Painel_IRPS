@@ -162,7 +162,12 @@ def test_contracts_stay_separate_from_item_quantity_and_price(app,login):
     c=login();payload={'municipalities':['3131307'],'start':'2025-01-01','end':'2025-01-07','publications':False,'contracts':True,'organization_cnpjs':['00000000000001'],'max_pages':5}
     made=c.post('/api/v1/history-collections',json=payload);assert made.status_code==201,made.text;cid=made.json()['id'];transport,_=fixture_transport();identity=c.get('/api/v1/auth/context').json()
     history.advance(app.state.database,identity['org_id'],identity['actor_id'],cid,1,transport)
-    records=c.get('/api/v1/purchases?dataset=official&phase=contratado&limit=100').json()['records'];contract=next(r for r in records if r['provider']=='PNCP_CONTRATOS')
+    # The shared test DB also contains other contracts. Select this fixture's
+    # exact event rather than whichever contract sorts first.
+    records=c.get('/api/v1/purchases',params={'dataset':'official','phase':'contratado','limit':100,
+        'q':'Contrato de teste sem itens documentados'}).json()['records']
+    contract=next(r for r in records if r['provider']=='PNCP_CONTRATOS'
+        and r['event_identity']=='00000000000001-1-000071/2025:contract')
     assert contract['quantity'] is None and contract['unit_price'] is None and Decimal(contract['amount'])==500
     assert c.post('/api/v1/opportunities/query',json={'phase':'contratado','start':'2025-01-01','end':'2025-01-31'}).json()['total']==0
 

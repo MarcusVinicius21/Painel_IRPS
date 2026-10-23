@@ -1,8 +1,8 @@
 # Continuidade da fila de 63 microtarefas
 
-Checkpoint da entrega M03_03, em 23/10/2026. Branch `feat/cobertura-municipal-12m-2026-10-23`; base `0bdf3d96bcaa46a689d6327d2910c43a56b2ba62`.
+Checkpoint da entrega M03_05, em 23/10/2026. Branch `feat/cobertura-municipal-12m-2026-10-23`; base `0bdf3d96bcaa46a689d6327d2910c43a56b2ba62`.
 
-**A fila não está concluída.** Dez tarefas registradas até esta entrega: seis PASS e quatro PARTIAL. As tarefas parciais têm implementação ou investigação comprovada, mas não atestam cobertura completa. Próxima tarefa: M03_04. As outras 53 continuam pendentes; não foram puladas para declarar os complementos D/X concluídos.
+**A fila não está concluída.** Doze tarefas registradas até esta entrega: seis PASS e seis PARTIAL. As tarefas parciais têm implementação ou investigação comprovada, mas não atestam cobertura completa. Próxima tarefa: M03_06. As outras 51 continuam pendentes; não foram puladas para declarar os complementos D/X concluídos.
 
 ## Dados preservados e evidências
 
@@ -18,6 +18,8 @@ O mesmo trabalhador controla todas as filas, com lock, cadência, Retry-After, l
 
 TCE-MG permanece com limitação de acesso documentada. A descoberta preliminar de licenças GitHub não constitui integração, revisão de segurança concluída ou autorização de incorporar AGPL/PolyForm.
 
+M03_04: 22 páginas de resultados novas e 97 fatos correntes homologados no snapshot; 429 testes e 200 subtestes aprovados. M03_05: 28 páginas novas nas três rotas de contratos; oito vínculos com HTTP 404 inconclusivo. Snapshot 23:28:06 UTC: 27 contratos e três instrumentos de empenho correntes, sem comprovação de execução financeira. Suíte: 439 testes e 200 subtestes aprovados.
+
 ## Estado das tarefas
 
 | ID | Estado | Commit local |
@@ -31,9 +33,9 @@ TCE-MG permanece com limitação de acesso documentada. A descoberta preliminar 
 | M02_03 | PASS | 94a733a810ff70de869de4885be3ba81a0ccb1d8 |
 | M03_01 | PARTIAL | 0845d40a9c3325e6d2290a6ae4a5fee24fad2a23 |
 | M03_02 | PARTIAL | 8fb24dadaa6467d6e2155836a199b320a114c60d |
-| M03_03 | PARTIAL | neste commit |
-| M03_04 | PENDENTE | — |
-| M03_05 | PENDENTE | — |
+| M03_03 | PARTIAL | c1ed04016f8f43bdab1fba647784671b16cdb8fe |
+| M03_04 | PARTIAL | 5ea8c3b4d9f69480e08a3054adbd4230b46830ce |
+| M03_05 | PARTIAL | neste commit |
 | M03_06 | PENDENTE | — |
 | M03_07 | PENDENTE | — |
 | M04_01 | PENDENTE | — |
@@ -88,6 +90,4 @@ TCE-MG permanece com limitação de acesso documentada. A descoberta preliminar 
 
 ## Retomada
 
-Consultar STATUS_GERAL.json e ledger.json privados; confirmar branch e diff. Verificar o processo e o checkpoint do trabalhador antes de iniciá-lo. Os scripts de estado são somente leitura e distinguem tarefas materializadas de cobertura de compras.
-
-Continuar uma tarefa por vez, com testes, relatório, revisão de segredos e commit local específico. Sem imagens, push, PR, merge ou deploy. Credenciais, bancos, backups, respostas brutas e logs privados permanecem fora do Git.
+Consultar STATUS_GERAL.json, ledger.json e relatórios privados. Conferir branch/diff e trabalhador ativo antes de iniciar outra instância. Continuar sequencialmente em M03_06, sem reiniciar tarefas aprovadas. Planos encerrados não significam todas as compras municipais; coletas parciais continuam separadas por fase. Sem imagens, push, PR, merge ou deploy.
