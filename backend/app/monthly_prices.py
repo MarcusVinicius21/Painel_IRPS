@@ -72,6 +72,35 @@ def import_archive(url,org,path,kind,month,expected_sha,source_url,metadata=None
     return {'snapshot_id':sid,'kind':kind,'month':month,'sha256':sha,'source_rows':rows,'accepted_rows':accepted,'rejected_rows':len(rejected),'duplicate_rows':duplicates,'conflicting_source_keys':conflicts,'rejections':rejected,'idempotent':False,'source_url':source_url,'complete_file_import':len(rejected)==0}
 
 
+def month_sequence(start,end):
+    current=start.replace(day=1);months=[]
+    while current<=end:
+        months.append(current.isoformat());current=date(current.year+current.month//12,current.month%12+1,1)
+    return months
+
+
+def coverage(ctx,start,end):
+    requested=month_sequence(start,end)
+    snapshots=ctx.db.all("""SELECT DISTINCT ON(kind,month) * FROM price_monthly_snapshot WHERE org_id=:o
+        AND month BETWEEN date_trunc('month',CAST(:start AS date)) AND :end ORDER BY kind,month,imported_at DESC,id DESC""",{'o':ctx.org_id,'start':start,'end':end})
+    selected={ (s['month'].isoformat(),s['kind']):s for s in snapshots }
+    cells=[];completed=[]
+    for month in requested:
+        kinds={}
+        for kind in ('material','servico'):
+            snap=selected.get((month,kind));status='not_collected'
+            if snap:
+                valid=snap['source_rows']==snap['accepted_rows']+snap['rejected_rows']+snap['duplicate_rows'] and snap['rejected_rows']==0
+                status='reconciled' if valid and month<date.today().replace(day=1).isoformat() else 'review_required' if not valid else 'provisional'
+            kinds[kind]={'state':status,**({k:normalize(snap[k]) for k in ['id','source_url','archive_sha256','source_rows','accepted_rows','rejected_rows','duplicate_rows','imported_at']} if snap else {})}
+        done=all(x['state']=='reconciled' for x in kinds.values())
+        if done:completed.append(month)
+        cells.append({'month':month,'state':'reconciled' if done else 'partial' if any(x['state']!='not_collected' for x in kinds.values()) else 'not_collected','files':kinds})
+    imported=sorted(set(s['month'].isoformat() for s in snapshots))
+    state='not_imported' if not imported else 'review_required' if any(v['state']=='review_required' for c in cells for v in c['files'].values()) else 'complete_for_imported_scope' if len(completed)==len(requested) else 'partially_imported'
+    return {'state':state,'months_requested':requested,'months_imported':imported,'months_missing':[m for m in requested if m not in completed],'months_reconciled':completed,'months':cells,'municipal_coverage_claimed':False}
+
+
 def query(ctx,kind,code,start,end,page=1,cursor=None):
     ctx.require('read')
     if kind not in ('material','servico') or not re.fullmatch(r'\d{1,12}',code):fail(422,'Confira o tipo e o código oficial.')
@@ -107,7 +136,7 @@ def query(ctx,kind,code,start,end,page=1,cursor=None):
         records.append({**row['body'],'source_url':snap['source_url'],'source_archive_sha256':snap['archive_sha256'],'source_line':row['line_number'],
             'source_record_sha256':row['record_sha256'],'revision_count':row['revision_count'],'needs_review':bool(reasons),'review_reasons':reasons,'catalogue_code_verified':known,'source_key':row['source_key']})
     return normalize({'records':records,'state':'needs_review' if any(r['needs_review'] for r in records) else 'available' if records else 'empty_valid_response' if snapshots else 'not_collected',
-        'next_cursor':next_cursor,'source_kind':'monthly_file','url':snapshots[0]['source_url'] if snapshots else None,'page':page,
+        'coverage':coverage(ctx,start,end),'next_cursor':next_cursor,'source_kind':'monthly_file','url':snapshots[0]['source_url'] if snapshots else None,'page':page,
         'total_pages_reported':(total+9)//10 if snapshots else None,'total_records_reported':total if snapshots else None,'has_next_page':page*10<total,
         'consulted_at':max((s['imported_at'] for s in snapshots),default=None),'scope':{'kind':kind,'code':code,'start':start,'end':end,'imported_months':[s['month'] for s in snapshots]},
         'source_error':None,'rejected_source_rows':sum(s['rejected_rows'] for s in snapshots),'municipal_coverage_claimed':False,'price_comparability_review_required':True,
