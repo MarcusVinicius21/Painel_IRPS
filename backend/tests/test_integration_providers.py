@@ -1,7 +1,8 @@
 import pytest
 from app.integration_providers import query,definitions
 
-def test_registry_has_explicit_official_and_blocked_states():
+def test_registry_has_explicit_official_and_blocked_states(monkeypatch):
+    monkeypatch.setattr('app.portal_credentials.load_portal_key',lambda:None)
     rows={r['provider']:r for r in definitions()}
     assert rows['LICITEI']['blocked'] and not rows['LICITEI']['operational']
     assert not rows['CATMAT_COM_BR']['official']

@@ -2,8 +2,8 @@
   "queue": "CI01-CI09-INTEGRACOES-118-2026-10-24",
   "base_sha": "d96289806d991dbc1e92c1262a8543d816514f7d",
   "branch": "feat/cobertura-municipal-12m-2026-10-23",
-  "current_task": "CI06",
-  "state": "CI06_HISTORICAL_COLLECTION",
+  "current_task": "CI07",
+  "state": "CI07_PERSISTENT_SCHEDULER",
   "legacy_M_D_X": "PAUSED_AND_PRESERVED",
   "FCP": "PRESERVED_DO_NOT_REPEAT",
   "tasks": [
@@ -44,11 +44,14 @@
     },
     {
       "id": "CI06",
-      "status": "IN_PROGRESS"
+      "status": "PARTIAL",
+      "pending": "12-month historical collection incomplete; materialization continues via scheduler",
+      "pages": 24,
+      "municipalities_with_verified_pages": 22
     },
     {
       "id": "CI07",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS"
     },
     {
       "id": "CI08",

@@ -3,6 +3,8 @@ from .security import fail
 from .db import normalize
 
 def definitions():
+    from .portal_credentials import load_portal_key
+    portal_key=bool(load_portal_key())
     return [
       {'provider':'PNCP','official':True,'operational':True,'installed':True,'tested':True,'blocked':None,
        'adapter':'existing_durable_history','scope':'publication/result/contract/ata; phases remain separate'},
@@ -14,8 +16,8 @@ def definitions():
        'adapter':'bounded_secondary_enrichment','scope':'CATMAT only; exact portfolio snapshot/code required'},
       {'provider':'LICITEI','official':False,'operational':False,'installed':True,'tested':True,'blocked':'AGPL_AND_INDEX_RUNTIME',
        'adapter':'isolated_stdio_poc','scope':'85 tools discovered; queries not validated; no source merge'},
-      {'provider':'PORTAL_TRANSPARENCIA','official':True,'operational':False,'installed':True,'tested':True,'blocked':'KEY_REQUIRED',
-       'adapter':'isolated_stdio_poc','scope':'109 tools discovered; federal query returned 401'},
+      {'provider':'PORTAL_TRANSPARENCIA','official':True,'operational':portal_key,'installed':True,'tested':True,'blocked':None if portal_key else 'KEY_REQUIRED',
+       'adapter':'cgu_bounded_cnpj_and_isolated_stdio','scope':'CEIS single page; no clearance or municipal purchase inference'},
       {'provider':'THIAGOSY_PNCP','official':False,'operational':False,'installed':False,'tested':False,'blocked':'LICENSE_NOT_IDENTIFIED',
        'adapter':'official_PNCP_alternative','scope':'No unlicensed source copied'},
       *[{'provider':name,'official':False,'operational':False,'installed':False,'tested':False,'blocked':'NOT_ADOPTED',

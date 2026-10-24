@@ -22,6 +22,11 @@ def provider_item(ctx:Auth,provider:str,group:str,code:str=Query(pattern=r'^\d{1
     from .integration_providers import query
     return query(ctx,provider,group,code,str(snapshot) if snapshot else None)
 
+@router.post('/providers/portal-transparencia/ceis/{cnpj}')
+def cgu_sanctions(ctx:Auth,cnpj:str):
+    from .portal_transparency import sanctions
+    return sanctions(ctx,cnpj)
+
 
 @router.get('/groups')
 def groups(ctx:Auth):return portfolio.groups(ctx)
