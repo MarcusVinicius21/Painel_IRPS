@@ -2,8 +2,8 @@
   "queue": "CI01-CI09-INTEGRACOES-118-2026-10-24",
   "base_sha": "d96289806d991dbc1e92c1262a8543d816514f7d",
   "branch": "feat/cobertura-municipal-12m-2026-10-23",
-  "current_task": "CI07",
-  "state": "CI07_PERSISTENT_SCHEDULER",
+  "current_task": "CI08",
+  "state": "CI08_OPERATIONAL_UI",
   "legacy_M_D_X": "PAUSED_AND_PRESERVED",
   "FCP": "PRESERVED_DO_NOT_REPEAT",
   "tasks": [
@@ -51,11 +51,13 @@
     },
     {
       "id": "CI07",
-      "status": "IN_PROGRESS"
+      "status": "PARTIAL",
+      "tests_passed": 9,
+      "pending": "Catalogue active-selection rollback and additional source schedules; app daemon verification in CI09"
     },
     {
       "id": "CI08",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS"
     },
     {
       "id": "CI09",

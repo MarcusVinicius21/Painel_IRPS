@@ -12,6 +12,16 @@ def monitored_municipalities(ctx:Auth):
     from .monitoring import targets
     return targets(ctx)
 
+@router.get('/refresh')
+def refresh_status(ctx:Auth):
+    from .monitoring_scheduler import status
+    return status(ctx)
+
+@router.post('/refresh',status_code=202)
+def refresh_request(ctx:Auth):
+    from .monitoring_scheduler import request_refresh
+    return request_refresh(ctx)
+
 @router.get('/providers')
 def providers(ctx:Auth):
     from .integration_providers import registry

@@ -30,7 +30,12 @@ def create_app(settings=None):
  if settings.ai_enabled:raise RuntimeError('Provedores pagos não são habilitados nesta rodada.')
  @asynccontextmanager
  async def lifespan(app):
+  worker=None
+  if settings.monitoring_worker_enabled and settings.auth_mode=='operational_local' and not settings.testing:
+   from .monitoring_scheduler import start
+   worker=start(app.state.database,settings)
   yield
+  if worker:worker[0].set();worker[1].join(timeout=2)
   if app.state.database.engine:app.state.database.engine.dispose()
  app=FastAPI(title='IRPS · serviço local',version='0.1.0',lifespan=lifespan)
  app.state.settings=settings;app.state.database=Database(settings);app.state.verifier=Verifier(settings);app.state.limiter={}

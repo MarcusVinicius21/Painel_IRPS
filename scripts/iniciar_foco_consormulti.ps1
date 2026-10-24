@@ -9,6 +9,7 @@ New-Item -ItemType Directory -Force $runtimePath | Out-Null
 $config=Get-Content -LiteralPath $sourceConfig -Raw | ConvertFrom-Json
 if ($config.auth_mode -ne 'operational_local' -or $config.ai_enabled) { throw 'Use somente o operador local, sem IA paga.' }
 $config.allowed_origins=@(@($config.allowed_origins)+"http://127.0.0.1:$FrontendPort" | Sort-Object -Unique)
+$config | Add-Member -NotePropertyName monitoring_worker_enabled -NotePropertyValue $true -Force
 $configPath=Join-Path $runtimePath 'operational-preview-config.json'
 [System.IO.File]::WriteAllText($configPath,($config | ConvertTo-Json -Depth 20),[System.Text.UTF8Encoding]::new($false))
 $env:IRPS_LOCAL_CONFIG=$configPath

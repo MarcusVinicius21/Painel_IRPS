@@ -18,6 +18,7 @@ class Settings(BaseModel):
  token_seconds:int=3600
  rate_limit:int=240
  testing:bool=False
+ monitoring_worker_enabled:bool=False
  operator_org_id:str=''
  operator_actor_id:str=''
  operator_password_hash:SecretStr=SecretStr('')
