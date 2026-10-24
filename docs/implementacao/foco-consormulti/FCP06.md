@@ -1,0 +1,12 @@
+# FCP06 — Complementos e fallback sem falsa execução financeira
+Status: PARTIAL
+
+Reutilizadas descobertas TCE/portais M04–M05 e crosswalk M06_01. Não houve novas tentativas repetitivas ao TCE inacessível, contorno do 403 de Timóteo ou ingestão do exportador de Ipatinga que ignorou o ano. Não se adicionou jurisdição RJ, pois o cadastro atual contém somente Ipatinga e Timóteo/MG. Referências CMED/SINAPI/FNDE não foram tratadas como compras municipais nem acionadas sem necessidade demonstrada de código/especificação.
+
+GET /portfolio/sources e backend/app/portfolio_sources.py apresentam separadamente evidência municipal local PNCP, preços nacionais, identidade IBGE, bloqueios financeiros e fonte CATMAT complementar. O painel pode abrir sem GitHub/MCP/CATMAT.com.br online. Nenhuma indisponibilidade é convertida em zero compras; bloqueios não impedem leitura dos fatos PNCP existentes. Fonte secundária não ganha selo oficial.
+
+Consulta operacional READ ONLY, outubro/2025–setembro/2026 e compradores municipais: 459 publicações, 341 linhas atuais de itens publicados, 96 resultados homologados, 33 contratos e 4 instrumentos de empenho PNCP. **Não somar essas fases como compras independentes.** Instrumento de empenho não comprova execução financeira, liquidação ou pagamento. Os números refletem o snapshot após avanço da fila, não a totalidade das cidades. Fontes/documentos e última consulta permanecem rastreáveis na resposta e na evidência privada source-status-proof.json.
+
+Ganho incremental financeiro de fontes complementares: **0 fatos importados, 0 merges aplicados**. Não há carga TCE/portal aprovada para provar duplicatas externas; não se declara reconciliação real entre fontes inexistentes. Crosswalk conserva IDs/versões e rejeita nomes, valores e datas como chave única. Casos reais PNCP e estados bloqueados continuam acessíveis localmente.
+
+Testes: pytest test_portfolio_sources.py, test_municipal_crosswalk.py, test_municipal_finance.py e test_municipal_portal_adapter.py: **30 aprovados**, 0,46 s. Cobrem fallback sem rede, segregação de fontes, estados bloqueados, identidade forte, parcelas, conflitos, datas indevidas, 429/503 e ausência de vazamento de campos pessoais na fronteira financeira. Consulta real executada sem alterar o banco. Diff/V4 aprovados. Sem migração adicional, screenshots, push, PR, merge ou deploy. Próxima FCP07: indicadores e fornecedores navegáveis.

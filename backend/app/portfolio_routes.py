@@ -52,3 +52,9 @@ def history(request:Request,ctx:Auth,group:str,start:date,end:date,phase:str,
 def coverage(ctx:Auth,start:date,end:date,municipalities:list[str]=Query(default=[])):
     from .portfolio_coverage import matrix
     return matrix(ctx,start,end,municipalities)
+
+
+@router.get('/sources')
+def sources(ctx:Auth):
+    from .portfolio_sources import sources as query
+    return query(ctx)
