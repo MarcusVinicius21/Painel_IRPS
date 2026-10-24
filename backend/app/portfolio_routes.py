@@ -3,6 +3,7 @@ from fastapi import APIRouter,Depends,Query,Request
 from .security import authenticate,fail
 from . import portfolio
 from uuid import UUID
+from datetime import date
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 router=APIRouter(prefix='/api/v1/portfolio')
 
@@ -33,3 +34,21 @@ def enrichment(snapshot:UUID,code:str,ctx:Auth):
     from . import national_catalogue,catalogue_enrichment
     entry=national_catalogue.entry(ctx,snapshot,code)
     return catalogue_enrichment.fetch('item',kind=entry['kind'],code=entry['code'],official_description=entry['name'])
+
+
+@router.get('/history')
+def history(request:Request,ctx:Auth,group:str,start:date,end:date,phase:str,
+        municipalities:list[str]=Query(default=[]),code:str|None=None,snapshot:UUID|None=None,
+        buyer:str|None=Query(None,pattern=r'^\d{14}$'),provider:str|None=Query(None,pattern=r'^[A-Z][A-Z0-9_]{0,79}$'),
+        offset:int=Query(0,ge=0,le=20000),limit:int=Query(25,ge=1,le=50),candidates:bool=True):
+    if set(request.query_params)-{'group','start','end','phase','municipalities','code','snapshot','buyer','provider','offset','limit','candidates'}:
+        fail(422,'Confira os filtros das compras municipais.')
+    from .portfolio_history import history as query
+    return query(ctx,group=group,start=start,end=end,phase=phase,municipalities=municipalities,code=code,
+        snapshot=str(snapshot) if snapshot else None,buyer=buyer,provider=provider,offset=offset,limit=limit,candidates=candidates)
+
+
+@router.get('/coverage')
+def coverage(ctx:Auth,start:date,end:date,municipalities:list[str]=Query(default=[])):
+    from .portfolio_coverage import matrix
+    return matrix(ctx,start,end,municipalities)

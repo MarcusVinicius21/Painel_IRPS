@@ -29,7 +29,10 @@ def original_record(fact):
     records=[r for r in body if isinstance(r,dict) and r.get('numeroItem')==number]
     if len(records)!=1:return None
     record=records[0]
-    if record.get('descricao')!=fact['description'] or record.get('unidadeMedida')!=fact['unit']:return None
+    # Collectors normalize outer whitespace only. Verify the immutable body hash
+    # first, then compare using that same lossless lexical normalization.
+    clean=lambda value:value.strip() if isinstance(value,str) else value
+    if clean(record.get('descricao'))!=clean(fact['description']) or clean(record.get('unidadeMedida'))!=clean(fact['unit']):return None
     return record
 
 def facts(ctx,q='',limit=50):

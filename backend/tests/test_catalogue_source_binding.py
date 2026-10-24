@@ -39,3 +39,6 @@ def test_original_source_hash_description_and_unit_are_required():
     assert original_record({**row,'source_sha256':'0'*64}) is None
     assert original_record({**row,'description':'Descrição alterada'}) is None
     assert original_record({**row,'unit':'CAIXA'}) is None
+    padded={**source(),'descricao':' '+source()['descricao']+' ','unidadeMedida':'UNIDADE  '}
+    preserved=fact(padded)
+    assert original_record({**preserved,'description':padded['descricao'].strip(),'unit':'UNIDADE'})==padded

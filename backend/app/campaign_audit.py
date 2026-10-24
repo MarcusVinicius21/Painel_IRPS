@@ -89,6 +89,7 @@ def reconcile(rows):
             'collection_limited':tasks[0].get('collection_state')=='limited',
             'max_attempts_seen':max(r.get('attempts',0) for r in tasks),
             'materialized_tasks':len(tasks),'verified_pages':len(good),'expected_pages':total,'missing_pages':missing,
+            'last_sync':max((str(r['consulted_at']) for r in good if r.get('consulted_at')),default=None),
             'pagination_reconciled':complete,'observed_rows':observed,'expected_records':expected_count,
             'fully_reconciled':complete and count_state=='reconciled' and not errors,
             'count_reconciliation':count_state,'errors':errors,'task_states':dict(Counter(r['state'] for r in tasks)),
