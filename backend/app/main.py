@@ -17,6 +17,7 @@ from . import scenarios,documents,exports,assistant,sources
 from .opportunity_routes import router as opportunity_router
 from . import operational
 from .director_routes import router as director_router
+from .portfolio_routes import router as portfolio_router
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 
@@ -274,6 +275,7 @@ def create_app(settings=None):
  def audit(ctx:Auth):return {'records':ctx.db.all('SELECT action,resource_id,metadata,created_at FROM audit_event WHERE org_id=:o AND actor_id=:a ORDER BY created_at DESC LIMIT 100',{'o':ctx.org_id,'a':ctx.actor_id})}
  app.include_router(opportunity_router)
  app.include_router(director_router)
+ app.include_router(portfolio_router)
  return app
 
 app=create_app()

@@ -1,0 +1,14 @@
+# FCP03 — Persistência aditiva e APIs locais
+Status: PARTIAL
+
+Migração 0016 adiciona portfolio_run, portfolio_group, portfolio_code_link e portfolio_preference. Não altera catálogo, preços, estudos ou fatos. Dados de triagem e filtros são append-only, com org_id, RLS/FORCE RLS e privilégios SELECT/INSERT. Snapshot nacional + código preservam namespace por associação ao snapshot. Regras/input têm hashes e versão; reimportar o mesmo par retorna o run existente. Nenhuma regra automática pode produzir confirmação comercial.
+
+APIs aditivas: GET /api/v1/portfolio/groups; GET /codes?group=...&q=...&kind=...&active=...&technical=...&subgroup=...&offset=...&limit=...; GET e POST /preferences. Busca utiliza índice full text nacional, código exato e paginação SQL até 50. Grupos direto/revisão são pesquisáveis; indiretos/excluídos não entram na consulta prioritária. Catálogo nacional completo continua na rota original. Filtros persistidos pertencem ao operador/organização; salvar exige scenario.write e valida municípios/período. Não cria contas ou confirma estudos.
+
+Importação por CLI scripts/importar_portfolio_consormulti.py verifica CSV completo contra regras vigentes, snapshot/namespace/hash, contagem e gate de backup restaurado. Aplicação usa INSERT sob RLS: a primeira tentativa COPY foi rejeitada pelo PostgreSQL no QA e corrigida sem bypass. O importador ainda não foi executado no operacional nesta tarefa, pois a nova prova de backup/restauração está terminando sua conferência de contagens. Nenhuma migração operacional foi aplicada antes desse gate.
+
+Testes executados em QA isolado: test_portfolio_api.py, **3 aprovados**, 2,66 s (grupos, pesquisa, idempotência, persistência, outro tenant, permissão de escrita, município inválido e RLS). Regras já tinham 25 testes aprovados. Migração em banco novo irps_fcp_qa_1077f159db: upgrade head, segundo upgrade idempotente, downgrade vazio descartável a 0015 e reupgrade a 0016 aprovados; quatro tabelas com RLS/FORCE RLS. Downgrade recusa tabelas preenchidas para preservar evidências; rollback operacional previsto é desativar a funcionalidade/seleção, não apagar dados.
+
+Falhas de comandos registradas: tentativa inicial Alembic fora de backend não encontrou migrations; uma expressão de shell inválida precedeu a tentativa e não executou ação. Comando corrigido no diretório backend; upgrades QA aprovados. Diff e guarda V4 aprovados.
+
+Pendentes de conclusão: importação e consultas no operacional após prova de restauração, carregamento das rotas no serviço Windows, integração visual FCP08 e vínculo de versão do portfólio aos filtros/estudos além da preferência atual. A preferência já preserva seleção de grupo; não altera snapshots antigos. Prosseguir somente com tarefas independentes enquanto o gate terminar. Sem screenshots, push, PR, merge ou deploy.
