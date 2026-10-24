@@ -12,6 +12,16 @@ def monitored_municipalities(ctx:Auth):
     from .monitoring import targets
     return targets(ctx)
 
+@router.get('/providers')
+def providers(ctx:Auth):
+    from .integration_providers import registry
+    return registry(ctx)
+
+@router.get('/providers/{provider}/item')
+def provider_item(ctx:Auth,provider:str,group:str,code:str=Query(pattern=r'^\d{1,20}$'),snapshot:UUID|None=None):
+    from .integration_providers import query
+    return query(ctx,provider,group,code,str(snapshot) if snapshot else None)
+
 
 @router.get('/groups')
 def groups(ctx:Auth):return portfolio.groups(ctx)

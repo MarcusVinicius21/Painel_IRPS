@@ -2,8 +2,8 @@
   "queue": "CI01-CI09-INTEGRACOES-118-2026-10-24",
   "base_sha": "d96289806d991dbc1e92c1262a8543d816514f7d",
   "branch": "feat/cobertura-municipal-12m-2026-10-23",
-  "current_task": "CI05",
-  "state": "CI05_PROVIDER_LAYER",
+  "current_task": "CI06",
+  "state": "CI06_HISTORICAL_COLLECTION",
   "legacy_M_D_X": "PAUSED_AND_PRESERVED",
   "FCP": "PRESERVED_DO_NOT_REPEAT",
   "tasks": [
@@ -38,11 +38,13 @@
     },
     {
       "id": "CI05",
-      "status": "IN_PROGRESS"
+      "status": "PARTIAL",
+      "pending": "MCP data bridges remain blocked; existing official adapters reused",
+      "tests_passed": 7
     },
     {
       "id": "CI06",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS"
     },
     {
       "id": "CI07",
