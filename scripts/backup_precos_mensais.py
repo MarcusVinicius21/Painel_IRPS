@@ -9,6 +9,11 @@ from app.config import load_settings
 from monthly_import_support import target,private_path,digest
 
 def counts(conn,org):
+    # Exact read-only validation: parallel index scans can stall on the Windows
+    # cluster after a restore. Local planner settings do not change any facts.
+    conn.execute('SET LOCAL max_parallel_workers_per_gather=0')
+    conn.execute('SET LOCAL enable_indexonlyscan=off')
+    conn.execute('SET LOCAL enable_indexscan=off')
     conn.execute("SELECT set_config('irps.org_id',%s,true)",(str(org),))
     return {t:conn.execute('SELECT count(*) FROM '+t).fetchone()[0] for t in ['national_catalogue_entry','procurement_fact','price_monthly_snapshot','price_monthly_record']}
 

@@ -7,6 +7,11 @@ from datetime import date
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 router=APIRouter(prefix='/api/v1/portfolio')
 
+@router.get('/municipalities')
+def monitored_municipalities(ctx:Auth):
+    from .monitoring import targets
+    return targets(ctx)
+
 
 @router.get('/groups')
 def groups(ctx:Auth):return portfolio.groups(ctx)

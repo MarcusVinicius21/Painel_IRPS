@@ -2,23 +2,62 @@
   "queue": "CI01-CI09-INTEGRACOES-118-2026-10-24",
   "base_sha": "d96289806d991dbc1e92c1262a8543d816514f7d",
   "branch": "feat/cobertura-municipal-12m-2026-10-23",
-  "current_task": "CI02",
-  "state": "CHECKPOINT_INSTALLED_AWAITING_NEXT_SESSION_DISCOVERY",
+  "current_task": "CI04",
+  "state": "CI04_RUNTIME_INTEGRATIONS",
   "legacy_M_D_X": "PAUSED_AND_PRESERVED",
   "FCP": "PRESERVED_DO_NOT_REPEAT",
   "tasks": [
-    {"id":"CI01","status":"PARTIAL","checkpoint_sha":"2396f85","database_readonly_recheck":"PASS","pending":"Fresh restored backup before operational mutation; prior backup hash and restore evidence verified"},
-    {"id":"CI02","status":"PARTIAL","pending":"Installed and enabled; verify skill discovery in next Codex session"},
-    {"id":"CI03","status":"NOT_STARTED"},
-    {"id":"CI04","status":"NOT_STARTED"},
-    {"id":"CI05","status":"NOT_STARTED"},
-    {"id":"CI06","status":"NOT_STARTED"},
-    {"id":"CI07","status":"NOT_STARTED"},
-    {"id":"CI08","status":"NOT_STARTED"},
-    {"id":"CI09","status":"NOT_STARTED"}
+    {
+      "id": "CI01",
+      "status": "PASS",
+      "checkpoint_sha": "2396f85",
+      "database_readonly_recheck": "PASS",
+      "pending": null,
+      "restored_backup": "PASS"
+    },
+    {
+      "id": "CI02",
+      "status": "PASS",
+      "pending": null,
+      "session_discovery": "All seven skills in trusted current skill catalog; paths verified without reinstall"
+    },
+    {
+      "id": "CI03",
+      "status": "PASS",
+      "tests_passed": 11,
+      "official_identities_validated": 118,
+      "pending": null,
+      "monitored": 118,
+      "membership_confirmed": 0,
+      "idempotent_operational_run": "PASS"
+    },
+    {
+      "id": "CI04",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "CI05",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "CI06",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "CI07",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "CI08",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "CI09",
+      "status": "NOT_STARTED"
+    }
   ],
   "push": false,
   "merge": false,
   "deploy": false,
-  "operational_database_mutated_by_CI_tasks": false
+  "operational_database_mutated_by_CI_tasks": true
 }
