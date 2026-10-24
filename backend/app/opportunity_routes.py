@@ -7,10 +7,21 @@ from .security import authenticate,fail,PERMISSIONS
 from .db import normalize
 from .modality import reject_filter
 from .opportunity_schemas import HistoricalScope,Advance,MunicipalGroup,OpportunityFilter,Equivalence,CanonicalProductReview,ViabilityReview,ScenarioFromOpportunity,OpportunityWatch,PHASES
-from . import history,opportunities,opportunity_alerts,catalogue,coverage_inventory,campaign_audit
+from . import history,opportunities,opportunity_alerts,catalogue,coverage_inventory,campaign_audit,municipal_indicators
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 router=APIRouter(prefix='/api/v1')
+
+@router.get('/municipal-history/indicators')
+def municipal_history_indicators(ctx:Auth,request:Request,start:date,end:date,phase:PHASES,
+        municipalities:list[str]=Query(default=[]),item_id:str|None=None,item_version:int|None=Query(None,ge=1),
+        provider:str|None=Query(None,pattern=r'^[A-Z][A-Z0-9_]{0,79}$'),
+        period:str=Query('month',pattern=r'^(month|quarter|year)$'),
+        cursor:str|None=Query(None,pattern=r'^[0-9a-f]{32}$'),limit:int=Query(50,ge=1,le=100)):
+    if set(request.query_params)-{'start','end','phase','municipalities','item_id','item_version','provider','period','cursor','limit'}:
+        fail(422,'Confira os filtros do histórico municipal.')
+    return municipal_indicators.indicators(ctx,start=start,end=end,phase=phase,municipalities=municipalities,
+        item_id=item_id,item_version=item_version,provider=provider,period=period,cursor=cursor,limit=limit)
 
 @router.get('/history-campaign/audit')
 def history_campaign_audit(ctx:Auth,request:Request,start:date,end:date,municipalities:list[str]=Query(default=[]),
