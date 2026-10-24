@@ -2,6 +2,7 @@ from typing import Annotated,Literal
 from fastapi import APIRouter,Depends,Query,Request
 from .security import authenticate,fail
 from . import portfolio
+from uuid import UUID
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 router=APIRouter(prefix='/api/v1/portfolio')
 
@@ -25,3 +26,10 @@ def preferences(ctx:Auth):return portfolio.preference_get(ctx)
 
 @router.post('/preferences',status_code=201)
 def preferences_save(body:portfolio.Preference,ctx:Auth):return portfolio.preference_save(ctx,body)
+
+
+@router.get('/enrichment/{snapshot}/{code}')
+def enrichment(snapshot:UUID,code:str,ctx:Auth):
+    from . import national_catalogue,catalogue_enrichment
+    entry=national_catalogue.entry(ctx,snapshot,code)
+    return catalogue_enrichment.fetch('item',kind=entry['kind'],code=entry['code'],official_description=entry['name'])

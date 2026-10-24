@@ -1,0 +1,12 @@
+# FCP04 — Fontes oficiais preservadas e complemento opcional
+Status: PARTIAL
+
+Revalidadas documentação CATMAT.com.br e sete repositórios, versões/commits fixados, licenças e manifestos de dependências. Matriz em FCP04_FONTES.md. Nenhum código terceiro incorporado, comando de instalação executado, sidecar criado ou credencial solicitada. Licitei permanece BLOCKED_LICENSE (package AGPL-3.0-only), thiagosy sem licença identificada; Portal da Transparência BLOCKED_KEY; demais MIT são referências opcionais. Não se concluiu auditoria de segurança de todas as dependências, pois não foram adotadas. Nenhum wrapper substitui os coletores oficiais PNCP/IBGE/Compras já existentes.
+
+backend/app/catalogue_enrichment.py implementa cliente **próprio** opcional de GET /item/{codigo}, /search e /categories documentados em https://catmat.com.br/api-docs. HTTPS/destino fixos, timeout, sem redirects, resposta limitada, validação de código/formato, cache de memória limitado por operação até cinco minutos. Não oferece CATSER, não interpreta likes como demanda e não importa preços/itens da fonte secundária como oficiais. Descrição divergente do snapshot recebe needs_review. Falha não bloqueia catálogo local. Endpoint aditivo GET /portfolio/enrichment/{snapshot}/{code} busca o item nacional primeiro, preservando namespace/origem.
+
+Provas reais: item CATMAT 150682 retornou **404**; busca cafe size=2 retornou dois candidatos; categories retornou 74 categorias. Isso não acrescentou fatos de compra ou cobertura municipal. O item ausente segue disponível no snapshot nacional. Estado indisponível/retentar é devolvido explicitamente, sem repetição agressiva (uma tentativa por chamada; respeitar fila para retomar). Não houve uso de likes/top ou chamadas POST externas.
+
+Testes de catálogo complementar: **3 aprovados**, 0,56 s; código exato, divergência, cache, CATSER sem HTTP, 404/429/503/403, timeout e código errado. Dados locais não são reescritos. Regressão da fonte principal permanece comprovada pelos testes anteriores e pelos fatos PNCP existentes; nova coleta real só será feita após o gate FCP01. Não se declara nova cobertura municipal obtida por fontes GitHub/MCP.
+
+Pendentes: utilização opcional na UI, auditoria aprofundada caso algum wrapper venha a ser adotado, fonte com chave e liberação jurídica AGPL. APIs novas ainda não carregadas no processo antigo. Diff e V4 preservados. Sem screenshots, push, PR, merge ou deploy. Próxima FCP05: histórico municipal existente e avanço controlado da fila quando o backup permitir.
