@@ -3,6 +3,8 @@ from collections import OrderedDict
 from threading import Lock
 from time import monotonic
 import re
+import hashlib
+from datetime import datetime,timezone
 import httpx
 
 _cache=OrderedDict();_lock=Lock();TTL=300;MAX_BYTES=1024*1024
@@ -55,6 +57,7 @@ def fetch(operation,*,kind='CATMAT',code=None,q=None,size=25,official_descriptio
         from .portfolio_rules import fold
         divergence=bool(official_description and records and fold(records[0]['description'])!=fold(official_description))
         result={**base,'state':'needs_review' if divergence else 'available','records':records,
+            'http_status':200,'sha256':hashlib.sha256(body).hexdigest(),'consulted_at':datetime.now(timezone.utc).isoformat(),
             'official_snapshot_divergence':divergence,'notice':'Confira a descrição oficial no IRPS. Esta fonte não comprova compras.'}
         with _lock:
             _cache[key]=(monotonic(),result)

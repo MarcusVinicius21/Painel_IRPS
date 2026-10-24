@@ -1,5 +1,13 @@
 import httpx
+import hashlib
 from app.catalogue_enrichment import fetch,_cache
+
+def test_secondary_response_preserves_checksum_and_consultation_time():
+    _cache.clear();response=httpx.Response(200,json={'codigo_item':463562,'descricao_item':'CAFÉ'})
+    result=fetch('item',code='463562',transport=httpx.MockTransport(lambda _:response))
+    assert result['sha256']==hashlib.sha256(response.content).hexdigest()
+    assert result['http_status']==200 and result['consulted_at']
+    assert result['official'] is False and result['purchase_history_implied'] is False
 
 
 def test_exact_optional_item_cache_and_official_divergence_never_replace_local():
