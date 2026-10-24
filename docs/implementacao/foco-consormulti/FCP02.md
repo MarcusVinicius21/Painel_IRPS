@@ -1,0 +1,16 @@
+# FCP02 — Curadoria conservadora e separação comercial
+Status: PARTIAL
+
+Lidos os vinte grupos originais. Implementadas regras versionadas independentes em backend/app/portfolio_rules.py; não se reutilizou a lista antiga de 154.222 códigos. A consulta percorreu todos os **348.679 registros dos snapshots nacionais atuais**, usando namespace, código, snapshot, descrição integral, PDM/classe e ativo/inativo preservados. Não houve escrita em banco. O catálogo nacional não foi reduzido.
+
+Resultado final em 24/10/2026 01:18:29 UTC: **2.365 correspondências técnicas diretas, 5.552 candidatas a revisão, 525 indiretas e 2.711 exclusões explícitas**, 11.153 identidades classificadas. As demais não são incluídas por esta regra de prioridade. São vínculos de triagem por grupo/código, não compras, preços ou autorização de venda. **Zero códigos comercialmente confirmados.** Candidatos ficam COMMERCIAL_PENDING; exclusões OUT_OF_PORTFOLIO. Unidade de fornecimento não é definida pelo CSV nacional: não se presume conversão ou comparabilidade entre apresentações.
+
+CSV completo com origem/snapshot/hash, namespace, código, descrição, PDM/classe, status técnico/comercial, justificativa e regra ficou privado em .runtime/irps-fcp/portfolio-correspondencias.csv. Matriz versionada FCP02_MATRIZ.md apresenta os vinte grupos e o hash do CSV; amostra por grupo está no relatório privado portfolio-classification.json. Materiais e serviços permanecem distintos. Meta numérica de códigos não foi imposta.
+
+Amostragem estratificada e negativos difíceis: locação/manutenção de máquina de hemodiálise foi retirada do grupo frota; manutenção de equipamento de dedetização foi excluída do serviço de controle de pragas. Cesta básica foi identificada por cabeçalho específico, incluindo código de serviço inativo, sempre com composição a revisar. Alimentos avulsos, papel genérico, camisa comum e placas eletrônicas não entram automaticamente. Café/cafeteira, catraca/chave, veículo/peça/locação e pavimentação material/execução têm regras distintas. Medicamentos com concentrações diferentes nunca se fundem por triagem.
+
+**Limitações:** regras conservadoras produzem candidatos, não revisão humana de todos os códigos. Grupo 09 mantém o termo institucional pendente e não ganhou candidatos de estrada na base examinada; seus falsos cognatos animais foram excluídos. Materiais hospitalares e equipamentos de informática exigem especificação e validação comercial. Possíveis falsos negativos fora dos cabeçalhos explícitos permanecem consultáveis no catálogo nacional. Nenhuma inferência comercial foi usada para preencher grupos.
+
+Testes: pytest backend/tests/test_portfolio_rules.py backend/tests/test_catalogue_source_binding.py -q: **28 aprovados**, 0,50 s. Primeiro script de classificação falhou por nível de isolamento definido após a abertura do contexto; corrigido configurando REPEATABLE READ no engine antes da transação, mantendo READ ONLY. Classificação integral repetida após os ajustes de amostra. Nenhuma asserção foi enfraquecida. Diff e guarda V4/referências aprovados. Backup/restauração FCP01 segue com gate privado; nenhuma mudança operacional ocorreu nesta tarefa.
+
+Próxima tarefa FCP03: persistir a seleção de maneira aditiva, com testes QA e gate de restauração antes do banco real. Sem imagens, push, PR, merge ou deploy.
