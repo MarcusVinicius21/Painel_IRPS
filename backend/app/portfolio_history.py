@@ -30,11 +30,12 @@ def source_groups(fact,record):
 
 
 def history(ctx,*,group,start,end,phase,municipalities=(),code=None,snapshot=None,buyer=None,
-            provider=None,offset=0,limit=25,candidates=True):
+            provider=None,offset=0,limit=25,candidates=True,item_id=None,item_version=None,_all=False):
     ctx.require('read')
     if group not in {f'{i:02}' for i in range(1,21)} or phase not in PHASES:fail(422,'Confira o grupo e a situação.')
     if end<start or (end-start).days>366 or end>date.today():fail(422,'Escolha até doze meses passados.')
     if bool(code)!=bool(snapshot):fail(422,'Informe código e versão do catálogo juntos.')
+    if bool(item_id)!=(item_version is not None):fail(422,'Escolha o item municipal e sua versão juntos.')
     if not 0<=offset<=20000 or not 1<=limit<=50:fail(422,'Confira a página de resultados.')
     selected=portfolio.run(ctx)
     if not selected:return {'records':[],'total':0,'state':'not_initialized','source_completeness_claimed':False}
@@ -55,6 +56,7 @@ def history(ctx,*,group,start,end,phase,municipalities=(),code=None,snapshot=Non
     params={'o':ctx.org_id,'cities':cities,'phase':phase,'start':start,'end':end}
     if buyer:clauses.append('b.cnpj=:buyer');params['buyer']=buyer
     if provider:clauses.append('f.provider=:provider');params['provider']=provider
+    if item_id:clauses.append('f.item_id=:item AND f.item_version=:version');params.update(item=item_id,version=item_version)
     rows=ctx.db.all('''SELECT f.*,b.name AS buyer_name,b.cnpj AS buyer_cnpj,s.url AS source_url,s.sha256 AS source_sha256,
         s.body AS source_body,s.consulted_at,m.name AS municipality_name,
         parent.description AS parent_description,parent.unit AS parent_unit,parent.metadata AS parent_metadata,
@@ -87,11 +89,12 @@ def history(ctx,*,group,start,end,phase,municipalities=(),code=None,snapshot=Non
             'buyer_name','buyer_cnpj','provider','phase','event_date','description','unit','quantity','unit_price','amount',
             'obligation_id','source_id','source_url','source_sha256','consulted_at')} |
             {'group_match_state':state,'catalogue_namespace':declared['namespace'],'catalogue_code':declared['code'],
+            'currency':row['metadata'].get('currency','BRL'),
             'group_evidence_source_id':str(row.get('parent_source_id') or row['source_id']),
             'supplier':supplier if verified_supplier else None,'supplier_role':'adjudicatário' if row['phase']=='homologado' and verified_supplier else 'contratado' if verified_supplier else None,
             'coverage_status':'partial','origin':'municipal_procurement','included_in_group_totals':False,
             'quantity_is_consumption':False,'financial_execution_proven':row['metadata'].get('financial_execution_proven',False)})
-    return normalize({'records':matched[offset:offset+limit],'total':len(matched),'offset':offset,'limit':limit,
+    return normalize({'records':matched if _all else matched[offset:offset+limit],'total':len(matched),'offset':offset,'limit':limit,
         'next_offset':offset+limit if offset+limit<len(matched) else None,'state':'available' if matched else 'no_matches_in_observed_scope',
         'group':group,'run_id':selected['id'],'rule_version':selected['rule_version'],'municipalities':cities,
         'start':start,'end':end,'phase':phase,'source_completeness_claimed':False,'coverage_status':'partial',
