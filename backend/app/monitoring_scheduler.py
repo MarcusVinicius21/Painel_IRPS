@@ -62,6 +62,8 @@ def cycle(database,org,actor,today=None,transport=None,sleep=None):
             summary={'municipality_ibge':city,'start':str(first),'end':str(last),'pages':result.get('pages',0)+child.get('pages',0),
                      'attempts':result.get('attempts',0)+child.get('attempts',0),'source_completeness':None}
             with database.transaction(org,actor) as db:
+                from .licinexus import schedule as schedule_complement
+                summary['licinexus_job']=schedule_complement(job_context(db,org,actor),city,first,last)
                 db.execute("UPDATE monitoring_schedule SET cursor=cursor+1,last_run=now(),last_error=NULL,last_result=CAST(:r AS jsonb),updated_at=now() WHERE org_id=:o",{'o':org,'r':encoded(summary)})
                 job_context(db,org,actor).audit('monitoring.cycle_finished',city,summary)
             return summary
@@ -81,7 +83,10 @@ def start(database,settings):
     stop=Event()
     def loop():
         while not stop.wait(5):
-            try:cycle(database,settings.operator_org_id,settings.operator_actor_id)
+            try:
+                cycle(database,settings.operator_org_id,settings.operator_actor_id)
+                from .licinexus import tick as complement
+                complement(database,settings.operator_org_id,settings.operator_actor_id)
             except Exception:pass  # Database unavailable: retry; never mark a cycle as successful.
     thread=Thread(target=loop,name='irps-monitoring',daemon=True);thread.start()
     return stop,thread

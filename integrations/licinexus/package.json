@@ -1,0 +1,1 @@
+{"name": "irps-licinexus-isolated", "private": true, "version": "0.0.0", "type": "module", "dependencies": {"@licinexusbr/mcp": "0.2.1"}}

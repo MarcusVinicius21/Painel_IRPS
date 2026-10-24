@@ -49,7 +49,15 @@ def test_same_numeric_code_material_and_service_have_distinct_caches(app,login):
     assert material['records'][0]['catalogue_kind']=='material' and service['records'][0]['catalogue_kind']=='servico'
 
 
-def test_repeated_remote_bytes_have_new_receipt_but_same_source_fingerprint(app,login):
+def test_repeated_remote_bytes_have_new_receipt_but_same_source_fingerprint(app,login,monkeypatch):
+    # Windows wall-clock resolution can assign identical instants to two fast
+    # requests. Control distinct receipt times without weakening either hash assertion.
+    from itertools import count
+    base=datetime.now(timezone.utc);ticks=count()
+    class ReceiptClock(datetime):
+        @classmethod
+        def now(cls,tz=None):return base+timedelta(microseconds=next(ticks))
+    monkeypatch.setattr(price_queries,'datetime',ReceiptClock)
     _,identity=context(app,login);code=str(int(uuid4().hex[:8],16))
     transport=httpx.MockTransport(lambda r:httpx.Response(200,json=payload(code)))
     first=run(app,identity,code,transport);fresh=run(app,identity,code,transport)

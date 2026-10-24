@@ -67,6 +67,9 @@ def cached_get(ctx,provider,url,params=None,transport=None):
  def traced(result):
   ctx.last_source_response={'url':result[0],'http_status':result[1],'sha256':hashlib.sha256(result[2]).hexdigest()}
   return result
+ if transport is not None:
+  from .licinexus import Capture
+  if isinstance(transport,Capture):return traced(transport.read(provider,url,params))
  if transport is None:
   cached=ctx.db.one("SELECT body,http_status FROM source_observation WHERE provider=:p AND url=:u AND classification='official' AND http_status IN (200,204) AND consulted_at>now()-interval '5 minutes' ORDER BY consulted_at DESC LIMIT 1",{'p':provider,'u':resolved})
   if cached:
@@ -81,6 +84,9 @@ def observe(ctx,provider,url,status,content,metadata):
 
 def sync(ctx,args,transport=None):
  ctx.require('sources.sync');provider=args['provider'];meta={'scope':args,'public':True,'note':'Consulta pontual; não comprova cobertura histórica completa.'}
+ if transport is not None:
+  from .licinexus import Capture
+  if isinstance(transport,Capture):meta.update(intermediary='Licinexus MCP 0.2.1',capture_ingestion=True,scope_note='size is a local safety bound; original request URL is preserved, no pagination coverage inferred')
  if provider=='IBGE':
   code=args.get('municipality_ibge')
   if not code or not code.isdigit() or len(code)!=7:fail(422,'Escolha um município pelo código IBGE.')
@@ -216,7 +222,7 @@ def job_context(db,org,actor):
 def run_job(database,org,actor,jid):
  try:
   with database.transaction(org,actor) as db:
-   ctx=job_context(db,org,actor);ctx.require('sources.sync');job=db.one("SELECT * FROM job WHERE org_id=:o AND id=:i AND state='queued' FOR UPDATE",{'o':org,'i':jid})
+   ctx=job_context(db,org,actor);ctx.require('sources.sync');job=db.one("SELECT * FROM job WHERE org_id=:o AND id=:i AND kind='source.sync' AND state='queued' FOR UPDATE",{'o':org,'i':jid})
    if not job:return
    db.execute("UPDATE job SET state='running' WHERE org_id=:o AND id=:i",{'o':org,'i':jid});args=job['arguments']
   with database.transaction(org,actor) as db:

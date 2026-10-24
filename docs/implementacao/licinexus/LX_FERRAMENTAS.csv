@@ -1,0 +1,19 @@
+﻿ferramenta;inicializou;parametros_aceitos;funcionou;retornou_dados;integrado;visivel_no_painel;fonte_oficial_consultada;http;atualizacao_automatica;bloqueio_ou_limite
+search_licitacoes;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503;NÃO;"HTTP 503 na rota de consulta; descoberta ampla não integrada."
+get_licitacao;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503;NÃO;HTTP 503 na rota /api/consulta/v1, inclusive após corrigir a sequência do caso para 164.
+list_licitacao_itens;SIM;SIM;SIM;SIM;SIM;SIM;SIM;200;SIM, fila limitada;"HTTP 200; 2 itens de veículos existentes e 10 itens novos da Câmara de Ipatinga. Ingestão pelos mesmos IDs PNCP."
+list_licitacao_resultados;SIM;SIM;SIM;SIM;SIM;SIM;SIM;200;SIM, fila limitada;"HTTP 200; homologação de 2 utilitários, R$ 219.000,00; identidade já existente. Nova revisão, sem nova compra."
+list_licitacao_arquivos;SIM;SIM;SIM;SIM;SIM;SIM;SIM;200;SIM, fila limitada;"HTTP 200; 1 documento do processo de veículos preservado como evidência."
+search_contratos;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503;NÃO;"HTTP 503; busca ampla não integrada."
+get_contrato;SIM;SIM;SIM;SIM;SIM;SIM;SIM;200;SIM, fila limitada;"HTTP 200; detalhe do contrato 19875020000134-2-000035/2026 já conhecido. Evidência adicional, sem novo contrato."
+list_contrato_termos;SIM;SIM;SIM;NÃO;NÃO;NÃO;SIM;204;NÃO;"HTTP 204 no contrato testado; resposta vazia válida, sem histórico adicional comprovado."
+list_contrato_instrumentos;SIM;SIM;INCONCLUSIVO;NÃO;NÃO;NÃO;SIM;404;NÃO;"HTTP 404 convertido em [] pelo upstream; não comprova ausência de instrumentos ou pagamento."
+search_atas_rp;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503;NÃO;"HTTP 503; sem atas recuperadas."
+get_ata_rp;SIM;SIM;INCONCLUSIVO;NÃO;NÃO;NÃO;SIM;404;NÃO;"HTTP 404 para sequência de ata não confirmada. Sem identidade de ata descoberta pela busca; resultado inconclusivo."
+get_orgao;SIM;SIM;SIM;SIM;NÃO;NÃO;"SIM; fallback BrasilAPI";404,200;NÃO;"PNCP HTTP 404; fallback BrasilAPI HTTP 200. Cadastro complementar, não evidência oficial de compras ou filiação."
+get_fornecedor_contratos;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503;NÃO;"HTTP 503; sem contratos adicionais do fornecedor."
+search_pca;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503;NÃO;"HTTP 503; sem planejamento recuperado."
+list_pca_itens;SIM;SIM;INCONCLUSIVO;NÃO;NÃO;NÃO;SIM;204;NÃO;HTTP 204 para sequência PCA 1 não confirmada por índice. Sem validação de histórico ou completude.
+get_cnpj_data;SIM;SIM;SIM;SIM;NÃO;NÃO;"NÃO; BrasilAPI";200;NÃO;HTTP 200 BrasilAPI: cadastro CNPJ complementar. Não é origem governamental direta e não entrou em fatos de compra.
+aggregate_licitacoes_por_periodo;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503;NÃO;"HTTP 503; não substitui métricas IRPS. Nenhuma agregação promovida a fato."
+compare_periodos;SIM;SIM;NÃO;NÃO;NÃO;NÃO;SIM;503,503,503,503,429,429;NÃO;"HTTP 503/429; não integrado. Sem comparação histórica ou percentual confiável."

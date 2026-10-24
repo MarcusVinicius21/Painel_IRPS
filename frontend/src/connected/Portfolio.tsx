@@ -5,6 +5,7 @@ import type {Row} from '../api';
 import {Page,Panel,Field,Notice,Empty,Badge,DataTable,Link,IconProps} from '../components/ui';
 import './portfolio.css';
 import {MonitoringStatus} from './MonitoringStatus';
+import {LicinexusStatus} from './LicinexusStatus';
 
 type Filters={group:string;q:string;kind:string;technical:string;active:string;subgroup:string;municipalities:string[];start:string;end:string;phase:string};
 const initial:Filters={group:'01',q:'',kind:'',technical:'',active:'',subgroup:'',municipalities:[],start:'2025-10-01',end:'2026-09-30',phase:'homologado'};
@@ -25,6 +26,7 @@ export function Portfolio(){
  const [tab,setTab]=useState('descricao'),[selected,setSelected]=useState<Row|null>(null),[offset,setOffset]=useState(0),[historyOffset,setHistoryOffset]=useState(0);
  const [pricePage,setPricePage]=useState(1),[priceCursors,setPriceCursors]=useState<Record<number,string>>({}),[codeOnly,setCodeOnly]=useState(false),[buyer,setBuyer]=useState(''),[buyerDraft,setBuyerDraft]=useState('');
  const [comparison,setComparison]=useState(false);
+ const [supplier,setSupplier]=useState(''),[supplierDraft,setSupplierDraft]=useState(''),[provider,setProvider]=useState('');
  useEffect(()=>{let active=true;void api('/portfolio/preferences').then(r=>{if(active){const saved={...initial,...r.payload,kind:r.payload.kind||'',technical:r.payload.technical||'',active:r.payload.active==null?'':String(r.payload.active),subgroup:r.payload.subgroup||''};setFilters(saved);setDraft(saved);setReady(true);}}).catch(e=>{if(active){ctx.setToast(e.message);setReady(true);}});return()=>{active=false;};},[ctx.setToast]);
  const groups=useResource('/portfolio/groups');
  const codeQuery=new URLSearchParams({group:filters.group,q:filters.q,offset:String(offset),limit:'25'});
@@ -35,6 +37,7 @@ export function Portfolio(){
  filters.municipalities.forEach(c=>historyQuery.append('municipalities',c));if(buyer)historyQuery.set('buyer',buyer);
  if(codeOnly&&selected){historyQuery.set('code',selected.code);historyQuery.set('snapshot',selected.snapshot_id);}
  if(tab==='fornecedores')historyQuery.set('suppliers_only','true');
+ if(supplier)historyQuery.set('supplier',supplier);if(provider)historyQuery.set('provider',provider);
  const history=useResource(ready&&['municipal','fornecedores'].includes(tab)?'/portfolio/history?'+historyQuery:null);
  const compareQuery=new URLSearchParams(historyQuery);compareQuery.delete('offset');compareQuery.delete('suppliers_only');compareQuery.set('offset','0');
  const compared=useResource(ready&&comparison&&tab==='municipal'?'/portfolio/comparison?'+compareQuery:null);
@@ -90,15 +93,17 @@ export function Portfolio(){
       {!prices.data?.records.length?<Empty title="Não encontramos preço neste recorte" description="O histórico municipal permanece disponível na outra guia."/>:null}
       <div className="pagination"><button className="button secondary" disabled={pricePage<=1} onClick={()=>setPricePage(p=>p-1)}>Preços anteriores</button><span>Página {pricePage}</span><button className="button secondary" disabled={!prices.data?.has_next_page} onClick={()=>{setPriceCursors(c=>({...c,[pricePage+1]:prices.data?.next_cursor}));setPricePage(p=>p+1);}}>Próximos preços</button></div>
      </ResourceState></>}</Panel>:null}
-    {['municipal','fornecedores'].includes(tab)?<Panel title={tab==='municipal'?'Registros municipais e documentos':'Fornecedores com evidência'}>
+    {['municipal','fornecedores'].includes(tab)?<><LicinexusStatus/><Panel title={tab==='municipal'?'Registros municipais e documentos':'Fornecedores com evidência'}>
      <Notice>{codeOnly?'Somente vínculos comprovados com o código selecionado.':'Candidatos do grupo por descrição. Não estão associados automaticamente a um código CATMAT/CATSER.'} Fase: {phases[filters.phase]}.</Notice>
      <div className="portfolio-inline"><Field label="CNPJ do órgão comprador"><input value={buyerDraft} maxLength={14} inputMode="numeric" onChange={e=>setBuyerDraft(e.target.value.replace(/\D/g,''))} placeholder="Todos os órgãos municipais"/></Field><button className="button secondary" disabled={buyerDraft.length!==0&&buyerDraft.length!==14} onClick={()=>{setBuyer(buyerDraft);setHistoryOffset(0);}}>Filtrar órgão</button><button className="button secondary" disabled={!selected} onClick={()=>{setCodeOnly(v=>!v);setHistoryOffset(0);}}>{codeOnly?'Ver candidatos do grupo':'Restringir ao código selecionado'}</button><button className="button secondary" onClick={()=>setComparison(v=>!v)}>Comparar identidades</button></div>
+     <div className="portfolio-inline"><Field label="CNPJ do fornecedor"><input value={supplierDraft} maxLength={14} inputMode="numeric" onChange={e=>setSupplierDraft(e.target.value.replace(/\D/g,''))} placeholder="Todos os fornecedores"/></Field><button className="button secondary" disabled={supplierDraft.length!==0&&supplierDraft.length!==14} onClick={()=>{setSupplier(supplierDraft);setHistoryOffset(0);}}>Filtrar fornecedor</button><Field label="Fonte do registro"><select value={provider} onChange={e=>{setProvider(e.target.value);setHistoryOffset(0);}}><option value="">Todas as fontes</option><option value="PNCP_ITENS">PNCP · itens publicados</option><option value="PNCP_RESULTADOS">PNCP · resultados homologados</option><option value="PNCP_CONTRATOS">PNCP · contratos</option></select></Field></div>
      <ResourceState resource={history}><DataTable<Row> rows={(history.data?.records||[]).filter((r:Row)=>tab!=='fornecedores'||r.supplier)} id={r=>r.id} pageSize={25} caption="Compras municipais observadas, sem soma entre fases" columns={[
       {label:'Município e órgão',render:r=><><strong>{r.municipality_name}</strong><p>{r.buyer_name}</p><small>CNPJ {r.buyer_cnpj}</small></>},
       {label:'Item e situação',render:r=><><p>{r.description}</p><small>{r.phase==='empenhado'&&!r.financial_execution_proven?'Instrumento de empenho PNCP; execução não comprovada':phases[r.phase]} · {r.event_date}</small><Badge>{r.group_match_state==='description_candidate_requires_review'?'Candidato: revisar vínculo':'Vínculo documentado'}</Badge><small>Processo {r.obligation_id}</small></>},
       {label:'Quantidade e unidade',render:r=><>{quantity(r.quantity)}<small>{r.unit||'Unidade não informada'}</small></>},
       {label:'Valor documentado',render:r=><>{r.currency==='BRL'?money(r.amount):'Moeda precisa de conferência'}<small>Preço unitário: {r.currency==='BRL'?money(r.unit_price):'Não comparável'}</small></>},
-      {label:'Fornecedor e fonte',render:r=><>{r.supplier?<p>{r.supplier.name} · {r.supplier.cnpj}<small>{r.supplier_role}</small></p>:<p>Fornecedor não identificado nesta situação.</p>}<a target="_blank" rel="noreferrer" href={r.source_url}>Abrir evidência oficial</a><small>Consultado em {new Date(r.consulted_at).toLocaleString('pt-BR')}</small><Link to={'processo?id='+r.id}>Ver registro no IRPS</Link></>},]}/>
+      {label:'Fornecedor e fonte',render:r=><>{r.supplier?<p>{r.supplier.name} · {r.supplier.cnpj}<small>{r.supplier_role}</small></p>:<p>Fornecedor não identificado nesta situação.</p>}<a target="_blank" rel="noreferrer" href={r.source_url}>Abrir evidência oficial</a><small>Consultado em {new Date(r.consulted_at).toLocaleString('pt-BR')}</small><Link to={'processo?id='+r.id}>Ver registro no IRPS</Link>
+       <details><summary>Complementar consulta PNCP</summary>{(r.provider==='PNCP_CONTRATOS'?['contract']:['items','results','documents']).map(op=><button key={op} className="button secondary" disabled={ctx.busy||!ctx.can('sources.sync')} onClick={()=>void ctx.run(async()=>{await post('/portfolio/licinexus',{fact_id:r.id,group:filters.group,operation:op});},'Consulta adicionada à fila. Confira o acompanhamento acima.')}>{({items:'Atualizar itens',results:'Consultar resultados',documents:'Consultar documentos',contract:'Conferir contrato'} as Record<string,string>)[op]}</button>)}</details></>},]}/>
       {!history.data?.records.length?<Empty title="Sem vínculo encontrado neste recorte" description="Isso não comprova ausência de compras. Consulte candidatos do grupo ou confira a cobertura."/>:null}
       <ServerPages offset={historyOffset} next={history.data?.next_offset??null} onChange={setHistoryOffset} label="Páginas do histórico municipal"/>
      </ResourceState>
@@ -106,7 +111,7 @@ export function Portfolio(){
       {label:'Identidade',render:r=><>{r.buyer_name}<p>{r.description}</p><small>Versão {r.item_version} · {r.unit}</small></>},
       {label:'Quantidade observada',render:r=>quantity(r.observed_quantity)}, {label:'Valor documentado',render:r=>r.currency==='BRL'?money(r.documented_amount):'Moeda a conferir'},
       {label:'Preço comparável',render:r=>money(r.comparable_unit_price_median)},{label:'Meses observados',render:r=><>{r.observed_months.join(', ')}<small>Cobertura parcial; sem previsão.</small></>},]}/></Panel></ResourceState>:null}
-    </Panel>:null}
+    </Panel></>:null}
     {tab==='fontes'?<><Panel title="Fontes e caminhos de consulta"><ResourceState resource={source}>{source.data?.records.map((r:Row)=><article className="portfolio-source" key={r.provider}><Badge>{status[r.state]||'Conferir fonte'}</Badge><h3>{r.provider.replaceAll('_',' ')}</h3><p>{r.message}</p><a target="_blank" rel="noreferrer" href={r.url}>Abrir fonte de referência</a></article>)}</ResourceState><Link className="button secondary" to="coleta-oportunidades">Retomar coletas existentes</Link><p>Use a fila existente. Não abra uma segunda coleta para o mesmo recorte.</p></Panel><Panel title="Doze meses de consultas por município"><Notice>Percentuais medem somente requisições planejadas, não todas as compras ou o mercado.</Notice><ResourceState resource={coverage}><DataTable<Row> rows={coverage.data?.records||[]} id={r=>r.municipality_ibge+r.month+r.provider} pageSize={12} caption="Cobertura das consultas municipais por mês e fonte" columns={[
       {label:'Município e mês',render:r=><>{ctx.cities.find(c=>c.ibge===r.municipality_ibge)?.name||r.municipality_ibge}<small>{r.month}</small></>},
       {label:'Fonte e recorte',render:r=><>{r.provider}<small>{r.period_basis==='validity_overlap'?'Vigência da ata':r.period_basis.includes('discovery')?'Descoberta pelo documento de origem':'Período específico da fonte'}</small></>},

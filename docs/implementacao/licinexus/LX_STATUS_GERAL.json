@@ -1,0 +1,59 @@
+{
+  "queue": "LX01-LX04",
+  "base": "5bfd3eeb706b5fbe76e31890c0a6c31f3c4beb7a",
+  "branch": "feat/cobertura-municipal-12m-2026-10-23",
+  "current": "LX04",
+  "tasks": {
+    "LX01": {
+      "state": "CONCLUIDO_COM_LIMITE",
+      "detail": "0.2.1 fixada; 0.2.2 somente GitHub main. MIT preservada, scripts desabilitados, alerta Zod mitigado sem alegar correção."
+    },
+    "LX02": {
+      "state": "CONCLUIDO_COM_BLOQUEIOS",
+      "detail": "18 chamadas individuais; 4 prompts e 2 recursos. Retornos e falhas discriminados na matriz."
+    },
+    "LX03": {
+      "state": "PARCIAL_OPERACIONAL",
+      "detail": "Itens/resultados/arquivos/contrato: fila durável e ingestão/evidência. Outras capacidades não promovidas a produto."
+    },
+    "LX04": {
+      "state": "CONCLUIDO_COM_LIMITES",
+      "detail": "580 testes Python e 200 subtestes aprovados; build aprovado; 5 testes Playwright aprovados antes e após restart; segurança e integridade aprovadas."
+    }
+  },
+  "legacy_queue": "NOT_RESUMED",
+  "push": false,
+  "merge": false,
+  "deploy": false,
+  "commit": false,
+  "resume": "Conferir diff e este ledger; não reinstalar nem repetir o piloto. Jobs persistem no PostgreSQL; execução limitada pelo worker existente.",
+  "execution_state": "ENCERRADA_COM_INTEGRACAO_PARCIAL",
+  "real_data": {
+    "cutoff": "2026-10-24T04:51:36-03:00",
+    "new_event_identities": 10,
+    "existing_identities_revisited": 3,
+    "new_portfolio_candidates": 2,
+    "new_confirmed_code_bindings": 0,
+    "additional_municipalities": 0,
+    "new_contracts": 0,
+    "new_atas": 0,
+    "new_results": 0,
+    "new_pca": 0
+  },
+  "security": {
+    "files_scanned": 27,
+    "credential_matches": 0,
+    "v4_preserved": 8,
+    "references_unchanged": true,
+    "dependency_advisory": "Zod GHSA-mrhx-c7xc-m3w5; mitigated exposure, not patched"
+  },
+  "reports": [
+    "RELATORIO_FINAL.md",
+    "LX01_BASELINE.json",
+    "LX02_FERRAMENTAS.md",
+    "LX03_INTEGRACAO.md",
+    "LX04_VALIDACAO.md",
+    "LX_FERRAMENTAS.csv",
+    "LX_NOVOS_EVENTOS.csv"
+  ]
+}

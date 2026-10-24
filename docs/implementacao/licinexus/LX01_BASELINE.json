@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-24T04:06:36.124783-03:00",
+  "head": "5bfd3eeb706b5fbe76e31890c0a6c31f3c4beb7a",
+  "branch": "feat/cobertura-municipal-12m-2026-10-23",
+  "initial_diff": "clean",
+  "scope": {
+    "monitoring_targets": 118,
+    "groups": 20,
+    "selected_codes": 7917,
+    "catalogue": 348679,
+    "national_prices": 2078067
+  },
+  "version": {
+    "requested_reference": "0.2.2",
+    "github_main_declared": "0.2.2",
+    "npm_published_pinned": "0.2.1",
+    "license": "MIT",
+    "node_minimum": "20"
+  },
+  "security": {
+    "install_scripts_executed": false,
+    "audit_high_packages": 2,
+    "root_advisory": "GHSA-mrhx-c7xc-m3w5 (Zod; reflected in dependent package)",
+    "public_mcp_exposed": false
+  }
+}

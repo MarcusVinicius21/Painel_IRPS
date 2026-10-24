@@ -45,3 +45,8 @@ def test_local_parent_lineage_supplier_and_candidate_filters(prepared,app,login)
     assert all(r['supplier'] is not None for r in suppliers['records'])
     assert login('compras-b').get('/api/v1/portfolio/history',params=p).json()['records']==[]
     assert c.get('/api/v1/portfolio/history',params={**p,'municipalities':['9999999']}).status_code==422
+    exact=c.get('/api/v1/portfolio/history',params={**p,'supplier':'00000000000001','provider':'PNCP_RESULTADOS'}).json()
+    assert any(r['id']==result for r in exact['records'])
+    assert c.get('/api/v1/portfolio/history',params={**p,'supplier':'00000000000099'}).json()['total']==0
+    assert c.get('/api/v1/portfolio/history',params={**p,'supplier':'invalid'}).status_code==422
+    assert c.get('/api/v1/portfolio/comparison',params={**p,'supplier':'00000000000099','provider':'PNCP_RESULTADOS'}).json()['total']==0

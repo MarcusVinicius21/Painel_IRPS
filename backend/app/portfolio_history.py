@@ -30,7 +30,7 @@ def source_groups(fact,record):
 
 
 def history(ctx,*,group,start,end,phase,municipalities=(),code=None,snapshot=None,buyer=None,
-            provider=None,offset=0,limit=25,candidates=True,item_id=None,item_version=None,suppliers_only=False,_all=False):
+            provider=None,offset=0,limit=25,candidates=True,item_id=None,item_version=None,suppliers_only=False,_all=False,supplier=None):
     ctx.require('read')
     if group not in {f'{i:02}' for i in range(1,21)} or phase not in PHASES:fail(422,'Confira o grupo e a situação.')
     if end<start or (end-start).days>366 or end>date.today():fail(422,'Escolha até doze meses passados.')
@@ -56,6 +56,9 @@ def history(ctx,*,group,start,end,phase,municipalities=(),code=None,snapshot=Non
     params={'o':ctx.org_id,'cities':cities,'phase':phase,'start':start,'end':end}
     if buyer:clauses.append('b.cnpj=:buyer');params['buyer']=buyer
     if provider:clauses.append('f.provider=:provider');params['provider']=provider
+    if supplier:
+        if not re.fullmatch(r'\d{14}',supplier):fail(422,'Informe o CNPJ do fornecedor com 14 números.')
+        clauses.append("f.metadata->'supplier'->>'cnpj'=:supplier");params['supplier']=supplier
     if item_id:clauses.append('f.item_id=:item AND f.item_version=:version');params.update(item=item_id,version=item_version)
     rows=ctx.db.all('''SELECT f.*,b.name AS buyer_name,b.cnpj AS buyer_cnpj,s.url AS source_url,s.sha256 AS source_sha256,
         s.body AS source_body,s.consulted_at,m.name AS municipality_name,

@@ -5,6 +5,7 @@ from .db import normalize
 def definitions():
     from .portal_credentials import load_portal_key
     portal_key=bool(load_portal_key())
+    from .licinexus_runtime import installed
     return [
       {'provider':'PNCP','official':True,'operational':True,'installed':True,'tested':True,'blocked':None,
        'adapter':'existing_durable_history','scope':'Publicações, resultados, contratos e atas; fases separadas e cobertura parcial.'},
@@ -21,8 +22,10 @@ def definitions():
        'scope':'Consulta direta CEIS de uma página; não atesta regularidade. MCP somente em POC: dependências com alertas.'},
       {'provider':'THIAGOSY_PNCP','official':False,'operational':False,'installed':False,'tested':False,'blocked':'LICENSE_NOT_IDENTIFIED',
        'adapter':'official_PNCP_alternative','scope':'Código sem licença não incorporado; utilizada API oficial.'},
+      {'provider':'LICINEXUS','official':False,'operational':installed(),'installed':installed(),'tested':True,'blocked':None if installed() else 'NOT_INSTALLED',
+       'adapter':'bounded_stdio_with_existing_pncp_ingestion','scope':'PNCP permanece fonte oficial. Itens/resultados/documentos aprovados; buscas, atas e PCA parciais ou bloqueados. Alerta Zod mitigado por isolamento e limites.'},
       *[{'provider':name,'official':False,'operational':False,'installed':False,'tested':False,'blocked':'NOT_ADOPTED',
-         'adapter':None,'scope':'Nenhum serviço adicional validado foi instalado nesta rodada.'} for name in ['MCP_BRASIL','LICINEXUS','QUERIDO_DIARIO']]]
+         'adapter':None,'scope':'Nenhum serviço adicional validado foi instalado nesta rodada.'} for name in ['MCP_BRASIL','QUERIDO_DIARIO']]]
 
 def registry(ctx):
     ctx.require('read')
