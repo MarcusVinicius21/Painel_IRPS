@@ -3,6 +3,7 @@ import {House,BrainCircuit,Lightbulb,ClipboardList,FileText,FolderOpen,MapPinned
 import {IconProps} from './ui';
 
 export const shellDestinations=[
+ ['portfolio','Portfólio CONSORMULTI',PackageSearch],
  ['inicio','Início',House],
  ['inteligencia','Inteligência e Planejamento',BrainCircuit],
  ['oportunidades','Oportunidades',Lightbulb],

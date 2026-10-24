@@ -1,0 +1,16 @@
+# FCP08 — Portfólio integrado ao Observatório
+Status: PARTIAL
+
+Implementada rota /#/portfolio na aplicação existente, com o shell e componentes compartilhados. Login operacional passa a abrir Portfólio CONSORMULTI; o dashboard anterior e demais módulos permanecem acessíveis. Vinte grupos, contagens reais, busca por código/descrição, namespace e correspondência técnica; motivos e confirmação comercial separados. Catálogo nacional continua a um clique. Não há nova conta, perfil ou frontend independente.
+
+Guias: Descrição, Preços nacionais, Compras dos municípios, Fornecedores verificados, Fontes e cobertura. Preços usam o consolidado oficial de doze meses, com paginação/cursor, sem agregado entre unidades diferentes. Histórico municipal usa grupo ou vínculo explícito do código/snapshot; candidato por descrição tem aviso próprio, sem soma de demanda. Órgão/CNPJ, fases, valores originais, evidência e consulta aparecem com a compra. Fornecedor vem somente do documento apropriado. Comparação por identidade não vira necessidade V4. Link ao planejamento existente transmite código e snapshot juntos.
+
+Filtros de grupo, município(s), período, fase e busca persistem no backend. CNPJ parcial não dispara consulta inválida: há ação explícita com quatorze dígitos. Guias carregam separadamente; falha/vazio em preço não remove histórico municipal. Erros não são ocultados, fonte complementar não é dependência para abrir o aplicativo. Retomada aponta à fila existente, sem criar coletor concorrente.
+
+Instância de verificação **http://127.0.0.1:5298/**, API 5297, mesmas credenciais/operador/banco operacional. A API antiga 5295 e frontend 5296 não foram encerrados. Nova instância foi iniciada em processo de terminal próprio, com configuração privada derivada que acrescenta somente a origem loopback 5298. Isso permitiu verificar o código carregado sem repetir a ação de encerramento/reload recusada anteriormente. Não foi iniciado worker contínuo em segundo plano.
+
+Playwright headless/Chrome real, sem screenshots: **3 testes aprovados**, 19,7 s. Login único, vinte grupos, consulta homologada/fornecedor em Ipatinga, documento PNCP, registro da Câmara de Timóteo (CNPJ próprio), persistência após reload, CATMAT 463562 com preço nacional real, ausência de vínculo municipal e fonte secundária indisponível sem bloquear a página. Responsividade 320/390/1536 px: sem overflow horizontal, foco de teclado preservado; axe no conteúdo novo com **zero violações** nas três larguras.
+
+Falhas corrigidas durante QA: contraste 4,43:1 no número selecionado, ajustado e revalidado; segundo ciclo do teste herdou município salvo de outro ciclo, fixture passou a selecionar Ipatinga explicitamente (sem alterar persistência ou enfraquecer a asserção). Build React/TypeScript/Vite aprovado, avisos de diretiva lucide e bundle >500 kB registrados. Diff/V4 preservados.
+
+Pendentes: cobertura municipal integral não demonstrada, revisão dos vínculos dos candidatos, confirmação comercial e fontes financeiras. Seleção do código em memória não é estudo formal; filtros persistem e planejamento mantém suas próprias validações/versionamento. Acessibilidade global dos módulos anteriores não foi certificada por este teste. Não há alegação pixel-perfect. Sem imagens, push, PR, merge ou deploy. Próxima FCP09: suíte completa em QA novo e relatório consolidado.
