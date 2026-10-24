@@ -192,7 +192,7 @@ def sync(ctx,args,transport=None):
           'modality_provenance':modality.publication(record,provider,sid,hashlib.sha256(content).hexdigest(),revision,args.get('modality')),
           'category':record.get('tipoInstrumentoConvocatorioNome'),
           'purchase':{'cnpj':entity['cnpj'],'year':record.get('anoCompra'),'sequence':record.get('sequencialCompra')}})});count+=1
-  expected=data.get('totalPaginas');result={'provider':provider,'records':len(data['data']),'new_revisions':count,'pages_fetched':1,'expected_pages':expected,'state':'partial','source_id':str(sid),'scope':args,'items_collected':False,'payments_collected':False}
+  expected=data.get('totalPaginas');result={'provider':provider,'records':len(data['data']),'new_revisions':count,'pages_fetched':1,'expected_pages':expected,'expected_records':data.get('totalRegistros'),'state':'partial','source_id':str(sid),'scope':args,'items_collected':False,'payments_collected':False}
  cid=identifier();ctx.db.execute('INSERT INTO coverage(org_id,id,provider,scope,state,pages_fetched,expected_pages,record_count,latest_success_at) VALUES (:o,:i,:p,CAST(:s AS jsonb),:state,:pages,:expected,:n,now())',{'o':ctx.org_id,'i':cid,'p':provider,'s':encoded(result['scope']),'state':result['state'],'pages':result['pages_fetched'],'expected':result['expected_pages'],'n':result['records']})
  ctx.audit('source.consulted',sid,{'provider':provider,'records':result['records'],'state':result['state']});return result
 

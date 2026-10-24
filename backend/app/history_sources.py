@@ -132,7 +132,7 @@ def contracts(ctx,args,transport=None,updated=False,linked=False):
                 'receipt':record.get('receita'),'items_unavailable':True,'quantity_is_consumption':False,
                 'commitment_instrument_only':is_commitment,'financial_execution_proven':False}})
     return {'provider':source_provider,'records':len(data['data']),'new_revisions':new,'source_id':str(sid),'state':'partial',
-        'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'scope':args,'quantities_collected':False,'unit_prices_collected':False}
+        'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'expected_records':data.get('totalRegistros'),'scope':args,'quantities_collected':False,'unit_prices_collected':False}
 
 
 def contract_terms(ctx,args,transport=None):
@@ -184,6 +184,7 @@ def atas(ctx,args,transport=None):
     sid=observe(ctx,'PNCP_ATAS',url,status,content,data,args,{'ata_summaries':[ata_summary(r,parent['obligation_id']) for r in records]})
     return {'provider':'PNCP_ATAS','records':len(records),'source_id':str(sid),'state':'observed_only',
         'pages_fetched':1,'expected_pages':data.get('totalPaginas') if isinstance(data,dict) else None,
+        'expected_records':data.get('totalRegistros') if isinstance(data,dict) else None,
         'pagination_unverified':not isinstance(data,dict) or type(data.get('totalPaginas')) is not int,
         'scope':args,'phase':'ata_registro',
         'parent_publication':str(parent['id']),'quantities_collected':False,'purchase_inferred':False}
@@ -237,7 +238,7 @@ def updated_index(ctx,provider,args,transport=None):
     sid=observe(ctx,provider,url,status,content,data,args,{'ata_summaries':[ata_summary(r) for r in data['data']],
         'period_basis':basis,'provider_id_note':'PNCP_ATAS_PUBLICACAO é um identificador técnico legado da rota por vigência.'} if provider.startswith('PNCP_ATAS_') else None)
     return {'provider':provider,'records':len(data['data']),'source_id':str(sid),'state':'observed_only',
-        'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'scope':args,
+        'pages_fetched':1,'expected_pages':data.get('totalPaginas'),'expected_records':data.get('totalRegistros'),'scope':args,
         'phase':'ata_registro' if provider.startswith('PNCP_ATAS_') else 'planejado',
         'period_basis':basis if provider.startswith('PNCP_ATAS_') else 'source_global_update_date',
         'quantities_collected':False,'purchase_inferred':False}

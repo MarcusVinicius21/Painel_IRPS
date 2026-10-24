@@ -7,10 +7,16 @@ from .security import authenticate,fail,PERMISSIONS
 from .db import normalize
 from .modality import reject_filter
 from .opportunity_schemas import HistoricalScope,Advance,MunicipalGroup,OpportunityFilter,Equivalence,CanonicalProductReview,ViabilityReview,ScenarioFromOpportunity,OpportunityWatch,PHASES
-from . import history,opportunities,opportunity_alerts,catalogue,coverage_inventory
+from . import history,opportunities,opportunity_alerts,catalogue,coverage_inventory,campaign_audit
 
 Auth=Annotated[object,Depends(authenticate,scope='function')]
 router=APIRouter(prefix='/api/v1')
+
+@router.get('/history-campaign/audit')
+def history_campaign_audit(ctx:Auth,request:Request,start:date,end:date,municipalities:list[str]=Query(default=[]),
+                           offset:int=Query(0,ge=0,le=100000),limit:int=Query(100,ge=1,le=1000)):
+    if set(request.query_params)-{'start','end','municipalities','offset','limit'}:fail(422,'Confira os filtros da conciliação.')
+    return campaign_audit.audit(ctx,start,end,municipalities,offset,limit)
 
 @router.get('/opportunity-options')
 def options(ctx:Auth):
