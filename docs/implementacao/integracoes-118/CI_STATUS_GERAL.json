@@ -2,15 +2,15 @@
   "queue": "CI01-CI09-INTEGRACOES-118-2026-10-24",
   "base_sha": "d96289806d991dbc1e92c1262a8543d816514f7d",
   "branch": "feat/cobertura-municipal-12m-2026-10-23",
-  "current_task": "CI08",
-  "state": "CI08_OPERATIONAL_UI",
+  "current_task": "CI09",
+  "state": "DELIVERED_WITH_EXPLICIT_PARTIAL_BLOCKS",
   "legacy_M_D_X": "PAUSED_AND_PRESERVED",
   "FCP": "PRESERVED_DO_NOT_REPEAT",
   "tasks": [
     {
       "id": "CI01",
       "status": "PASS",
-      "checkpoint_sha": "2396f85",
+      "checkpoint_sha": "2396f85f8215db270ad3f738f6bfd358463e2e97",
       "database_readonly_recheck": "PASS",
       "pending": null,
       "restored_backup": "PASS"
@@ -19,7 +19,8 @@
       "id": "CI02",
       "status": "PASS",
       "pending": null,
-      "session_discovery": "All seven skills in trusted current skill catalog; paths verified without reinstall"
+      "session_discovery": "All seven skills in trusted current skill catalog; paths verified without reinstall",
+      "checkpoint_sha": "5c0a41e037b873cd42c22479673d67586fa6a584"
     },
     {
       "id": "CI03",
@@ -29,39 +30,53 @@
       "pending": null,
       "monitored": 118,
       "membership_confirmed": 0,
-      "idempotent_operational_run": "PASS"
+      "idempotent_operational_run": "PASS",
+      "checkpoint_sha": "53845149f7cd5f3f959e1e43080b882c940cc393"
     },
     {
       "id": "CI04",
       "status": "PARTIAL",
-      "pending": "Licitei runtime/index and AGPL gate; federal key; optional stacks not adopted"
+      "pending": "Licitei search and AGPL; Portal MCP dependency advisories; optional stacks not adopted",
+      "checkpoint_sha": "cb9eb471d964f0e8ca6f285dd4f01f9b32dd8c8e"
     },
     {
       "id": "CI05",
       "status": "PARTIAL",
-      "pending": "MCP data bridges remain blocked; existing official adapters reused",
-      "tests_passed": 7
+      "pending": "CGU authenticated; remaining MCP bridges not operational",
+      "tests_passed": 7,
+      "checkpoint_sha": "e97fe9f622e02bf27d8d0b01a437d06aa15ec40d"
     },
     {
       "id": "CI06",
       "status": "PARTIAL",
       "pending": "12-month historical collection incomplete; materialization continues via scheduler",
       "pages": 24,
-      "municipalities_with_verified_pages": 22
+      "municipalities_with_verified_pages": 22,
+      "checkpoint_sha": "4dcd2a56f8d320d24c97749b436012dc0a565ad7"
     },
     {
       "id": "CI07",
       "status": "PARTIAL",
       "tests_passed": 9,
-      "pending": "Catalogue active-selection rollback and additional source schedules; app daemon verification in CI09"
+      "pending": "Catalogue active-selection rollback; additional source/price schedules",
+      "checkpoint_sha": "20d05a9372b3f6fa27132a91d6c2b3ab14f14b76"
     },
     {
       "id": "CI08",
-      "status": "IN_PROGRESS"
+      "status": "PASS",
+      "playwright_passed": 4,
+      "build": "PASS",
+      "checkpoint_sha": "c5bd42cea7acd0d21619df19a8b5a13279e4afbc"
     },
     {
       "id": "CI09",
-      "status": "NOT_STARTED"
+      "status": "PARTIAL",
+      "python_passed": 573,
+      "python_subtests_passed": 200,
+      "post_review_focused_passed": 11,
+      "playwright_passed": 4,
+      "queue_ui_recheck_passed": 1,
+      "partial_reason": "No full municipal 12-month coverage; unresolved search/license/dependency/source gates"
     }
   ],
   "push": false,

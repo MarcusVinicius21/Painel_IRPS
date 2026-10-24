@@ -18,6 +18,7 @@ export function MonitoringStatus(){
    <p>Última execução: {time(schedule.data?.last_run)}. Próxima verificação: {time(schedule.data?.next_run)}.</p>
    {schedule.data?.last_error?<Notice tone="amber">A última atualização precisa de atenção. Os dados salvos continuam disponíveis.</Notice>:null}
    <p>{schedule.data?.enabled?'A agenda retoma enquanto o servidor estiver ligado.':'A agenda ainda não foi iniciada neste ambiente.'} Estoque não disponível.</p>
+   <p>Fila de consultas oficiais, incluindo outras coleções: {((schedule.data?.queue??[]) as Row[]).map(r=>`${({ready:'a consultar',running:'em execução',completed:'concluídas',failed:'com falha',failed_retryable:'aguardando nova tentativa',blocked:'bloqueadas',quarantined:'em conferência'} as Record<string,string>)[r.state]??r.state}: ${r.requests}`).join('; ')||'Nenhuma consulta registrada'}. Esses contadores não medem compras ou cobertura municipal.</p>
   </>}
   <button className="button secondary" disabled={pending||!ctx.can('sources.sync')} onClick={()=>{
    setPending(true);void ctx.run(async()=>{await post('/portfolio/refresh',{});},'Atualização solicitada. Acompanhe a próxima execução.').finally(()=>setPending(false));

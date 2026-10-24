@@ -19,7 +19,11 @@ def ensure(ctx):
 def status(ctx):
     ctx.require('read')
     row=ctx.db.one('SELECT enabled,cursor,next_run,last_run,last_request,last_error,last_result FROM monitoring_schedule WHERE org_id=:o',{'o':ctx.org_id})
-    return normalize(row or {'enabled':False,'last_run':None,'next_run':None,'last_error':None,'last_result':{},'notice':'A atualização automática ainda não foi iniciada.'})
+    queue=ctx.db.all('''SELECT t.state,count(*) requests FROM history_task t
+        JOIN history_collection c ON c.org_id=t.org_id AND c.id=t.collection_id
+        WHERE t.org_id=:o AND c.dataset='official' GROUP BY t.state ORDER BY t.state''',{'o':ctx.org_id})
+    return normalize({**(row or {'enabled':False,'last_run':None,'next_run':None,'last_error':None,'last_result':{},'notice':'A atualização automática ainda não foi iniciada.'}),
+        'queue':queue,'queue_scope':'official_organization_collections_not_purchase_coverage'})
 
 def request_refresh(ctx):
     ctx.require('sources.sync');ensure(ctx)
@@ -65,7 +69,9 @@ def cycle(database,org,actor,today=None,transport=None,sleep=None):
             # Only class/code persisted; no exception messages that might contain keys.
             code=type(e).__name__
             with database.transaction(org,actor) as db:
-                db.execute("UPDATE monitoring_schedule SET last_error=:e,next_run=now()+interval '5 minutes',updated_at=now() WHERE org_id=:o",{'o':org,'e':code})
+                # Failed collections retain their own checkpoints. Rotate the
+                # scheduling cursor so one unavailable target cannot starve others.
+                db.execute("UPDATE monitoring_schedule SET cursor=cursor+1,last_error=:e,next_run=now()+interval '5 minutes',updated_at=now() WHERE org_id=:o",{'o':org,'e':code})
                 job_context(db,org,actor).audit('monitoring.cycle_failed',org,{'error_type':code})
             return {'state':'failed','error_type':code}
         finally:

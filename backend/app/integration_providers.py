@@ -7,21 +7,22 @@ def definitions():
     portal_key=bool(load_portal_key())
     return [
       {'provider':'PNCP','official':True,'operational':True,'installed':True,'tested':True,'blocked':None,
-       'adapter':'existing_durable_history','scope':'publication/result/contract/ata; phases remain separate'},
+       'adapter':'existing_durable_history','scope':'Publicações, resultados, contratos e atas; fases separadas e cobertura parcial.'},
       {'provider':'COMPRAS_GOV','official':True,'operational':True,'installed':True,'tested':True,'blocked':None,
-       'adapter':'existing_monthly_prices','scope':'national prices, not municipal purchase coverage'},
+       'adapter':'existing_monthly_prices','scope':'Preços nacionais; não comprovam compras municipais.'},
       {'provider':'IBGE','official':True,'operational':True,'installed':True,'tested':True,'blocked':None,
-       'adapter':'existing_identity','scope':'municipal identity only'},
+       'adapter':'existing_identity','scope':'Somente identificação oficial dos municípios.'},
       {'provider':'CATMAT_COM_BR','official':False,'operational':True,'installed':True,'tested':True,'blocked':None,
-       'adapter':'bounded_secondary_enrichment','scope':'CATMAT only; exact portfolio snapshot/code required'},
-      {'provider':'LICITEI','official':False,'operational':False,'installed':True,'tested':True,'blocked':'AGPL_AND_INDEX_RUNTIME',
-       'adapter':'isolated_stdio_poc','scope':'85 tools discovered; queries not validated; no source merge'},
+       'adapter':'bounded_secondary_enrichment','scope':'Complemento CATMAT; exige código e versão exatos do portfólio.'},
+      {'provider':'LICITEI','official':False,'operational':False,'installed':True,'tested':True,'blocked':'AGPL_AND_SEARCH_VALIDATION',
+       'adapter':'isolated_stdio_poc','scope':'Uma amostra oficial persistiu no PGlite após reiniciar; busca sem retorno. Revisão AGPL pendente.'},
       {'provider':'PORTAL_TRANSPARENCIA','official':True,'operational':portal_key,'installed':True,'tested':True,'blocked':None if portal_key else 'KEY_REQUIRED',
-       'adapter':'cgu_bounded_cnpj_and_isolated_stdio','scope':'CEIS single page; no clearance or municipal purchase inference'},
+       'adapter':'cgu_bounded_cnpj_and_isolated_stdio','sidecar_production_ready':False,'sidecar_blocked':'DEPENDENCY_ADVISORIES',
+       'scope':'Consulta direta CEIS de uma página; não atesta regularidade. MCP somente em POC: dependências com alertas.'},
       {'provider':'THIAGOSY_PNCP','official':False,'operational':False,'installed':False,'tested':False,'blocked':'LICENSE_NOT_IDENTIFIED',
-       'adapter':'official_PNCP_alternative','scope':'No unlicensed source copied'},
+       'adapter':'official_PNCP_alternative','scope':'Código sem licença não incorporado; utilizada API oficial.'},
       *[{'provider':name,'official':False,'operational':False,'installed':False,'tested':False,'blocked':'NOT_ADOPTED',
-         'adapter':None,'scope':'No additional unique validated capability installed'} for name in ['MCP_BRASIL','LICINEXUS','QUERIDO_DIARIO']]]
+         'adapter':None,'scope':'Nenhum serviço adicional validado foi instalado nesta rodada.'} for name in ['MCP_BRASIL','LICINEXUS','QUERIDO_DIARIO']]]
 
 def registry(ctx):
     ctx.require('read')

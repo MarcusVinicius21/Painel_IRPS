@@ -4,6 +4,8 @@ from .db import normalize
 
 def sources(ctx):
     ctx.require('read')
+    from .portal_credentials import load_portal_key
+    portal_available=bool(load_portal_key())
     rows=ctx.db.all('''SELECT f.provider,f.phase,count(*) AS current_records,
         count(DISTINCT f.source_id) AS evidence_documents,max(s.consulted_at) AS last_consulted
         FROM procurement_fact f JOIN source_observation s ON s.id=f.source_id
@@ -32,8 +34,10 @@ def sources(ctx):
             'message':'O caminho público retornou acesso negado.','fallback':'no_authentication_bypass'},
         {'provider':'CATMAT_COM_BR','state':'optional','origin':'catalogue_enrichment','official':False,
             'url':'https://catmat.com.br/api-docs','message':'Complemento opcional para materiais. O catálogo local permanece disponível.','fallback':'official_local_catalogue'},
-        {'provider':'PORTAL_TRANSPARENCIA_MCP','state':'blocked','origin':'context_indicator','official':False,
-            'url':'https://github.com/dutradotdev/mcp-portal-transparencia','message':'Depende de chave autorizada. Não ativado.','fallback':'not_required'},
+        {'provider':'PORTAL_TRANSPARENCIA_MCP','state':'available' if portal_available else 'blocked','origin':'context_indicator','official':True,
+            'url':'https://portaldatransparencia.gov.br/api-de-dados',
+            'message':'Consulta CEIS por CNPJ disponível. Não comprova regularidade nem compras municipais.' if portal_available else 'A consulta depende de chave autorizada.',
+            'fallback':'not_required'},
     ]
     return normalize({'records':definitions,'municipal_evidence':rows,
         'external_dependencies_required_to_open':False,'new_financial_facts':0,'cross_source_merges_applied':0,

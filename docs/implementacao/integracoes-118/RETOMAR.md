@@ -1,5 +1,17 @@
 # Retomada — integrações e 118 alvos
 
+## Estado atualizado após CI09
+
+CI03–CI09 foram executadas nesta continuação. O texto abaixo é o checkpoint histórico de CI02 e **não deve ser reexecutado**. Backup atual foi restaurado e conferido; 118 alvos estão ativados; migração atual é 0018. Skills confirmadas na sessão, sem reinstalação. Usar `CI_STATUS_GERAL.json` e `CI_RELATORIO_FINAL.md` como estado atual.
+
+CGU autenticada e chave privada DPAPI; não solicitar nem imprimir o segredo. Portal MCP somente POC isolada por alertas de dependências. Licitei mantém amostra após reinício, mas busca ainda sem retorno e adoção AGPL pendente. Cobertura municipal permanece parcial; agenda do backend segue enquanto o servidor estiver ligado.
+
+Retomada: confirmar Git, serviços e testes posteriores; não repetir CI01–CI08, não refazer FCP nem reabrir M/D/X. Prosseguir apenas nas lacunas específicas aprovadas em novo pedido. Não presumir cobertura integral ou vínculos de catálogo revisados. Não fazer push, PR, merge ou deploy.
+
+Para abrir o ambiente existente: `powershell -File scripts/iniciar_foco_consormulti.ps1`, com PostgreSQL previamente em execução. A configuração privada derivada habilita o worker; nenhuma senha consta neste documento. Não reinicializar o banco.
+
+## Checkpoint histórico de CI02
+
 Este checkpoint pertence à ordem de 24/10/2026. Não retomar M/D/X, repetir FCP nem reinstalar as sete skills.
 
 Abra o mesmo projeto e esta conversa no próximo turno. Caso as skills não apareçam no catálogo, feche normalmente o aplicativo Codex, abra-o novamente e retome esta conversa. Não pare o PostgreSQL; uma reinicialização do Codex não é uma reinicialização do banco.
