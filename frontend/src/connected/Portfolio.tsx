@@ -4,6 +4,7 @@ import {api,post,useApi,useResource,money,quantity,phases} from '../api';
 import type {Row} from '../api';
 import {Page,Panel,Field,Notice,Empty,Badge,DataTable,Link,IconProps} from '../components/ui';
 import './portfolio.css';
+import {MonitoringStatus} from './MonitoringStatus';
 
 type Filters={group:string;q:string;kind:string;technical:string;active:string;subgroup:string;municipalities:string[];start:string;end:string;phase:string};
 const initial:Filters={group:'01',q:'',kind:'',technical:'',active:'',subgroup:'',municipalities:[],start:'2025-10-01',end:'2026-09-30',phase:'homologado'};
@@ -49,6 +50,7 @@ export function Portfolio(){
  const choose=(row:Row)=>{setSelected(row);setPricePage(1);setPriceCursors({});setCodeOnly(false);};
  return <Page title="Portfólio CONSORMULTI" description="Escolha um grupo, confira preços e explore compras municipais." icon={<PackageSearch {...IconProps}/>} actions={<Link className="button secondary" to="inteligencia">Consultar catálogo nacional <ArrowUpRight {...IconProps}/></Link>}>
   <Notice>Candidatos técnicos não representam oferta confirmada. Compras observadas não comprovam necessidade futura.</Notice>
+  <MonitoringStatus/>
   <div className="portfolio-layout">
    <aside className="portfolio-groups"><Panel title="Vinte frentes de atuação"><ResourceState resource={groups}>
     <nav aria-label="Grupos do portfólio">{groups.data?.records.map((g:Row)=><button type="button" key={g.code} aria-pressed={g.code===filters.group} onClick={()=>apply({...filters,group:g.code,q:'',subgroup:''})}><span>{g.code}</span><div><strong>{g.name}</strong><small>{quantity(Number(g.direct_codes)+Number(g.review_codes))} códigos candidatos</small></div></button>)}</nav>
