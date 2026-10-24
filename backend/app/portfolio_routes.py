@@ -40,12 +40,12 @@ def enrichment(snapshot:UUID,code:str,ctx:Auth):
 def history(request:Request,ctx:Auth,group:str,start:date,end:date,phase:str,
         municipalities:list[str]=Query(default=[]),code:str|None=None,snapshot:UUID|None=None,
         buyer:str|None=Query(None,pattern=r'^\d{14}$'),provider:str|None=Query(None,pattern=r'^[A-Z][A-Z0-9_]{0,79}$'),
-        offset:int=Query(0,ge=0,le=20000),limit:int=Query(25,ge=1,le=50),candidates:bool=True):
-    if set(request.query_params)-{'group','start','end','phase','municipalities','code','snapshot','buyer','provider','offset','limit','candidates'}:
+        offset:int=Query(0,ge=0,le=20000),limit:int=Query(25,ge=1,le=50),candidates:bool=True,suppliers_only:bool=False):
+    if set(request.query_params)-{'group','start','end','phase','municipalities','code','snapshot','buyer','provider','offset','limit','candidates','suppliers_only'}:
         fail(422,'Confira os filtros das compras municipais.')
     from .portfolio_history import history as query
     return query(ctx,group=group,start=start,end=end,phase=phase,municipalities=municipalities,code=code,
-        snapshot=str(snapshot) if snapshot else None,buyer=buyer,provider=provider,offset=offset,limit=limit,candidates=candidates)
+        snapshot=str(snapshot) if snapshot else None,buyer=buyer,provider=provider,offset=offset,limit=limit,candidates=candidates,suppliers_only=suppliers_only)
 
 
 @router.get('/coverage')

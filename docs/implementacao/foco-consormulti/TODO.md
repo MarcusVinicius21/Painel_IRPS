@@ -9,4 +9,4 @@
 - [x] Mostrar cobertura e bloqueios separadamente.
 - [x] Persistir filtros no servidor.
 - [x] Validar jornada operacional no navegador, responsividade e acessibilidade.
-- [ ] Consolidar evidências finais e limitações sem falsas alegações de cobertura.
+- [x] Consolidar evidências finais e limitações sem falsas alegações de cobertura.

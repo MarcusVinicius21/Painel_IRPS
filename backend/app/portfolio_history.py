@@ -30,7 +30,7 @@ def source_groups(fact,record):
 
 
 def history(ctx,*,group,start,end,phase,municipalities=(),code=None,snapshot=None,buyer=None,
-            provider=None,offset=0,limit=25,candidates=True,item_id=None,item_version=None,_all=False):
+            provider=None,offset=0,limit=25,candidates=True,item_id=None,item_version=None,suppliers_only=False,_all=False):
     ctx.require('read')
     if group not in {f'{i:02}' for i in range(1,21)} or phase not in PHASES:fail(422,'Confira o grupo e a situação.')
     if end<start or (end-start).days>366 or end>date.today():fail(422,'Escolha até doze meses passados.')
@@ -85,6 +85,7 @@ def history(ctx,*,group,start,end,phase,municipalities=(),code=None,snapshot=Non
         supplier=(row['metadata'].get('supplier') or {})
         verified_supplier=bool(row['provider'] in ('PNCP_RESULTADOS','PNCP_CONTRATOS')
             and re.fullmatch(r'\d{14}',str(supplier.get('cnpj') or '')))
+        if suppliers_only and not verified_supplier:continue
         matched.append({k:row[k] for k in ('id','item_id','item_version','municipality_ibge','municipality_name',
             'buyer_name','buyer_cnpj','provider','phase','event_date','description','unit','quantity','unit_price','amount',
             'obligation_id','source_id','source_url','source_sha256','consulted_at')} |

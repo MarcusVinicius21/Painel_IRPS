@@ -41,5 +41,7 @@ def test_local_parent_lineage_supplier_and_candidate_filters(prepared,app,login)
     assert not row['included_in_group_totals'] and not row['quantity_is_consumption']
     assert response.json()['comparative_quantity'] is None
     assert c.get('/api/v1/portfolio/history',params={**p,'candidates':False}).json()['total']==0
+    suppliers=c.get('/api/v1/portfolio/history',params={**p,'suppliers_only':True,'limit':1}).json()
+    assert all(r['supplier'] is not None for r in suppliers['records'])
     assert login('compras-b').get('/api/v1/portfolio/history',params=p).json()['records']==[]
     assert c.get('/api/v1/portfolio/history',params={**p,'municipalities':['9999999']}).status_code==422

@@ -38,6 +38,8 @@ test.describe('FCP · operador real e evidências públicas locais',()=>{
   await page.route('https://catmat.com.br/**',r=>r.abort());
   await page.getByRole('navigation',{name:'Grupos do portfólio'}).getByRole('button').filter({hasText:/^15\s*Café/}).click();
   await page.getByLabel('Código ou descrição').fill('463562');
+  await page.getByLabel('Situação do código').selectOption('true');
+  await page.getByLabel('Subgrupo técnico').selectOption('cafe_produto');
   await page.getByRole('button',{name:'Aplicar e salvar filtros'}).click();
   await page.getByRole('button',{name:'Abrir ficha 463562'}).first().click();
   await page.getByRole('button',{name:'Consultar preços nacionais',exact:true}).click();

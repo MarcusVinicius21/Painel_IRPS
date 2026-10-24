@@ -30,6 +30,9 @@ def test_twenty_groups_code_search_and_national_catalogue_unchanged(prepared):
     assert query.status_code==200,query.text
     rows=query.json()['records'];assert len(rows)==1 and rows[0]['code']==code
     assert rows[0]['commercial_status']=='COMMERCIAL_PENDING'
+    subgroup=rows[0]['subgroup']
+    assert c.get('/api/v1/portfolio/codes',params={'group':'15','q':code,'subgroup':subgroup,'active':False}).json()['records']==[]
+    assert len(c.get('/api/v1/portfolio/codes',params={'group':'15','q':code,'subgroup':subgroup,'active':True}).json()['records'])==1
     assert c.get('/api/v1/portfolio/codes?group=01&q='+code).json()['records']==[]
     assert c.get('/api/v1/national-catalogue?q='+code).json()['total']>=1
     assert c.get('/api/v1/portfolio/codes?group=15&not_implemented=1').status_code==422
@@ -37,9 +40,10 @@ def test_twenty_groups_code_search_and_national_catalogue_unchanged(prepared):
 
 def test_preferences_persist_and_other_organization_is_isolated(prepared,login):
     c,_=prepared
-    payload={'group':'15','q':'café','municipalities':['3131307'],'phase':'homologado','start':'2025-10-01','end':'2026-09-30'}
+    payload={'group':'15','q':'café','municipalities':['3131307'],'phase':'homologado','start':'2025-10-01','end':'2026-09-30','active':True,'subgroup':'cafe_produto'}
     saved=c.post('/api/v1/portfolio/preferences',json=payload);assert saved.status_code==201,saved.text
     read=c.get('/api/v1/portfolio/preferences').json();assert read['payload']['group']=='15' and read['payload']['municipalities']==['3131307']
+    assert read['payload']['active'] is True and read['payload']['subgroup']=='cafe_produto'
     other=login('compras-b');assert other.get('/api/v1/portfolio/groups').json()['records']==[]
     assert other.get('/api/v1/portfolio/preferences').json()['id'] is None
     assert login('consulta-a').post('/api/v1/portfolio/preferences',json=payload).status_code==403

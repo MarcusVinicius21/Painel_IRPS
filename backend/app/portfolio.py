@@ -13,6 +13,8 @@ class Preference(Strict):
     q:str=Field(default='',max_length=150)
     kind:Literal['CATMAT','CATSER']|None=None
     technical:Literal['DIRECT_TECHNICAL','NEEDS_TECH_REVIEW']|None=None
+    active:bool|None=None
+    subgroup:str=Field(default='',max_length=80)
     municipalities:list[Code]=Field(default_factory=list,max_length=118)
     start:date=date(2025,10,1)
     end:date=date(2026,9,30)
@@ -32,7 +34,8 @@ def groups(ctx):
     if not selected:return {'records':[],'state':'not_initialized','notice':'O portfólio ainda não foi preparado neste espaço.'}
     rows=ctx.db.all('''SELECT g.*,count(l.code) FILTER(WHERE l.technical_status='DIRECT_TECHNICAL') AS direct_codes,
         count(l.code) FILTER(WHERE l.technical_status='NEEDS_TECH_REVIEW') AS review_codes,
-        count(l.code) FILTER(WHERE l.commercial_status='COMMERCIAL_CONFIRMED') AS commercial_confirmed
+        count(l.code) FILTER(WHERE l.commercial_status='COMMERCIAL_CONFIRMED') AS commercial_confirmed,
+        array_agg(DISTINCT l.subgroup) FILTER(WHERE l.technical_status IN ('DIRECT_TECHNICAL','NEEDS_TECH_REVIEW')) AS subgroups
         FROM portfolio_group g LEFT JOIN portfolio_code_link l ON l.org_id=g.org_id AND l.run_id=g.run_id AND l.group_code=g.code
         WHERE g.org_id=:o AND g.run_id=:r GROUP BY g.org_id,g.run_id,g.code ORDER BY g.code''',{'o':ctx.org_id,'r':selected['id']})
     return normalize({'records':rows,'run_id':selected['id'],'rule_version':selected['rule_version'],'state':'available',
